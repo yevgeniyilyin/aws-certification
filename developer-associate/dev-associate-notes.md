@@ -2,7 +2,7 @@
 
 
 
-## Whitepapers  
+## Whitepapers
 [AWS Security Best Practices](https://d0.awsstatic.com/whitepapers/Security/AWS_Security_Best_Practices.pdf)  
 [AWS Well-Architected Framework](https://d0.awsstatic.com/whitepapers/architecture/AWS_Well-Architected_Framework.pdf)  
 [Practicing Continuous Integration and Continuous Delivery on AWS Accelerating Software Delivery with DevOps](https://d1.awsstatic.com/whitepapers/DevOps/practicing-continuous-integration-continuous-delivery-on-AWS.pdf)  
@@ -12,9 +12,8 @@
 [Running Containerized Microservices on AWS](https://d1.awsstatic.com/whitepapers/DevOps/running-containerized-microservices-on-aws.pdf)  
 [Blue/Green Deployments on AWS](https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf)  
 
-
-
 ---
+
 # EC2
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html#ebs-create-snapshot-multi-volume
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dedicated-hosts-recovery.html
@@ -607,8 +606,44 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 
 ---
 # CloudFormation
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html
 
 ## CloudFormation
+- Template JSON or YAML
+- Only `Resources` section is required
+- **CloudFormer**: create CloudFormation template from existing resources
+- Resources:
+  - Format `AWS::aws-product-name::data-type-name`
+  - Properties dependend on resource
+  - Policies:
+    - _CreationPolicy_
+    - _DeletionPolicy_
+    - _DependsOn_
+    - _Metadata_
+    - _UpdatePolicy_
+- CloudFormation Stacks
+  - Stack resources are treaded as one single unit
+- CloudFormation Functions (intrinsic functions), here is some:
+  - `Fn::GetAtt`
+  - `Fn::GetAZs`  
+  - `Fn::Join`  
+  - `Ref`  
+  - `Fn::ImportValue`  
+
+---
+# Systems Manager Parameter Store
+- Can store parameters in hierarchies
+- Keeps history of value changes
+- Tiers:
+  - Standard: 10K parameters, size max 4KB, no parameter policies
+  - Advanced: >10K parameters, size maz 8KB, parameter policies
+- Parameter policy: Expiration, Notification
+- Parameter Types: `String`, `StringList`, `SecureString`  
+- API Actions:
+  - `PutParameter`  
+  - `GetParameter`  
+  - `DeleteParameter`  
+
 
 
 
@@ -628,5 +663,5 @@ Inline Policies vs Managed Policies vs Custom Policies
 Maintain Sessionstate with ELBs:
 - Option 1: ELB generated cookie stickiness
 - Option 2: Application generated cookie stickiness
-- Option 3: Non-ELB (not recommeded):
+- Option 3: Non-ELB (not recommended):
             using caching services like ElastiCache to store session state

@@ -470,12 +470,12 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
 
 -> Subscriptions:
     Endpoints:
-      `HTTP/S`
-      `Email, Email JSON`
-      `SQS (Fun-out)`
-      `Lambda`
-      `Platform application endpoint (mobile application)`
-      `SMS`
+      `HTTP/S`  
+      `Email, Email JSON`  
+      `SQS (Fun-out)`  
+      `Lambda`  
+      `Platform application endpoint (mobile application)`  
+      `SMS`  
     Filters
     DLQ settings
 - SNS Message attributes:

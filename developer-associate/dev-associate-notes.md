@@ -460,7 +460,7 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
 ## SNS
 - Public service - needs NAT or IGW or VPC endpoint
 - Fully resilient within a region
-- Messages up to 256KB
+- Messages up to **256KB**
 
 -> Topics: max 256 char, alphanumeric + "-" and "_
     Encryption (optional), AWS KMS
@@ -470,12 +470,12 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
 
 -> Subscriptions:
     Endpoints:
-      HTTP/S
-      Email, Email JSON
-      SQS (Fun-out)
-      Lambda
-      Platform application endpoint (mobile application)
-      SMS
+      `HTTP/S`
+      `Email, Email JSON`
+      `SQS (Fun-out)`
+      `Lambda`
+      `Platform application endpoint (mobile application)`
+      `SMS`
     Filters
     DLQ settings
 - SNS Message attributes:
@@ -484,7 +484,7 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
 -> Access to SNS resources:
   SNS access control policies:
     - Grant access to SNS topic to another AWS service or account
-      API: AddPermission
+      API: `AddPermission`
     - Grant right to some AWS services to publish to SNS topic (many services will use IAM Role instead)
     - Can use IAM Policies and Access Control Policies at the same time
 
@@ -523,7 +523,7 @@ https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-d
     Multiple producers and multiple consumers
 
   -> FIFO (exactly once, soft limits 3000 mps with batching or 300 without by default)
-    Multiple producers, btu multiple consumers only through Group IDs
+    Multiple producers, but multiple consumers only through Group IDs
     20K in-flight messages
     The name of FIFO queue must end with .fifo
     Supports message groups - allow multiple ordered message groups within a queue
@@ -541,7 +541,7 @@ https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-d
 
 -> Queue configuration:
     - Visibility timeout (0s-12h)
-    - Delivery delay (0s-15m): delay each message coming to the queue -> Creates **Delay Queue**
+    - **Delay Queue**: Delivery delay (0s-15m): delay each message coming to the queue  
     - Receive message wait time (0-20s): max time polling will wait for messages
     - Message retention period (1m-14d)
     - Max message size (1-256KB)

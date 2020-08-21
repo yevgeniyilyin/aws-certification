@@ -2,58 +2,17 @@
 
 
 
-https://aws.amazon.com/certification/certification-prep
-
-# ELB
-https://aws.amazon.com/blogs/aws/new-tls-termination-for-network-load-balancers/
-https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
-
-# Cognito
-https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-sync.html
-
-
-
-# VPC
-https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html#nacl-ephemeral-ports
-https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/vpc-vpce.html
-https://docs.amazonaws.cn/en_us/elasticbeanstalk/latest/dg/vpc-rds.html
-
-# S3
-https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock.html
-https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-inventory.html
-https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
-
-# Lambda
-https://docs.aws.amazon.com/lambda/latest/dg/configuration-database.html?icmpid=docs_lambda_help
-https://docs.aws.amazon.com/lambda/latest/dg/lambda-environment-variables.html
-https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
-https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
-https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html
-https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics.html
-https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/
-https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/
-https://aws.amazon.com/lambda/faqs
-https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html
-https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html
-
-# API Gateway
-https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/
-https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html
-https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
+## Whitepapers
+[AWS Security Best Practices](https://d0.awsstatic.com/whitepapers/Security/AWS_Security_Best_Practices.pdf)
+[AWS Well-Architected Framework](https://d0.awsstatic.com/whitepapers/architecture/AWS_Well-Architected_Framework.pdf)  
+[Practicing Continuous Integration and Continuous Delivery on AWS Accelerating Software Delivery with DevOps](https://d1.awsstatic.com/whitepapers/DevOps/practicing-continuous-integration-continuous-delivery-on-AWS.pdf)
+[Microservices on AWS](https://d1.awsstatic.com/whitepapers/microservices-on-aws.pdf)
+[Serverless Architectures with AWS Lambda](https://d1.awsstatic.com/whitepapers/serverless-architectures-with-aws-lambda.pdf)
+[Optimizing Enterprise Economics with Serverless Architectures](https://d1.awsstatic.com/whitepapers/optimizing-enterprise-economics-serverless-architectures.pdf)
+[Running Containerized Microservices on AWS](https://d1.awsstatic.com/whitepapers/DevOps/running-containerized-microservices-on-aws.pdf)
+[Blue/Green Deployments on AWS](https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf)
 
 
-
-
-
-*** AWS organisations
-
-
-
-Whitepapers:
--> Blue/Green Deployments on AWS
 
 ---
 # EC2
@@ -92,14 +51,14 @@ IAM Policy required fields:
 - Action or NotAction
 - Resource or NotResource
 
-
+---
 # IAM access reports:
 - Credential Report: lists the users and usage of their access keys
 - Access Analyzer: monitor access to resources
   (you define zone of trust -> analyser finds access outside ZoT to your resources)
 - Organisation activity: service access report for OU or account
 
-
+---
 # STS
 STS API Call returns: Security Token, Access Key ID, Secret Access Key
 STS API calls:
@@ -165,16 +124,27 @@ KMS API actions:
 - network reachability
 - EC2 instance security
 
-******************
-Cognito
+---
+# Cognito
+https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-sync.html
+
+## Cognito
 - sign in directly
 - web federation
 - Components - User pool - user directory in Cognito
 - Components - Identity pool - user can obtain temporary AWS credentials
 push notifications to sync
 
-******************
-API Gateway
+---
+# API Gateway
+https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/
+https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html
+https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
+
+## API Gateway
 - Resource URL
 - Stage is added to default API endpoint
 - Respond to request: Lambda, HTTP Endpoints, other AWS services
@@ -190,8 +160,21 @@ API Gateway
 - Can configure SOAP Webservice Passthrough (doesn't convert XML!)
 - Canary releases - create/promote canary
 
-******************
-Lambda
+---
+# Lambda
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-database.html?icmpid=docs_lambda_help
+https://docs.aws.amazon.com/lambda/latest/dg/lambda-environment-variables.html
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
+https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html
+https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics.html
+https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/
+https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/
+https://aws.amazon.com/lambda/faqs
+https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html
+https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html
+
+## Lambda
 - max timeout 15m
 - priced per # of requests and duration
 - can be used cross-region
@@ -232,10 +215,6 @@ SAM Templates
 ******************
 Step Functions
 -
-
-******************
-X-Ray
-- Integrates with ELB, Lambda, API GTW, EC2, Beanstalk
 
 ---
 # DynamoDB
@@ -316,11 +295,20 @@ https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.
 - Rule can trigger: SNS, SQS, EC2, Lambda
 
 ---
-VPC
+# VPC
+https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html#nacl-ephemeral-ports
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/vpc-vpce.html
+https://docs.amazonaws.cn/en_us/elasticbeanstalk/latest/dg/vpc-rds.html
+
+## VPC
 - VPC endpoints - from CSAA course
 
-******************
-ELB
+---
+# ELB
+https://aws.amazon.com/blogs/aws/new-tls-termination-for-network-load-balancers/
+https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
+
+## ELB
 - X-Forwarded-For header to have the client IP on the backend server (via ELB)
 - NLB: Layer 4 (Transport), TCP, UDP, TLS, supports STATIC IP, can be assigned Elastic IP per subnet
 - ALB: Layer 7 (Application), HTTP/S
@@ -329,34 +317,39 @@ ELB
   Each of container assigned a random port
   ELB+Target Groups can handle that
 
-******************
-S3
+---
+# S3
+https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock.html
+https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-inventory.html
+https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
+
+## S3
 - S3 permissions:
-A) S3 IAM Policies: attached to Users, Groups, Roles
-  Not attached to S3 buckets or objects
-  Cannot grant access to anonymous users
-  JSON
-B) Resource Based:
-  ->Bucket policies: attached to S3 bucket (not the objects/user/role)
+  A) S3 IAM Policies: attached to Users, Groups, Roles
+    Not attached to S3 buckets or objects
+    Cannot grant access to anonymous users
+    JSON
+  B) Resource Based:
+  - Bucket policies: attached to S3 bucket (not the objects/user/role)
     Can grant access to anonymous users
     Can restric access based on IP address
     Applied to all bucket-owner objects
     JSON
-  ->ACLs: can be used with buckets and objects
+  - ACLs: can be used with buckets and objects
     Cannot deny permissions or grant additional permissions
     Manage access to the objects not owned by the bucket owner
     Manage permissions at the object level
     Allow external accounts to manage policies on objects
     XML
 - S3 Encryption
- -> In-Transit Encryption (client-side):
-  Using a Client-side Master Key:
-    CSMK provided by a client, never sent to AWS (only to client-side S3 encryption client)
-    S3 client encrypts the data using the DEK (randomly generated by S3 client)
-    Material description uploaded as part of the metadata (x-amz-meta-x-amz-key)
-  Using a AWS KMS CMK:
-    On upload, KMS returns a DEK (plaintext and chipertext to keep with the data)
-    Ciphertext uploaded as metadata
+  - In-Transit Encryption (client-side):
+    **Using a Client-side Master Key**:  
+      CSMK provided by a client, never sent to AWS (only to client-side S3 encryption client)
+      S3 client encrypts the data using the DEK (randomly generated by S3 client)
+      Material description uploaded as part of the metadata (x-amz-meta-x-amz-key)
+    **Using a AWS KMS CMK**:  
+      On upload, KMS returns a DEK (plaintext and ciphertext to keep with the data)
+      Ciphertext uploaded as metadata
 
  -> At-rest encryption
   SSE-S3: uses S3-managed key
@@ -381,14 +374,14 @@ B) Resource Based:
   cannot disable object lock or suspend versioning after object lock enabled
   apply to an individual version of an object in a versioned bucket
 
-******************
-CloudFront
+---
+## CloudFront
 - caching based off the object name
 - in order to serve a new version of the object, create a new obj with new name
 - you can set TTL
 
-*******************
-ECS
+---
+## ECS
 - Use cases:
   Microservices and docker applications
   Batch and ETL Jobs
@@ -430,8 +423,8 @@ Container Def->Task Def->Service->Cluster (Fargate)
 
 -> IAM Roles for ECS Tasks
 
-******************
-Elastic Beanstalk
+---
+## Elastic Beanstalk
 - Manages everything required for less complex application
 - Platform as a Service
 - Automated provisioning, auto scaling, load balancing, software updates
@@ -565,9 +558,17 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 # Repos, Deployment, Builds, and CI/CD
 
 ## X-Ray
+- Integrates with ELB, Lambda, API GTW, EC2, Beanstalk
 - Error - Client errors `400-series errors`  
 - Fault - Server faults `500-series errors`  
 - Throttle - Throttling errors `419 Too Many Requests`  
+- Allow to search through request information using:
+  - Annotations
+  - Trace IDs
+  - URL Paths (partial or complete)
+- Trace IDs are added as custom HTTP headers
+- X-Ray applies a sampling algorithm by default
+- You can implement your own sampling frequences for data collecton
 
 ## CodeCommit
 - Integrated with other AWS Services
@@ -575,6 +576,7 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 
 ## CodeBuild
 - Compile, run unit tests, produce deployment artifacts (stored in S3)
+- Can use Managed Image or Custom Docker Image
 - Build Project: defines build, sources:
   - S3, CodeCommit, GitHub, Bitbucket, GitHub Enterprise
 - Build Environment: OS, runtime, tools
@@ -592,16 +594,21 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 
 ## CodePipeline
 - Automate release process
+- Stages, Actions, Transitions
+- Stages contain at least one action
+- Actions have a deployment artifact as input/output or both
 - Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code
 - Can add workflows (e.g. approvals via SNS)
 
 ## CodeStar
-- 
+- Project templates for various projects and programming languages
+- IDEs integration
+- Visualisation (Application activity, JIRA)
 
+---
+# CloudFormation
 
-
-
-
+## CloudFormation
 
 
 

@@ -75,7 +75,7 @@ https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.
 Whitepapers:
 -> Blue/Green Deployments on AWS
 
-******************
+
 EC2
 - You can create multi-volume snapshots for ALL EBS volumes attached to an
   EC2 instance (select resource type as Instance in create snapshot dialog),
@@ -101,14 +101,14 @@ IAM Policy required fields:
 - Action or NotAction
 - Resource or NotResource
 
-******************
+
 # IAM access reports:
 - Credential Report: lists the users and usage of their access keys
 - Access Analyzer: monitor access to resources
   (you define zone of trust -> analyser finds access outside ZoT to your resources)
 - Organisation activity: service access report for OU or account
 
-******************
+
 # STS
 STS API Call returns: Security Token, Access Key ID, Secret Access Key
 STS API calls:
@@ -131,12 +131,12 @@ When to use STS
 - Roles for cross-account access
 - Roles for EC2
 
-******************
+
 IAM API Keys
 - In order for API credentials to work, they must be associated with a USER
 - Roles do not have API credentials!!!
 
-******************
+
 KMS
 - CMK used to encrypt/decrypt up to 4KB of data
 - CMK is the primary resource in KMS
@@ -155,7 +155,7 @@ KMS
 - KMS assymmetric CMK - mathematically related public and private key pair
 - KMS supports RSA and ECC assymmetric CMKs
 
-******************
+
 KMS API actions:
 - encrypt: aws kms encrypt
 - generate data key/envelop key (GenerateDataKey API)
@@ -452,7 +452,7 @@ OpsWorks
 - Infrastructure management platform
 based on Chef configuration management platform
 
-...
+---
 # SNS
 https://docs.aws.amazon.com/sns/latest/api/CommonErrors.html
 https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
@@ -505,7 +505,7 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
   - Subscribe
   - Unsubscribe
 
-...
+---
 # SQS
 https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html
 https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-delay-queues.html

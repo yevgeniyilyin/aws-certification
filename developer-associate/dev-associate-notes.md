@@ -12,22 +12,6 @@ https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https
 https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-sync.html
 
 
-# EC2
-https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html#ebs-create-snapshot-multi-volume
-https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dedicated-hosts-recovery.html
-https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/capacity-reservation-sharing.html
-https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-market-concepts-buying.html#ri-queued-purchase
-https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dh-sharing.html
-https://aws.amazon.com/blogs/aws/new-trigger-a-kernel-panic-to-diagnose-unresponsive-ec2-instances/
-https://aws.amazon.com/blogs/aws/automate-os-image-build-pipelines-with-ec2-image-builder/
-https://aws.amazon.com/blogs/aws/new-amazon-ebs-fast-snapshot-restore-fsr/
-https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-connect-set-up.html
-
-
-# KMS
-https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-concepts.html#symmetric-cmks
-https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#enveloping
-https://aws.amazon.com/blogs/security/aws-encryption-sdk-how-to-decide-if-data-key-caching-is-right-for-your-application/
 
 # VPC
 https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html#nacl-ephemeral-ports
@@ -60,11 +44,7 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching
 https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html
 https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
 
-# DynamoDB
-https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-api
-https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/specifying-conditions.html
-https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html
-https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html
+
 
 
 
@@ -75,8 +55,19 @@ https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.
 Whitepapers:
 -> Blue/Green Deployments on AWS
 
+---
+# EC2
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html#ebs-create-snapshot-multi-volume
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dedicated-hosts-recovery.html
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/capacity-reservation-sharing.html
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-market-concepts-buying.html#ri-queued-purchase
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dh-sharing.html
+https://aws.amazon.com/blogs/aws/new-trigger-a-kernel-panic-to-diagnose-unresponsive-ec2-instances/
+https://aws.amazon.com/blogs/aws/automate-os-image-build-pipelines-with-ec2-image-builder/
+https://aws.amazon.com/blogs/aws/new-amazon-ebs-fast-snapshot-restore-fsr/
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-connect-set-up.html
 
-EC2
+## EC2
 - You can create multi-volume snapshots for ALL EBS volumes attached to an
   EC2 instance (select resource type as Instance in create snapshot dialog),
   up to 40 volumes per instance
@@ -136,8 +127,13 @@ IAM API Keys
 - In order for API credentials to work, they must be associated with a USER
 - Roles do not have API credentials!!!
 
+---
+# KMS
+https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-concepts.html#symmetric-cmks
+https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#enveloping
+https://aws.amazon.com/blogs/security/aws-encryption-sdk-how-to-decide-if-data-key-caching-is-right-for-your-application/
 
-KMS
+## KMS
 - CMK used to encrypt/decrypt up to 4KB of data
 - CMK is the primary resource in KMS
 - CMKs generate, encrypt and decrypt the data keys (DEKs)
@@ -163,8 +159,8 @@ KMS API actions:
 - re-encrypt (without having an original key, e.g. for key rotation)
 - key rotation (enable-key-rotation)
 
-******************
-AWS Inspector
+---
+# AWS Inspector
 - automated security assessment service
 - network reachability
 - EC2 instance security
@@ -241,8 +237,14 @@ Step Functions
 X-Ray
 - Integrates with ELB, Lambda, API GTW, EC2, Beanstalk
 
-******************
-DynamoDB
+---
+# DynamoDB
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-api
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/specifying-conditions.html
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html
+https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html
+
+## DynamoDB
 - 1 WCU: 1 write of 1 item of 1KB or less (round up to nearest KB)
 - Writes are applied in the order received
 - There are "conditional writes" - only succeed if the attributes meet
@@ -304,8 +306,8 @@ DynamoDB
     - Can trigger Lambda
 
 
-******************
-CloudWatch
+---
+## CloudWatch
 - By default EC2 monintoring is 5m, detailed - 1m
 - By default store indefinitely (can change the retention period)
 - Host-level metrics: CPU, Network, Disk, StatusCheck
@@ -313,7 +315,7 @@ CloudWatch
 - Alarm can trigger: SNS, Auto scaling action, EC2 action (stop, terminate, reboot)
 - Rule can trigger: SNS, SQS, EC2, Lambda
 
-******************
+---
 VPC
 - VPC endpoints - from CSAA course
 
@@ -447,10 +449,9 @@ Elastic Beanstalk
   - Rolling with addition batch
   - Blue/Green
 
-*******************
-OpsWorks
-- Infrastructure management platform
-based on Chef configuration management platform
+---
+# OpsWorks
+- Infrastructure management platform based on Chef configuration management platform
 
 ---
 # SNS
@@ -462,14 +463,14 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
 - Fully resilient within a region
 - Messages up to **256KB**
 
--> Topics: max 256 char, alphanumeric + "-" and "_
-    Encryption (optional), AWS KMS
-    Access Policy (default access for topic owner)
-    Delivery retry policy (to HTTP/S endpoints)
-    Delivery status logging (successful/failed deliveries) for Lambda, SQS, HTTP/S, APP
+- Topics: max 256 char, alphanumeric + "-" and "_
+    - Encryption (optional), AWS KMS
+    - Access Policy (default access for topic owner)
+    - Delivery retry policy (to HTTP/S endpoints)
+    - Delivery status logging (successful/failed deliveries) for Lambda, SQS, HTTP/S, APP
 
--> Subscriptions:
-    Endpoints:
+- Subscriptions:  
+    Endpoints:  
       `HTTP/S`  
       `Email, Email JSON`  
       `SQS (Fun-out)`  
@@ -479,58 +480,63 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
     Filters
     DLQ settings
 - SNS Message attributes:
-    Name, Value, Type (String, String array, number, binary)
+    `Name, Value, Type (String, String array, number, binary)`
 
--> Access to SNS resources:
+- Access to SNS resources:
   SNS access control policies:
     - Grant access to SNS topic to another AWS service or account
       API: `AddPermission`
     - Grant right to some AWS services to publish to SNS topic (many services will use IAM Role instead)
     - Can use IAM Policies and Access Control Policies at the same time
 
--> Message Data:
+- Message Data:
     - Message Body:
         Message, MessageID, Signature, SigningCertURL, Subject, Timestamp, TopicARN, Type, UnsubscribeURL
     - Message Attributes:
         Name, Type, Value (useful for SQS and mobile push)
 
--> Mobile Push with SNS:
+- Mobile Push with SNS:
     - MPNS Process
     Create a platform application->Add endpoints->Publish messages
     - Can publish additionally a notification to SNS topics (endpoint created, deleted, updated, failure)
 
--> SNS API and Errors:
-  - CreateTopic: Name
-  - Publish: Send message: Message
-  - Subscribe
-  - Unsubscribe
+- SNS API and Errors:
+  - `CreateTopic`: Name  
+  - `Publish`: Send message: Message  
+  - `Subscribe`  
+  - `Unsubscribe`  
 
 ---
 # SQS
+[FAQs](https://aws.amazon.com/sqs/faqs/)
 https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html
 https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-delay-queues.html
+https://aws.amazon.com/blogs/compute/new-for-aws-lambda-sqs-fifo-as-an-event-source/
+https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html
+https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 
 ## SQS
 - HA
 - can be PCI compliant and encrypt messages using KMS
-- Polling types:
+- Polling types:  
     - short polling (0s receive message wait time), queries only subset of the SQS servers
     - long polling (1-20s receive message wait time)
 
-- Queue types (has to be selected BEFORE creating queue):
-  -> Standard (nearly unlimited throughput, at least once semantic)
-    120K  in-flight messages
-    Multiple producers and multiple consumers
+- Queue types (has to be selected BEFORE creating queue):  
+    - **Standard** (nearly unlimited throughput, at least once semantic)  
+    - 120K in-flight messages (received from a queue by a consumer, but not yet deleted)
+    - Multiple producers and multiple consumers
 
-  -> FIFO (exactly once, soft limits 3000 mps with batching or 300 without by default)
-    Multiple producers, but multiple consumers only through Group IDs
-    20K in-flight messages
-    The name of FIFO queue must end with .fifo
-    Supports message groups - allow multiple ordered message groups within a queue
+    - **FIFO** (exactly once, soft limits 3000 mps with batching or 300 without by default)
+    - Multiple producers, but multiple consumers only through Group IDs
+    - 20K in-flight messages
+    - The name of FIFO queue must end with `.fifo`  
+    - Supports message groups - allow multiple ordered message groups within a queue
 
-- Message up to 256KB (but can link S3)
+- Message up to **256KB** (but can link S3 with [Amazon SQS Extended Client Library for Java](https://github.com/awslabs/amazon-sqs-java-extended-client-lib))
 - Up to 10 metadata attributes (outside of message body)
--> Message Components:
+- Message Components:
     - Body
     - ReceiptHandle - allows to delete message after processing
     - Metadata attributes (up to 10)
@@ -539,21 +545,58 @@ https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-d
 
 - Can have attached resource policy (access policy)
 
--> Queue configuration:
-    - Visibility timeout (0s-12h)
+- Queue configuration:
+    - Visibility timeout (0s-12h): Use `ChangeMessageVisibility`  
     - **Delay Queue**: Delivery delay (0s-15m): delay each message coming to the queue  
-    - Receive message wait time (0-20s): max time polling will wait for messages
-    - Message retention period (1m-14d)
-    - Max message size (1-256KB)
-    - Access policy -> defines who can send and who can receive
-    - DLQ
+    - Receive message wait time (0-20s): max time polling will wait for messages  
+    - Message retention period (1m-14d)  
+    - Max message size (1-256KB)  
+    - Access policy -> defines who can send and who can receive  
+    - DLQ: should be the same type as the main queue  
 - Use URL to access
-
-- ApproximateNumberOfMessages -> metric for ASG
+- `ApproximateNumberOfMessages` -> metric for ASG
 
 - Managing Access to SQS
   - same as with SNS
 
+- AWS Lambda uses long polling for standard queues and message group ID for FIFO queues
+
+---
+# Repos, Deployment, Builds, and CI/CD
+
+## X-Ray
+- Error - Client errors `400-series errors`  
+- Fault - Server faults `500-series errors`  
+- Throttle - Throttling errors `419 Too Many Requests`  
+
+## CodeCommit
+- Integrated with other AWS Services
+- Uses git workflows
+
+## CodeBuild
+- Compile, run unit tests, produce deployment artifacts (stored in S3)
+- Build Project: defines build, sources:
+  - S3, CodeCommit, GitHub, Bitbucket, GitHub Enterprise
+- Build Environment: OS, runtime, tools
+- Build Spec: YAML file
+
+## CodeDeploy
+- Automated deployments to EC2, Lambda, on-prem
+- Blue/Green Deployment: automatically creates blue/green environment
+- Blue/Green with Lambda:
+  - _Canary_: % of traffic shifted to the new version. Wait for specified time and shift the rest
+  - _Linear_: Traffic is shifted in equal increments with equal periods
+  - _All at once_: Traffic is immediately shifted
+- Lifecycle event hooks:
+  - BeforeInstall, AfterInstall, ApplicationStart, ApplicationStop, ValidateService
+
+## CodePipeline
+- Automate release process
+- Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code
+- Can add workflows (e.g. approvals via SNS)
+
+## CodeStar
+- 
 
 
 

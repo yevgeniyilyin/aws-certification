@@ -2,15 +2,18 @@
 
 
 
-## Whitepapers
-[AWS Security Best Practices](https://d0.awsstatic.com/whitepapers/Security/AWS_Security_Best_Practices.pdf)  
-[AWS Well-Architected Framework](https://d0.awsstatic.com/whitepapers/architecture/AWS_Well-Architected_Framework.pdf)  
+# Whitepapers
+[AWS Security Best Practices](https://d0.awsstatic.com/whitepapers/Security/AWS_Security_Best_Practices.pdf)
+|[Linux Academy Notes](https://www.lucidchart.com/documents/view/dfdee40b-893c-4d68-80ff-a980b62592d1/0)  
+[AWS Well-Architected Framework](https://d0.awsstatic.com/whitepapers/architecture/AWS_Well-Architected_Framework.pdf)|[Linux Academy Notes]([Linux Academy Notes](https://www.lucidchart.com/documents/view/dfdee40b-893c-4d68-80ff-a980b62592d1/0)  
 [Practicing Continuous Integration and Continuous Delivery on AWS Accelerating Software Delivery with DevOps](https://d1.awsstatic.com/whitepapers/DevOps/practicing-continuous-integration-continuous-delivery-on-AWS.pdf)  
 [Microservices on AWS](https://d1.awsstatic.com/whitepapers/microservices-on-aws.pdf)  
 [Serverless Architectures with AWS Lambda](https://d1.awsstatic.com/whitepapers/serverless-architectures-with-aws-lambda.pdf)  
 [Optimizing Enterprise Economics with Serverless Architectures](https://d1.awsstatic.com/whitepapers/optimizing-enterprise-economics-serverless-architectures.pdf)  
 [Running Containerized Microservices on AWS](https://d1.awsstatic.com/whitepapers/DevOps/running-containerized-microservices-on-aws.pdf)  
 [Blue/Green Deployments on AWS](https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf)  
+
+
 
 ---
 
@@ -211,9 +214,39 @@ https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html
 SAM Templates
 
 
-******************
-Step Functions
--
+---
+# SWF
+- Workflow coordinates and manages the execution of **activities** that can be run asyn across multiple devices
+- Consistent execution
+- No duplication of tasks
+- Guarantees delivery order of messages/tasks
+- Primarily an API which an application can integrate its workflow into
+- Execution can last up to 1y
+- Components:
+  - Workflows (Decider)
+  - Activities (single step in workflow)
+  - Tasks: what interacts with the workers that are part of a workflow
+  - Workers: can be any type of component (even a person)
+
+---
+# Step Functions
+- Components: Tasks, State Machines (defined using **JSON** Amazon States Language)
+- Activity can be:
+  - Program code interacting with Step Function API actions
+  - Lambda function
+- State Types:
+  - Task: do some work
+  - Choice:
+  - Fail/Succeed
+  - Pass: Pass inputs to outputs, do some transformation
+  - Wait
+  - Parallel
+- Transitions
+- API Actions:
+  - `CreateStateMachine`  
+  - `StartExecution`  
+  - `ListExecution` - list executions is eventually consistent (use `nextToken`)  
+  - `StopExecution`  
 
 ---
 # DynamoDB
@@ -225,7 +258,7 @@ https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.
 ## DynamoDB
 - 1 WCU: 1 write of 1 item of 1KB or less (round up to nearest KB)
 - Writes are applied in the order received
-- There are "conditional writes" - only succeed if the attributes meet
+- There are "conditional writes" - only succeed if the attributes meet some conditions
 - 1 RCU: 1 read of 1 item of 4KB or less (strongly consistent) or 2 reads 4KB per sec for eventually consistent
 - Eventual consistent read - 0.5 RCU
 - IAM condition parameter: fine-graned access per-item or per-attribute
@@ -643,6 +676,7 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-functio
   - `PutParameter`  
   - `GetParameter`  
   - `DeleteParameter`  
+
 
 
 

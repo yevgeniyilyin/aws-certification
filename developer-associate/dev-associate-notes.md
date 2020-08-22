@@ -1,19 +1,17 @@
 # Developer Associate
 
+Training course notes
 
-
-# Whitepapers
+# Whitepapers
 [AWS Security Best Practices](https://d0.awsstatic.com/whitepapers/Security/AWS_Security_Best_Practices.pdf)
-|[Linux Academy Notes](https://www.lucidchart.com/documents/view/dfdee40b-893c-4d68-80ff-a980b62592d1/0)  
-[AWS Well-Architected Framework](https://d0.awsstatic.com/whitepapers/architecture/AWS_Well-Architected_Framework.pdf)|[Linux Academy Notes]([Linux Academy Notes](https://www.lucidchart.com/documents/view/dfdee40b-893c-4d68-80ff-a980b62592d1/0)  
-[Practicing Continuous Integration and Continuous Delivery on AWS Accelerating Software Delivery with DevOps](https://d1.awsstatic.com/whitepapers/DevOps/practicing-continuous-integration-continuous-delivery-on-AWS.pdf)  
-[Microservices on AWS](https://d1.awsstatic.com/whitepapers/microservices-on-aws.pdf)  
-[Serverless Architectures with AWS Lambda](https://d1.awsstatic.com/whitepapers/serverless-architectures-with-aws-lambda.pdf)  
-[Optimizing Enterprise Economics with Serverless Architectures](https://d1.awsstatic.com/whitepapers/optimizing-enterprise-economics-serverless-architectures.pdf)  
-[Running Containerized Microservices on AWS](https://d1.awsstatic.com/whitepapers/DevOps/running-containerized-microservices-on-aws.pdf)  
-[Blue/Green Deployments on AWS](https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf)  
-
-
+| [Linux Academy Notes](https://www.lucidchart.com/documents/view/dfdee40b-893c-4d68-80ff-a980b62592d1/0)  
+[AWS Well-Architected Framework](https://d0.awsstatic.com/whitepapers/architecture/AWS_Well-Architected_Framework.pdf) | [Linux Academy Notes](https://app.lucidchart.com/documents/view/81457ecf-406a-41a6-af1f-c72dc82b8c01/0_0)  
+[Practicing Continuous Integration and Continuous Delivery on AWS Accelerating Software Delivery with DevOps](https://d1.awsstatic.com/whitepapers/DevOps/practicing-continuous-integration-continuous-delivery-on-AWS.pdf) | [Linux Academy Notes](https://www.lucidchart.com/documents/view/b8a9e318-d525-469d-8016-793fb41da2f2/0)  
+[Microservices on AWS](https://d1.awsstatic.com/whitepapers/microservices-on-aws.pdf) | [Linux Academy Notes](https://app.lucidchart.com/documents/view/f51c65c7-fda0-400c-b20f-cc920e55d0a8/0)  
+[Serverless Architectures with AWS Lambda](https://d1.awsstatic.com/whitepapers/serverless-architectures-with-aws-lambda.pdf) | [Linux Academy Notes](https://app.lucidchart.com/documents/view/69c1b85c-a4dd-4828-be58-3ef5a15efce8/0)  
+[Optimizing Enterprise Economics with Serverless Architectures](https://d1.awsstatic.com/whitepapers/optimizing-enterprise-economics-serverless-architectures.pdf) | [Linux Academy Notes](https://www.lucidchart.com/documents/view/f012ef3f-deaf-4442-8008-a796d80db3fe/0)  
+[Running Containerized Microservices on AWS](https://d1.awsstatic.com/whitepapers/DevOps/running-containerized-microservices-on-aws.pdf) | [Linux Academy Notes](https://www.lucidchart.com/documents/view/392c5e21-5047-41fe-8f46-f610c844c4ce/0)  
+[Blue/Green Deployments on AWS](https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf) | [Linux Academy Notes](https://www.lucidchart.com/documents/view/e7f49c8f-34d7-4b31-9313-1485e84b0510)  
 
 ---
 
@@ -587,7 +585,13 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 - AWS Lambda uses long polling for standard queues and message group ID for FIFO queues
 
 ---
-# Repos, Deployment, Builds, and CI/CD
+# Repos, Deployment, Builds, and CI/
+
+Developers->CodeCommit->CodeBuild->Test->CodeDeploy->Environment
+Deployment Methods:
+> All at Once (can be used with CodeDeploy, cannot be used with Lambda)
+> Rolling/Canary (API Gateway and Elastic Beanstalk using that)
+> Immutable and Blue/Green (DNS update is required, can be used with CodeDeploy)
 
 ## X-Ray
 - Integrates with ELB, Lambda, API GTW, EC2, Beanstalk

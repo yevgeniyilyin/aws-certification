@@ -46,18 +46,24 @@ Main:
 - Lambda
 - Elastic Beanstalk
 
-IAM Policy required fields:
+---
+# IAM
+
+IAM Policy **required** fields:
 - Effect (Deny, Allow)
 - Action or NotAction
 - Resource or NotResource
 
 ---
-# IAM access reports:
+## IAM access reports:
 - Credential Report: lists the users and usage of their access keys
 - Access Analyzer: monitor access to resources
   (you define zone of trust -> analyser finds access outside ZoT to your resources)
 - Organisation activity: service access report for OU or account
 
+- Policy simulator:
+  1. Get the context keys first
+  2. `aws iam simulate-custom-policy-command`
 ---
 # STS
 STS API Call returns: Security Token, Access Key ID, Secret Access Key
@@ -126,14 +132,33 @@ KMS API actions:
 
 ---
 # Cognito
-https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-sync.html
+https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-sync.
+https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-events.html
+https://docs.aws.amazon.com/cognito/latest/developerguide/role-based-access-control.html
 
 ## Cognito
 - sign in directly
 - web federation
-- Components - User pool - user directory in Cognito
-- Components - Identity pool - user can obtain temporary AWS credentials
-push notifications to sync
+- Components - **User pool** - user directory in Cognito
+- Components - **Identity pool** - user can obtain temporary AWS credentials
+- push notifications to sync a dataset
+- Cognito Events:
+  > allows to execute AWS Lambda function in response to important events in Cognito
+  > Cognito raises the **Sync Trigger** event when identity pool dataset is synced.
+  > You can use the Sync Trigger to take action when a user updates  
+
+  - Lambda function must respond in 5s
+- Cognito Streams:
+  - Cognito can push each dataset change to a Kinesis stream (new or existing)
+  - You need to select IAM role that grants Cognito permission to put events in the selected stream
+
+- Cognito Role-Based Access Control
+  - permissions for each user are controlled through IAM roles that you create
+  - you can define rules to choose the role for each user based on claims in the user's ID token
+  - you can define a default role for authenticated users
+  - you can define a separate IAM role for guest users (not authenticated)
+  - Rules are evaluated in order, and the IAM role for the first matching rule is used, unless `CustomRoleArn` is specified to override the order
+
 
 ---
 # API Gateway
@@ -143,6 +168,7 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
 https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html
 https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html
 https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
+https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
 
 ## API Gateway
 - Resource URL
@@ -159,6 +185,17 @@ https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
     429 Too Many Requests error
 - Can configure SOAP Webservice Passthrough (doesn't convert XML!)
 - Canary releases - create/promote canary
+- Stage variables:
+  - name-value pairs you can define as configuration attributes associated with a deployment stage
+  - use as environment variables in API setup and mapping templates (`${stageVariables.Name}`)
+- To support CORS, API resource needs to implement an OPTIONS method that can respond to the OPTIONS request with following header:
+  `Access-Control-Allow-Headers`
+  `Access-Control-Allow-Origin`
+  `Access-Control-Allow-Methods`
+
+## CORS
+https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
+ß
 
 ---
 # Lambda
@@ -173,6 +210,8 @@ https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/
 https://aws.amazon.com/lambda/faqs
 https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html
 https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
+
 
 ## Lambda
 - max timeout 15m
@@ -209,7 +248,11 @@ https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html
 - Lambda metrics:
     Invocation, Performace, Concurrency
 
-SAM Templates
+## SAM Templates
+- `sam init`, `sam build`, `sam deploy`  
+- place the function code at the root level of the working directory with YAML file
+- use cloudformation package command to package the deployment
+
 
 
 ---
@@ -247,55 +290,81 @@ SAM Templates
   - `StopExecution`  
 
 ---
+# Kinesis
+https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html
+https://docs.aws.amazon.com/firehose/latest/dev/encryption.html
+
+- Data record: sequence number, partition key, data blob (up to **1MB**)
+- Retention period 24h-168h (`IncreaseStreamRetentionPeriod` and `DecreaseStreamRetentionPeriod`)
+- Supports ordering of the messages in an individual shard (`PutRecord` with `sequenceNumberForOrdering` parameter) - strictly increasing sequence number for puts from the same client and same partition key
+- Consumers (Kinesis Data Stream Application):
+  - shared fan-out consumers
+  - enhanced fan-out consumers
+- Shard: sequence of data records in a stream
+  - up to 5tps for reads, up to 2MB/s - for each shard
+  - up to 1000 record/s for writes, up to 1MB/s - for each shard
+
+- Data Encryption in Kinesis Firehose:
+  Depends on the source of data:
+    - Kinesis Data Stream as data source: Firehose reads encrypted data from the stream, buffers the data in memory and delivers to the destination without storing unencrypted data at rest
+    - If you send data to Firehose using `PutRecord` or `PutRecordBatch` - turn on SSE by using `StartDeliveryStreamEncryption`
+---
 # DynamoDB
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-api
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/specifying-conditions.html
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html
 https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html
+https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
+
 
 ## DynamoDB
+- max item size is **400KB**, but S3 can be used to save items and object identifier is saved in DDB table
 - 1 WCU: 1 write of 1 item of 1KB or less (round up to nearest KB)
 - Writes are applied in the order received
 - There are "conditional writes" - only succeed if the attributes meet some conditions
 - 1 RCU: 1 read of 1 item of 4KB or less (strongly consistent) or 2 reads 4KB per sec for eventually consistent
 - Eventual consistent read - 0.5 RCU
 - IAM condition parameter: fine-graned access per-item or per-attribute
-    dynamodb:LeadingKeys - allow users to access only the items where partition key = user_id
-    dynamodb:Attributes - limits access to the specified attributes
-    dynamodb:Select
-    dynamodb:ReturnValues
-    dynamodb:ReturnConsumedCapacity
+    `dynamodb:LeadingKeys` - allow users to access only the items where partition key = user_id
+    `dynamodb:Attributes` - limits access to the specified attributes
+    `dynamodb:Select`  
+    `dynamodb:ReturnValues`  
+    `dynamodb:ReturnConsumedCapacity`  
 
 - Read operations:
-    GetItem, BatchGetItem (up to 100 items and max 16MB),
-    Use ProjectionExpression to return only selected attributes
+    `GetItem`, `BatchGetItem` (up to 100 items and max 16MB),
+    Use `ProjectionExpression` to return only selected attributes
     Query - max 1MB per call,
-        results are always sorted by Sort Key. Reverse by setting ScanIndexForward
+        results are always sorted by Sort Key. Reverse by setting `ScanIndexForward`
     Scan - max 1MB per, can scan only one partition at a time
         can configure parallel scans by logically dividing a table or index
 - No strongly consistent reads on GSI
 - Can delete GSI any time, cannot delete LSI
 
--> TTL
+- For query: specify the search criteria:
+  - partition key name and value in _quality condition_
+
+- TTL
     - Any attribute of your choice
     - In epoch time format
 
--> DynamoDB Transactions:
+- DynamoDB Transactions:
     - ACID
     - across multiple tables
 
--> Atomic Counters:
+- Atomic Counters:
     writes applied in the order received - can be used to increment existing value
--> Conditional writes
-    only succeed if condition is met (ConditionalCheckFailedException if not met
--> CommonErrors:
+- Conditional writes
+    only succeed if condition is met (`ConditionalCheckFailedException` if not met
+- CommonErrors:
     ThrottlingError
     ProvisionedThroughputExceededException (number of requests is too high)
     ResourceNotFoundException (e.g. table does not exist/in CREATING)
--> DAX
+- DAX
     write-through
-    Eventually consistent only
--> Throttling Issues and Fixes:
+    Eventually consistent only!!!
+    **For strongly consistent reads DAX pass all requests to DDB & does not cache for these requests**  
+- Throttling Issues and Fixes:
     Hot partitions
     Capacity limitations
     Fixes:
@@ -309,10 +378,13 @@ https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.
       - Can accomodate only 3000 RCU or 1000 WCU
       - Max 10GB of data
       - never deleted
--> DDB Streams
+- DDB Streams
     - Time-ordered change log for the table, stored for 24 hours
     - Encrypted by default
     - Can trigger Lambda
+- Encryption at rest (only AWS owned CMK or AWS managed CMK)
+  > DDB uses the CMK to generate and encrypt a DEK (known as __Table Key__). **AWS Owned** (free for charge)
+  > or **AWS Managed CMK** (charge) can be used. Customer managed CMK's are not supported.
 
 
 ---
@@ -323,6 +395,10 @@ https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.
 - Min granularity for custom metric - 1m
 - Alarm can trigger: SNS, Auto scaling action, EC2 action (stop, terminate, reboot)
 - Rule can trigger: SNS, SQS, EC2, Lambda
+- Metric resolution:
+  - Default: 5m
+  - Detailed: 1m
+  - High-resolution: 10 or 30s
 
 ---
 # VPC
@@ -380,17 +456,16 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
     **Using a AWS KMS CMK**:  
       On upload, KMS returns a DEK (plaintext and ciphertext to keep with the data)
       Ciphertext uploaded as metadata
-
- -> At-rest encryption
-  SSE-S3: uses S3-managed key
-    add x-amz-server-side-encryption request header to upload request
-    bucket policies can require all objects to use SSE by requiring that header
-    *x-amz-server-side-encryption: AES256*
-  SSE-KMS: uses KMS-managed keys
-    allows to separate roles
-    better auditing of access to data
-    *x-amz-server-side-encryption: ams:kms*
-  SSE-C: customer manages the keys
+  - At-rest encryption (server-side)
+      **SSE-S3**: uses S3-managed key
+        add x-amz-server-side-encryption request header to upload request
+        bucket policies can require all objects to use SSE by requiring that header
+        `x-amz-server-side-encryption: AES256`  
+      **SSE-KMS**: uses KMS-managed keys
+        allows to separate roles
+        better auditing of access to data
+        `x-amz-server-side-encryption: ams:kms`  
+      **SSE-C**: customer manages the keys
 - S3 Versioning:
   Versions are full versions of new objects - NOT incremental
 - S3 Events:
@@ -405,19 +480,22 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
   apply to an individual version of an object in a versioned bucket
 
 ---
-## CloudFront
+# CloudFront
 - caching based off the object name
 - in order to serve a new version of the object, create a new obj with new name
 - you can set TTL
 
 ---
-## ECS
+# ECS
+https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html
+
 - Use cases:
   Microservices and docker applications
   Batch and ETL Jobs
   CI/CD
 - Container Registry - ECR (AWS) or 3rd party
 - Fargate - "serverless", manages EC2 instances
+- For EC2 container instances (ECS instance) - must be running ECS container agent
 
 Container Def->Task Def->Service->Cluster (Fargate)
 
@@ -454,23 +532,51 @@ Container Def->Task Def->Service->Cluster (Fargate)
 -> IAM Roles for ECS Tasks
 
 ---
+# Elastic Beanstalk
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-configuration-methods-before.html
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.html
+
 ## Elastic Beanstalk
 - Manages everything required for less complex application
 - Platform as a Service
 - Automated provisioning, auto scaling, load balancing, software updates
 
 - Application - logical container
-- Environments inside application (environments are transitory)
+- Environments inside application (environments are transitory). Environment has only one version running
 - Application versions are deployed  to environments
-- Environment tiers:
-  - Web server environment
-  - Worker environment
+- Two types of Beanstalk environments:
+  - _Web server environment_: serve web applications on the Internet
+  - _Worker environment_: use in background SQS processing for decoupling applications
+- Environments are deployed via CloudFormation stack (behind the scenes)
 
--> Deployment options:
-  - All at once
-  - Rolling
-  - Rolling with addition batch
-  - Blue/Green
+- [Deployment options](https://blog.shikisoft.com/which_elastic_beanstalk_deployment_should_you_use/):   
+  **All at once**  
+  starts deployment on all instances. Downtimes are possible. Suitable for dev or test environments
+
+  **Rolling**  
+  deploy one by one. If deployment fails, only failed instance will be effected
+
+  **Rolling with additional batch**  
+  launch new instances (batch) and first deploy on them - maintains full capacity during deployments
+
+  **Immutable**  
+  launch a completely new set of instances, deploy the new version and terminate old instances.
+  The new set is launched in a separate temporary ASG first and then transferred to the original ASG and terminates the temporary ASG
+
+  **Traffic-splitting**  
+  canary testing as part of application deployment. Full set of new instances (like immutable deployment). Forward a specified percentage of client traffic to the new version.
+
+  **Blue/Green**  (not on Elastic Beanstalk deployment type list)
+  replicates the current environment (including ELB and ASG) and redirect the traffic to the new environment
+  1. Clone current environment (or launch a new environment)
+  2. Deploy the new application version to the new environment
+  3. Test
+  4. In **Environment actions** choose **Swap environmetn URLs**  
+  Elastic Beanstalk swaps the CNAME records
+
+- Supports two methods of saving configuration option settings:
+  - config files in YAML or JSON in `.ebextensions` folder
+  - saved configurations created from a running environment or JSON option file
 
 ---
 # OpsWorks
@@ -585,16 +691,21 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 - AWS Lambda uses long polling for standard queues and message group ID for FIFO queues
 
 ---
-# Repos, Deployment, Builds, and CI/
+# Repos, Deployment, Builds, and CI/CD
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environmentmgmt-updates-immutable.html
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.deploy-existing-version.html
+https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines-create-cross-account.html
 
 Developers->CodeCommit->CodeBuild->Test->CodeDeploy->Environment
 Deployment Methods:
-> All at Once (can be used with CodeDeploy, cannot be used with Lambda)
-> Rolling/Canary (API Gateway and Elastic Beanstalk using that)
-> Immutable and Blue/Green (DNS update is required, can be used with CodeDeploy)
+> All at Once (can be used with CodeDeploy, cannot be used with Lambda)  
+> Rolling/Canary (API Gateway and Elastic Beanstalk using that)  
+> Immutable and Blue/Green (DNS update is required, can be used with CodeDeploy)  
 
 ## X-Ray
 - Integrates with ELB, Lambda, API GTW, EC2, Beanstalk
+- Need to have X-Ray daemon running on EC2 instance (and role attached to EC2 instance to upload data onto X-Ray)
+- For Lambda you should attach `AWSXrayWriteOnlyAccess` policy to the Lambda execution role
 - Error - Client errors `400-series errors`  
 - Fault - Server faults `500-series errors`  
 - Throttle - Throttling errors `419 Too Many Requests`  
@@ -617,9 +728,12 @@ Deployment Methods:
   - S3, CodeCommit, GitHub, Bitbucket, GitHub Enterprise
 - Build Environment: OS, runtime, tools
 - Build Spec: YAML file
+- AWS CLI: run the build:
+  `aws codebuilt start-build --project-name`, with `buildspecOverride` can specify a new inline or buildspec file  
 
 ## CodeDeploy
 - Automated deployments to EC2, Lambda, on-prem
+- Uses YAML or JSON aplication specification file **AppSpec** for ECS, Lambda or EC2 compute platforms
 - Blue/Green Deployment: automatically creates blue/green environment
 - Blue/Green with Lambda:
   - _Canary_: % of traffic shifted to the new version. Wait for specified time and shift the rest
@@ -627,6 +741,8 @@ Deployment Methods:
   - _All at once_: Traffic is immediately shifted
 - Lifecycle event hooks:
   - BeforeInstall, AfterInstall, ApplicationStart, ApplicationStop, ValidateService
+- Sequence of the event hooks:
+  `ApplicationStop`->(DownloadBundle)->`BeforeInstall`->(install)->`AfterInstall`->`ApplicationStart`->`ValidateService`
 
 ## CodePipeline
 - Automate release process
@@ -635,11 +751,22 @@ Deployment Methods:
 - Actions have a deployment artifact as input/output or both
 - Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code
 - Can add workflows (e.g. approvals via SNS)
+- Enable cross-account access (e.g. pipeline in one account, resources in another):
+  - Create CMK in KMS
+  - Add a cross-account role
 
 ## CodeStar
 - Project templates for various projects and programming languages
 - IDEs integration
 - Visualisation (Application activity, JIRA)
+
+## Blue/Green Development
+- Almost zero-downtime and rollback capabilities
+- Blue: current application
+- Green: new version
+- Provides isolation between blue and green environments
+- AWS Services to help automate deployments:
+  > Route53, ELB, Auto Scaling, Elastic Beanstalk, OpsWorks, CloudFormation, CloudWatch  
 
 ---
 # CloudFormation
@@ -660,6 +787,7 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-functio
     - _UpdatePolicy_
 - CloudFormation Stacks
   - Stack resources are treaded as one single unit
+- You can create nested CloudFormation stacks by using `AWS::CloudFormation::Stack` resource
 - CloudFormation Functions (intrinsic functions), here is some:
   - `Fn::GetAtt`
   - `Fn::GetAZs`  

@@ -26,7 +26,6 @@ https://aws.amazon.com/blogs/aws/automate-os-image-build-pipelines-with-ec2-imag
 https://aws.amazon.com/blogs/aws/new-amazon-ebs-fast-snapshot-restore-fsr/
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-connect-set-up.html
 
-## EC2
 - You can create multi-volume snapshots for ALL EBS volumes attached to an
   EC2 instance (select resource type as Instance in create snapshot dialog),
   up to 40 volumes per instance
@@ -54,16 +53,21 @@ IAM Policy **required** fields:
 - Action or NotAction
 - Resource or NotResource
 
----
-## IAM access reports:
 - Credential Report: lists the users and usage of their access keys
 - Access Analyzer: monitor access to resources
   (you define zone of trust -> analyser finds access outside ZoT to your resources)
 - Organisation activity: service access report for OU or account
 
+Inline Policies vs Managed Policies vs Custom Policies
+
+- Managed Policies: provided by AWS, cannot be changed, common use cases based on job functions
+- Custom Policies: you create and manage, recommended to create on basis of Managed Policy
+- Inline Policies: _embedded_ within the user, group, or role
+
 - Policy simulator:
   1. Get the context keys first
   2. `aws iam simulate-custom-policy-command`
+
 ---
 # STS
 STS API Call returns: Security Token, Access Key ID, Secret Access Key
@@ -98,7 +102,6 @@ https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-concepts.html#s
 https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#enveloping
 https://aws.amazon.com/blogs/security/aws-encryption-sdk-how-to-decide-if-data-key-caching-is-right-for-your-application/
 
-## KMS
 - CMK used to encrypt/decrypt up to 4KB of data
 - CMK is the primary resource in KMS
 - CMKs generate, encrypt and decrypt the data keys (DEKs)
@@ -136,7 +139,6 @@ https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-sync.
 https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-events.html
 https://docs.aws.amazon.com/cognito/latest/developerguide/role-based-access-control.html
 
-## Cognito
 - sign in directly
 - web federation
 - Components - **User pool** - user directory in Cognito
@@ -170,7 +172,6 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request
 https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
 https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
 
-## API Gateway
 - Resource URL
 - Stage is added to default API endpoint
 - Respond to request: Lambda, HTTP Endpoints, other AWS services
@@ -193,9 +194,9 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.htm
   `Access-Control-Allow-Origin`
   `Access-Control-Allow-Methods`
 
-## CORS
+---
+# CORS
 https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
-ß
 
 ---
 # Lambda
@@ -212,8 +213,6 @@ https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html
 https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html
 https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
 
-
-## Lambda
 - max timeout 15m
 - priced per # of requests and duration
 - can be used cross-region
@@ -248,12 +247,11 @@ https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
 - Lambda metrics:
     Invocation, Performace, Concurrency
 
-## SAM Templates
+---
+# SAM Templates
 - `sam init`, `sam build`, `sam deploy`  
 - place the function code at the root level of the working directory with YAML file
 - use cloudformation package command to package the deployment
-
-
 
 ---
 # SWF
@@ -308,6 +306,7 @@ https://docs.aws.amazon.com/firehose/latest/dev/encryption.html
   Depends on the source of data:
     - Kinesis Data Stream as data source: Firehose reads encrypted data from the stream, buffers the data in memory and delivers to the destination without storing unencrypted data at rest
     - If you send data to Firehose using `PutRecord` or `PutRecordBatch` - turn on SSE by using `StartDeliveryStreamEncryption`
+
 ---
 # DynamoDB
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-api
@@ -316,8 +315,6 @@ https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.
 https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html
 https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
 
-
-## DynamoDB
 - max item size is **400KB**, but S3 can be used to save items and object identifier is saved in DDB table
 - 1 WCU: 1 write of 1 item of 1KB or less (round up to nearest KB)
 - Writes are applied in the order received
@@ -388,7 +385,7 @@ https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
 
 
 ---
-## CloudWatch
+# CloudWatch
 - By default EC2 monintoring is 5m, detailed - 1m
 - By default store indefinitely (can change the retention period)
 - Host-level metrics: CPU, Network, Disk, StatusCheck
@@ -406,7 +403,6 @@ https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html#nacl-ephe
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/vpc-vpce.html
 https://docs.amazonaws.cn/en_us/elasticbeanstalk/latest/dg/vpc-rds.html
 
-## VPC
 - VPC endpoints - from CSAA course
 
 ---
@@ -414,7 +410,6 @@ https://docs.amazonaws.cn/en_us/elasticbeanstalk/latest/dg/vpc-rds.html
 https://aws.amazon.com/blogs/aws/new-tls-termination-for-network-load-balancers/
 https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
 
-## ELB
 - X-Forwarded-For header to have the client IP on the backend server (via ELB)
 - NLB: Layer 4 (Transport), TCP, UDP, TLS, supports STATIC IP, can be assigned Elastic IP per subnet
 - ALB: Layer 7 (Application), HTTP/S
@@ -423,13 +418,18 @@ https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https
   Each of container assigned a random port
   ELB+Target Groups can handle that
 
+- Maintain Sessionstate with ELBs:
+  - Option 1: ELB generated cookie stickiness
+  - Option 2: Application generated cookie stickiness
+  - Option 3: Non-ELB (not recommended):
+              using caching services like ElastiCache to store session state
+
 ---
 # S3
 https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock.html
 https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-inventory.html
 https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
 
-## S3
 - S3 permissions:
   A) S3 IAM Policies: attached to Users, Groups, Roles
     Not attached to S3 buckets or objects
@@ -536,7 +536,6 @@ Container Def->Task Def->Service->Cluster (Fargate)
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-configuration-methods-before.html
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.html
 
-## Elastic Beanstalk
 - Manages everything required for less complex application
 - Platform as a Service
 - Automated provisioning, auto scaling, load balancing, software updates
@@ -566,7 +565,7 @@ https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.
   **Traffic-splitting**  
   canary testing as part of application deployment. Full set of new instances (like immutable deployment). Forward a specified percentage of client traffic to the new version.
 
-  **Blue/Green**  (not on Elastic Beanstalk deployment type list)
+  **Blue/Green**  (not on Elastic Beanstalk deployment type list)  
   replicates the current environment (including ELB and ASG) and redirect the traffic to the new environment
   1. Clone current environment (or launch a new environment)
   2. Deploy the new application version to the new environment
@@ -587,7 +586,6 @@ https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.
 https://docs.aws.amazon.com/sns/latest/api/CommonErrors.html
 https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
 
-## SNS
 - Public service - needs NAT or IGW or VPC endpoint
 - Fully resilient within a region
 - Messages up to **256KB**
@@ -645,7 +643,6 @@ https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
 https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html
 https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 
-## SQS
 - HA
 - can be PCI compliant and encrypt messages using KMS
 - Polling types:  
@@ -772,7 +769,6 @@ Deployment Methods:
 # CloudFormation
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html
 
-## CloudFormation
 - Template JSON or YAML
 - Only `Resources` section is required
 - **CloudFormer**: create CloudFormation template from existing resources
@@ -808,26 +804,3 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-functio
   - `PutParameter`  
   - `GetParameter`  
   - `DeleteParameter`  
-
-
-
-
-
-Cognito Lab
-https://ilyiny.auth.us-east-1.amazoncognito.com/login?response_type=token&client_id=2jouo3k0r6plg6it4n5fg8qilv&redirect_uri=https://example.com
-London123&
-
-https://example.com
-
-
-Inline Policies vs Managed Policies vs Custom Policies
-
-- Managed Policies: provided by AWS, cannot be changed, common use cases based on job functions
-- Custom Policies: you create and adminster, recommended to create on basis of Managed Policy
-- Inline Policies: _embedded_ within the user, group, or role
-
-Maintain Sessionstate with ELBs:
-- Option 1: ELB generated cookie stickiness
-- Option 2: Application generated cookie stickiness
-- Option 3: Non-ELB (not recommended):
-            using caching services like ElastiCache to store session state

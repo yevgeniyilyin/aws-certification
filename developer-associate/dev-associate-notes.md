@@ -220,7 +220,7 @@ Integration types:
   - `HTTP`: HTTP endpoints in the backend  
       you must configure both integration request and response  
   - `HTTP_PROXY`: access to HTTP backend with a streamlined integration setup on single API method  
-      you must configure both integration request and response  
+      you do not set integration request or response   
   - `MOCK`: API Gateway return a response without sending the request to the backend  
 
 ---

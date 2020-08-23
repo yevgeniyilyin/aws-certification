@@ -64,7 +64,7 @@ Inline Policies vs Managed Policies vs Custom Policies
 - Custom Policies: you create and manage, recommended to create on basis of Managed Policy
 - Inline Policies: _embedded_ within the user, group, or role
 
-- Policy simulator:
+Policy simulator:
   1. Get the context keys first
   2. `aws iam simulate-custom-policy-command`
 
@@ -265,10 +265,9 @@ https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
   - Workflows (Decider)
   - Activities (single step in workflow)
   - Tasks: what interacts with the workers that are part of a workflow
-  - Workers: can be any type of component (even a person)
 
 ---
-# Step Functions
+# Step Functions
 - Components: Tasks, State Machines (defined using **JSON** Amazon States Language)
 - Activity can be:
   - Program code interacting with Step Function API actions
@@ -438,15 +437,15 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
   B) Resource Based:
   - Bucket policies: attached to S3 bucket (not the objects/user/role)
     Can grant access to anonymous users
-    Can restric access based on IP address
+    Can restrict access based on IP address
     Applied to all bucket-owner objects
-    JSON
+    Written in JSON
   - ACLs: can be used with buckets and objects
     Cannot deny permissions or grant additional permissions
     Manage access to the objects not owned by the bucket owner
     Manage permissions at the object level
     Allow external accounts to manage policies on objects
-    XML
+    Written in XML
 - S3 Encryption
   - In-Transit Encryption (client-side):
     **Using a Client-side Master Key**:  
@@ -465,7 +464,7 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
         allows to separate roles
         better auditing of access to data
         `x-amz-server-side-encryption: ams:kms`  
-      **SSE-C**: customer manages the keys
+      **SSE-C**: customer manages the keys  
 - S3 Versioning:
   Versions are full versions of new objects - NOT incremental
 - S3 Events:
@@ -573,6 +572,8 @@ https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.
   4. In **Environment actions** choose **Swap environmetn URLs**  
   Elastic Beanstalk swaps the CNAME records
 
+![Deployment options](../media/deployment-methods.jpg)  
+
 - Supports two methods of saving configuration option settings:
   - config files in YAML or JSON in `.ebextensions` folder
   - saved configurations created from a running environment or JSON option file
@@ -590,7 +591,7 @@ https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html
 - Fully resilient within a region
 - Messages up to **256KB**
 
-- Topics: max 256 char, alphanumeric + "-" and "_
+- Topics: name max 256 characters, alphanumeric + "-" and "_
     - Encryption (optional), AWS KMS
     - Access Policy (default access for topic owner)
     - Delivery retry policy (to HTTP/S endpoints)

@@ -102,30 +102,34 @@ https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-concepts.html#s
 https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#enveloping
 https://aws.amazon.com/blogs/security/aws-encryption-sdk-how-to-decide-if-data-key-caching-is-right-for-your-application/
 
-- CMK used to encrypt/decrypt up to 4KB of data
-- CMK is the primary resource in KMS
-- CMKs generate, encrypt and decrypt the data keys (DEKs)
-- CMK: [alias, creation data, desc, state, key material]
-- CMK is ALWAYS stays inside KMS, can be NEVER exported, never leaves KMS unencrypted
-- Setup: Alias->Desc->Key Material (KMS, Own, CloudHSM)->Admin Permissions->Usage Permissions
-- Two types of CMK - AWS-managed (aws/) and Customer-managed
-- KMS does not manage or store DATA KEYS
-- KMS cannot use DATA KEYS to encrypt data for you
-- You must call KMS API to use CMK
-- Key deletion is not performed immedeately -> you can set a deletion date
-- Envelop Encryption
-- AWS Services that integrates with KMS do not support asymmetric keys
-- KMS symmectric CMK - 256-bit key
-- KMS assymmetric CMK - mathematically related public and private key pair
-- KMS supports RSA and ECC assymmetric CMKs
+CMK:
+- used to encrypt/decrypt up to 4KB of data
+- is the primary resource in KMS
+- used to generate, encrypt and decrypt the data keys (DEKs)
+- components: [alias, creation data, desc, state, key material]
+- is ALWAYS stays inside KMS, can be NEVER exported, never leaves KMS unencrypted
+
+Setup CMK: Alias->Desc->Key Material (KMS, Own, CloudHSM)->Admin Permissions->Usage Permissions
+Two types of CMK - **AWS-managed** (aws/) and **Customer-managed**  
+
+KMS does not manage or store DATA KEYS
+KMS cannot use DATA KEYS to encrypt data for you
+You must call KMS API to use CMK
+Key deletion is not performed immedeately -> you can set a deletion date
+
+Envelop Encryption
+AWS Services that integrates with KMS _do not_ support asymmetric keys
+KMS symmectric CMK - 256-bit key
+KMS assymmetric CMK - mathematically related public and private key pair
+KMS supports RSA and ECC assymmetric CMKs
 
 
 KMS API actions:
-- encrypt: aws kms encrypt
-- generate data key/envelop key (GenerateDataKey API)
+- encrypt: `aws kms encrypt`
+- generate data key/envelop key (`GenerateDataKey` or `GenerateDataKeyWithoutPlaintext` API
 - decrypt
 - re-encrypt (without having an original key, e.g. for key rotation)
-- key rotation (enable-key-rotation)
+- key rotation (`enable-key-rotation`)
 
 ---
 # AWS Inspector
@@ -197,6 +201,41 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.htm
 ---
 # CORS
 https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
+
+Cross-origin HTTP request:
+- A different _domain_
+- A different _subdomain_
+- A different _port_
+- A different _protocol_
+
+For simiple CORS POST method requests, the response from your resource needs to include the header `Access-Control-Allow-Origin` set to `'*'` or set of origins allowed to access that resource
+
+For non-simple requests you need to enable CORS support:
+> When a browser receives a non-simple HTTP request, the CORS protocol requires the browser to send a preflight request to the server and wait for approval (or a request for credentials) from the server before sending the actual request. The preflight request appears to your API as an HTTP request that:
+> - Includes an `Origin` header.
+> - Uses the `OPTIONS` method.
+> - Includes the following headers:
+>   - `Access-Control-Request-Method`
+>   - `Access-Control-Request-Headers`
+
+> To support CORS, therefore, a REST API resource needs to implement an `OPTIONS` method that can respond to the `OPTIONS` preflight request with at least the following response headers mandated by the Fetch standard:
+> - `Access-Control-Allow-Methods`
+> - `Access-Control-Allow-Headers`
+> - `Access-Control-Allow-Origin`
+
+> How you enable CORS support depends on your API's integration type.
+
+CORS support for mock integrations:
+- create `OPTIONS` method to return the required response headers
+- each of CORS-enabled methods must return `Access-Control-Allow-Origin` header in at least its 200 response
+
+CORS support for Lambda or HTTP non-proxy integrations and AWS service integrations:
+- setup required headers by using API Gateway method response and integration response settings
+- API Gateway creates `OPTION` method and add `Access-Control-Allow-Origin` header to your existing methods integration responses (sometimes you need to manually add headers)
+
+CORS support for Lambda or HTTP proxy integrations:
+- you can setup `OPTIONS` response headers in API Gateway
+- your backend is responsible for returning `Access-Control-Allow-Origin` and `Access-Control-Allow-Headers` headers, because proxy integration doesn't return and integration response
 
 ---
 # Lambda
@@ -290,14 +329,21 @@ https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
 # Kinesis
 https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html
 https://docs.aws.amazon.com/firehose/latest/dev/encryption.html
+https://docs.aws.amazon.com/streams/latest/dev/building-consumers.html
 
 - Data record: sequence number, partition key, data blob (up to **1MB**)
 - Retention period 24h-168h (`IncreaseStreamRetentionPeriod` and `DecreaseStreamRetentionPeriod`)
 - Supports ordering of the messages in an individual shard (`PutRecord` with `sequenceNumberForOrdering` parameter) - strictly increasing sequence number for puts from the same client and same partition key
 - Consumers (Kinesis Data Stream Application):
-  - shared fan-out consumers
-  - enhanced fan-out consumers
-- Shard: sequence of data records in a stream
+  - _shared fan-out consumers_: fixed total 2MB/s per shard **shared** between all consumers. 200ms message propagation delay if there is one consumer reading from the stream. 1000ms delay with 5 consumers
+  Pull mode over HTTP using `GetRecords`  
+
+  - _enhanced fan-out consumers_: 2 MB/s per consumer per shard. 70ms propagation delay
+  Push mode over HTTP/2 using `SubscribeToShard`  
+
+![Kinesis Consumers](../media/kinesis-consumers.jpg)  
+
+- **sShard**: sequence of data records in a stream
   - up to 5tps for reads, up to 2MB/s - for each shard
   - up to 1000 record/s for writes, up to 1MB/s - for each shard
 
@@ -315,10 +361,10 @@ https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.
 https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
 
 - max item size is **400KB**, but S3 can be used to save items and object identifier is saved in DDB table
-- 1 WCU: 1 write of 1 item of 1KB or less (round up to nearest KB)
+- **1 WCU**: 1 write of 1 item of 1KB or less (round up to nearest KB)
 - Writes are applied in the order received
 - There are "conditional writes" - only succeed if the attributes meet some conditions
-- 1 RCU: 1 read of 1 item of 4KB or less (strongly consistent) or 2 reads 4KB per sec for eventually consistent
+- **1 RCU**: 1 read of 1 item of 4KB or less (strongly consistent) or 2 reads 4KB per sec for eventually consistent
 - Eventual consistent read - 0.5 RCU
 - IAM condition parameter: fine-graned access per-item or per-attribute
     `dynamodb:LeadingKeys` - allow users to access only the items where partition key = user_id
@@ -327,7 +373,7 @@ https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
     `dynamodb:ReturnValues`  
     `dynamodb:ReturnConsumedCapacity`  
 
-- Read operations:
+Read operations:
     `GetItem`, `BatchGetItem` (up to 100 items and max 16MB),
     Use `ProjectionExpression` to return only selected attributes
     Query - max 1MB per call,
@@ -340,52 +386,56 @@ https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
 - For query: specify the search criteria:
   - partition key name and value in _quality condition_
 
-- TTL
-    - Any attribute of your choice
-    - In epoch time format
+TTL
+  - Any attribute of your choice
+  - In epoch time format
 
-- DynamoDB Transactions:
-    - ACID
-    - across multiple tables
+DynamoDB Transactions:
+  - ACID
+  - across multiple tables
 
-- Atomic Counters:
-    writes applied in the order received - can be used to increment existing value
-- Conditional writes
-    only succeed if condition is met (`ConditionalCheckFailedException` if not met
-- CommonErrors:
-    ThrottlingError
-    ProvisionedThroughputExceededException (number of requests is too high)
-    ResourceNotFoundException (e.g. table does not exist/in CREATING)
-- DAX
-    write-through
-    Eventually consistent only!!!
-    **For strongly consistent reads DAX pass all requests to DDB & does not cache for these requests**  
-- Throttling Issues and Fixes:
-    Hot partitions
-    Capacity limitations
-    Fixes:
-      - slowly increase provisioned capacity
-      - review capacity on GSI (throttle on index double-counted)
-      - implement error retries and exponential backoff (built-in in AWS SDK)
-      - distribute operations evently across partitions
-      - implement caching solution (ElastiCache or DAX)
-      - use TTL on items in the table
-    Partitions:
-      - Can accomodate only 3000 RCU or 1000 WCU
-      - Max 10GB of data
-      - never deleted
-- DDB Streams
-    - Time-ordered change log for the table, stored for 24 hours
-    - Encrypted by default
-    - Can trigger Lambda
-- Encryption at rest (only AWS owned CMK or AWS managed CMK)
+Atomic Counters:
+  - writes applied in the order received - can be used to increment existing value
+Conditional writes
+  - only succeed if condition is met (`ConditionalCheckFailedException` if not met
+CommonErrors:
+  - ThrottlingError
+  - ProvisionedThroughputExceededException (number of requests is too high)
+  - ResourceNotFoundException (e.g. table does not exist/in CREATING)
+
+Specify `ReturnConsumedCapacity=TOTAL` in Query request to obtain how much of capacity is being used
+DAX
+  - write-through
+  - Eventually consistent only!!!
+  - **For strongly consistent reads DAX pass all requests to DDB & does not cache for these requests**  
+
+Throttling Issues and Fixes:
+  Hot partitions
+  Capacity limitations
+  Fixes:
+    - slowly increase provisioned capacity
+    - review capacity on GSI (throttle on index double-counted)
+    - implement error retries and exponential backoff (built-in in AWS SDK)
+    - distribute operations evently across partitions
+    - implement caching solution (ElastiCache or DAX)
+    - use TTL on items in the table
+  Partitions:
+    - Can accomodate only 3000 RCU or 1000 WCU
+    - Max 10GB of data
+    - never deleted
+DDB Streams
+  - Time-ordered change log for the table, stored for 24 hours
+  - Encrypted by default
+  - Can trigger Lambda
+
+Encryption at rest (only AWS owned CMK or AWS managed CMK)
   > DDB uses the CMK to generate and encrypt a DEK (known as __Table Key__). **AWS Owned** (free for charge)
   > or **AWS Managed CMK** (charge) can be used. Customer managed CMK's are not supported.
 
 
 ---
 # CloudWatch
-- By default EC2 monintoring is 5m, detailed - 1m
+- By default EC2 monitoring is 5m, detailed - 1m
 - By default store indefinitely (can change the retention period)
 - Host-level metrics: CPU, Network, Disk, StatusCheck
 - Min granularity for custom metric - 1m
@@ -428,6 +478,8 @@ https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https
 https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock.html
 https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-inventory.html
 https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
+https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-inventory.html
+https://docs.aws.amazon.com/AmazonS3/latest/dev/troubleshooting.html
 
 - S3 permissions:
   A) S3 IAM Policies: attached to Users, Groups, Roles
@@ -534,20 +586,22 @@ Container Def->Task Def->Service->Cluster (Fargate)
 # Elastic Beanstalk
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-configuration-methods-before.html
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.html
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.as.html
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.db.html
 
-- Manages everything required for less complex application
-- Platform as a Service
-- Automated provisioning, auto scaling, load balancing, software updates
+Manages everything required for less complex application
+Platform as a Service
+Automated provisioning, auto scaling, load balancing, software updates
 
-- Application - logical container
-- Environments inside application (environments are transitory). Environment has only one version running
-- Application versions are deployed  to environments
-- Two types of Beanstalk environments:
+Application - logical container
+Environments inside application (environments are transitory). Environment has only one version running
+Application versions are deployed  to environments
+Two types of Beanstalk environments:
   - _Web server environment_: serve web applications on the Internet
   - _Worker environment_: use in background SQS processing for decoupling applications
-- Environments are deployed via CloudFormation stack (behind the scenes)
+Environments are deployed via CloudFormation stack (behind the scenes)
 
-- [Deployment options](https://blog.shikisoft.com/which_elastic_beanstalk_deployment_should_you_use/):   
+[Deployment options](https://blog.shikisoft.com/which_elastic_beanstalk_deployment_should_you_use/):   
   **All at once**  
   starts deployment on all instances. Downtimes are possible. Suitable for dev or test environments
 
@@ -574,13 +628,16 @@ https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.
 
 ![Deployment options](../media/deployment-methods.jpg)  
 
-- Supports two methods of saving configuration option settings:
+Elastic Beanstalk Supports two methods of saving configuration option settings:
   - config files in YAML or JSON in `.ebextensions` folder
   - saved configurations created from a running environment or JSON option file
 
+Includes Auto Scaling Group to manage EC2 instances. You can modifiy the **launch configuration** to change the instance type, key pair, EBS, and other settings.
+You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html) in the root of the application source bundle to configure the environment name, solution stack and [environment links](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-links.html) to use.
+
 ---
 # OpsWorks
-- Infrastructure management platform based on Chef configuration management platform
+Infrastructure management platform based on _Chef_ or _Puppet_ configuration management platform
 
 ---
 # SNS
@@ -701,6 +758,8 @@ Deployment Methods:
 > Immutable and Blue/Green (DNS update is required, can be used with CodeDeploy)  
 
 ## X-Ray
+https://docs.aws.amazon.com/xray/latest/devguide/xray-api-sampling.html
+
 - Integrates with ELB, Lambda, API GTW, EC2, Beanstalk
 - Need to have X-Ray daemon running on EC2 instance (and role attached to EC2 instance to upload data onto X-Ray)
 - For Lambda you should attach `AWSXrayWriteOnlyAccess` policy to the Lambda execution role
@@ -713,7 +772,17 @@ Deployment Methods:
   - URL Paths (partial or complete)
 - Trace IDs are added as custom HTTP headers
 - X-Ray applies a sampling algorithm by default
+  - 1 request/s & 5% of any additional request per host
+  - Sampling rules:
+  `ReservoirRate + FixedRate*(TotalRequests-ReservoirRate)`   
+
 - You can implement your own sampling frequences for data collecton
+
+Running the X-Ray daemon on ECS:
+  - create a Docker image that runs X-Ray daemon, upload to Docker repo (there is the official Docker image):
+  `docker pull amazon/aws-xray-daemon`  
+  - deploy to ECS cluster
+  - assign a role to the docker container in ECS with policy allowing writing to X-Ray
 
 ## CodeCommit
 - Integrated with other AWS Services
@@ -769,9 +838,11 @@ Deployment Methods:
 ---
 # CloudFormation
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
 
 - Template JSON or YAML
 - Only `Resources` section is required
+- Max 60 parameters
 - **CloudFormer**: create CloudFormation template from existing resources
 - Resources:
   - Format `AWS::aws-product-name::data-type-name`
@@ -782,6 +853,13 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-functio
     - _DependsOn_
     - _Metadata_
     - _UpdatePolicy_
+- Parameter data types:
+  - String
+  - Number
+  - List: array of integers or floats separated by commas
+  - CommaDelimitedList: array of literal strings separated by commas
+  - AWS-Specific Parameter Types: such as EC2 key pair names and VPC IDs
+  - SSM Parameter Types: points to SSM parameter store, CloudFormation fetches automatically the parameter values  
 - CloudFormation Stacks
   - Stack resources are treaded as one single unit
 - You can create nested CloudFormation stacks by using `AWS::CloudFormation::Stack` resource

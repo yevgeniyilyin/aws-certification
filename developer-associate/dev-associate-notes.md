@@ -213,16 +213,15 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.htm
   `Access-Control-Allow-Methods`  
 
 Integration types:
-  - `AWS`: AWS Service actions
-      you must configure both integration request and response
-  - `AWS_PROXY`: Lambda proxy integration, API Gateway passes the incoming request direct to Lambda
-      you do not set integration request or response
-  - `HTTP`: HTTP endpoints in the backend
-      you must configure both integration request and response
-  - `HTTP_PROXY`: access to HTTP backend with a streamlined integration setup on single API method
-      you must configure both integration request and response
-  - `MOCK`: API Gateway return a response without sending the request to the backend
-
+  - `AWS`: AWS Service actions  
+      you must configure both integration request and response  
+  - `AWS_PROXY`: Lambda proxy integration, API Gateway passes the incoming request direct to Lambda  
+      you do not set integration request or response  
+  - `HTTP`: HTTP endpoints in the backend  
+      you must configure both integration request and response  
+  - `HTTP_PROXY`: access to HTTP backend with a streamlined integration setup on single API method  
+      you must configure both integration request and response  
+  - `MOCK`: API Gateway return a response without sending the request to the backend  
 
 ---
 # CORS
@@ -320,10 +319,10 @@ Function configuration:
     Database proxies (manages pool of connections)
 
 Lambda API Actions:
-    `AddPermission`: add permission to the resource policy to invoke Lambda
-    `CreateFunction`:
-    `Invoke`: synchronous
-    `InvokeAsync`  
+    `AddPermission`: add permission to the resource policy to invoke Lambda  
+    `CreateFunction`:  
+    `Invoke`: synchronous  
+    `InvokeAsync`   
     `CreateEventSourceMapping`: identifies a stream as an event source for Lambda
       can be DynamoDB stream or Kinesis
 

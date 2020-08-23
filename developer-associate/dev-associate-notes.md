@@ -14,7 +14,10 @@ Training course notes
 [Blue/Green Deployments on AWS](https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf) | [Linux Academy Notes](https://www.lucidchart.com/documents/view/e7f49c8f-34d7-4b31-9313-1485e84b0510)  
 
 ---
+# AWS General Reference
+https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
 
+---
 # EC2
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html#ebs-create-snapshot-multi-volume
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dedicated-hosts-recovery.html
@@ -52,6 +55,8 @@ IAM Policy **required** fields:
 - Effect (Deny, Allow)
 - Action or NotAction
 - Resource or NotResource
+
+IAM Policy stores up to 5 [versions](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-versioning.html). One version is set to default.
 
 - Credential Report: lists the users and usage of their access keys
 - Access Analyzer: monitor access to resources
@@ -144,21 +149,29 @@ https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-events.html
 https://docs.aws.amazon.com/cognito/latest/developerguide/role-based-access-control.html
 
 - sign in directly
-- web federation
-- Components - **User pool** - user directory in Cognito
-- Components - **Identity pool** - user can obtain temporary AWS credentials
-- push notifications to sync a dataset
-- Cognito Events:
+- web indentity federation
+
+Components:
+  - **User pool** - user directory in Cognito
+  - **Identity pool** - user can obtain temporary AWS credentials
+
+AWS Cognito Sync:
+  - Cross-device syncing of application-related user data
+  - Synching of offline data back to AWS
+  - push notifications to sync a dataset
+
+Cognito Events:
   > allows to execute AWS Lambda function in response to important events in Cognito
   > Cognito raises the **Sync Trigger** event when identity pool dataset is synced.
   > You can use the Sync Trigger to take action when a user updates  
 
   - Lambda function must respond in 5s
-- Cognito Streams:
+
+Cognito Streams:
   - Cognito can push each dataset change to a Kinesis stream (new or existing)
   - You need to select IAM role that grants Cognito permission to put events in the selected stream
 
-- Cognito Role-Based Access Control
+Cognito Role-Based Access Control
   - permissions for each user are controlled through IAM roles that you create
   - you can define rules to choose the role for each user based on claims in the user's ID token
   - you can define a default role for authenticated users
@@ -168,6 +181,7 @@ https://docs.aws.amazon.com/cognito/latest/developerguide/role-based-access-cont
 
 ---
 # API Gateway
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html
 https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/
 https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html
 https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
@@ -183,7 +197,7 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.htm
 - Stages -> dev, prod, beta.
   Specific settings: caching, request throttling, logging, stage variables
 - Caching -> set capacity, encryption, TTL, per-key invalidation
-- Dashboard -> API calls, Latency, Integraiton Latency, 4xx and 5xx Errors
+- Dashboard -> API calls, Latency, Integration Latency, 4xx and 5xx Errors
 - Can import API from Swagger 2.0
 - Throttling -> by default limits the steady-state request rate to 10000 rps
     Max 5000 concurrent requests accross all APIs within AWS account
@@ -196,7 +210,19 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.htm
 - To support CORS, API resource needs to implement an OPTIONS method that can respond to the OPTIONS request with following header:
   `Access-Control-Allow-Headers`
   `Access-Control-Allow-Origin`
-  `Access-Control-Allow-Methods`
+  `Access-Control-Allow-Methods`  
+
+Integration types:
+  - `AWS`: AWS Service actions
+      you must configure both integration request and response
+  - `AWS_PROXY`: Lambda proxy integration, API Gateway passes the incoming request direct to Lambda
+      you do not set integration request or response
+  - `HTTP`: HTTP endpoints in the backend
+      you must configure both integration request and response
+  - `HTTP_PROXY`: access to HTTP backend with a streamlined integration setup on single API method
+      you must configure both integration request and response
+  - `MOCK`: API Gateway return a response without sending the request to the backend
+
 
 ---
 # CORS
@@ -239,6 +265,9 @@ CORS support for Lambda or HTTP proxy integrations:
 
 ---
 # Lambda
+https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html
+https://docs.aws.amazon.com/lambda/latest/dg/runtimes-context.html
+https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html
 https://docs.aws.amazon.com/lambda/latest/dg/configuration-database.html?icmpid=docs_lambda_help
 https://docs.aws.amazon.com/lambda/latest/dg/lambda-environment-variables.html
 https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
@@ -255,35 +284,50 @@ https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
 - max timeout 15m
 - priced per # of requests and duration
 - can be used cross-region
-- Version Control:
+
+Soft Limits:
+  - 1000 concurrent execution
+  - 75GB function and layer storage
+  - 250 ENI per VPC
+Hard Limits:
+  - 6MB sync and 256KB async Invocation payload (request and response)
+  - 512MB /tmp directory storage
+  - 1024 file descriptors
+  - 1024 execution processes/threads
+
+Version Control:
   Each Lambda version has a unique ARN
-  After publishing, the version is immutable (you can edit only $LATEST)
-  $LATEST - maintains the latest code, the only you can edit
-    Qualified ARN - function ARN + version suffix
-    Unqualified ARN - only function ARN, use $LATEST
+  After publishing, the version is immutable (you can edit only `$LATEST`)
+  `$LATEST` - maintains the latest code
+    _Qualified ARN_ - function ARN + version suffix
+    _Unqualified ARN_ - only function ARN, use `$LATEST`
   Aliases: use to point specific ARN (application use alias incl. $LATEST)
     aliases have static ARN but can point to any version of the same function
     you can use weighted alias to shift traffic between versions
     rollback as easy as updating the version in the alias
-- Invocation can be synchronous/asynchronous
-- Function configuration:
+
+Invocation can be synchronous/asynchronous
+
+Function configuration:
     Basic settings: Runtime, Handler (filename.functionname), Memory, Timeout
     Monitoring (CloudWatch, X-Ray)
     Permissions
-    Enviroment Variables (by default encrypted at rest using KMS, can be encrypted in transit)
-    VPC - function can access VPC resources in specifed VPC
+    Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit
+    VPC - function can access VPC resources in specified VPC
     File System - connect to EFS
-    Asynchrounous invocation settings + DQL - SQS or SNS
+    Asynchronous invocation settings + DQL - SQS or SNS
     Concurrency, _provisioned concurrency_ (e.g. for weighted alias)
     Database proxies (manages pool of connections)
-- Lambda API Actions:
-    AddPermission: add permission to the resource policy to invoke Lambda
-    CreateFunction:
-    Invoke: synchronous
-    InvokeAsync
-    CreateEventSourceMapping: identifies a stream as an event source for Lambda
+
+Lambda API Actions:
+    `AddPermission`: add permission to the resource policy to invoke Lambda
+    `CreateFunction`:
+    `Invoke`: synchronous
+    `InvokeAsync`  
+    `CreateEventSourceMapping`: identifies a stream as an event source for Lambda
       can be DynamoDB stream or Kinesis
-- Lambda metrics:
+
+Lambda metrics:
     Invocation, Performace, Concurrency
 
 ---
@@ -307,6 +351,8 @@ https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
 
 ---
 # Step Functions
+https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
+
 - Components: Tasks, State Machines (defined using **JSON** Amazon States Language)
 - Activity can be:
   - Program code interacting with Step Function API actions
@@ -343,7 +389,7 @@ https://docs.aws.amazon.com/streams/latest/dev/building-consumers.html
 
 ![Kinesis Consumers](../media/kinesis-consumers.jpg)  
 
-- **sShard**: sequence of data records in a stream
+- **Shard**: sequence of data records in a stream
   - up to 5tps for reads, up to 2MB/s - for each shard
   - up to 1000 record/s for writes, up to 1MB/s - for each shard
 
@@ -409,21 +455,22 @@ DAX
   - Eventually consistent only!!!
   - **For strongly consistent reads DAX pass all requests to DDB & does not cache for these requests**  
 
-Throttling Issues and Fixes:
-  Hot partitions
-  Capacity limitations
-  Fixes:
+Throttling Issues and Fixes:  
+  Hot partitions  
+  Capacity limitations  
+  Fixes:  
     - slowly increase provisioned capacity
     - review capacity on GSI (throttle on index double-counted)
     - implement error retries and exponential backoff (built-in in AWS SDK)
     - distribute operations evently across partitions
     - implement caching solution (ElastiCache or DAX)
     - use TTL on items in the table
-  Partitions:
+  Partitions:  
     - Can accomodate only 3000 RCU or 1000 WCU
     - Max 10GB of data
     - never deleted
-DDB Streams
+
+DDB Streams  
   - Time-ordered change log for the table, stored for 24 hours
   - Encrypted by default
   - Can trigger Lambda
@@ -481,7 +528,10 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html
 https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-inventory.html
 https://docs.aws.amazon.com/AmazonS3/latest/dev/troubleshooting.html
 
-- S3 permissions:
+Performace:
+- 3500 PUT/s and 5500 GET/s per prefix
+
+S3 permissions:
   A) S3 IAM Policies: attached to Users, Groups, Roles
     Not attached to S3 buckets or objects
     Cannot grant access to anonymous users
@@ -498,7 +548,8 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/troubleshooting.html
     Manage permissions at the object level
     Allow external accounts to manage policies on objects
     Written in XML
-- S3 Encryption
+
+S3 Encryption
   - In-Transit Encryption (client-side):
     **Using a Client-side Master Key**:  
       CSMK provided by a client, never sent to AWS (only to client-side S3 encryption client)
@@ -517,24 +568,31 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/troubleshooting.html
         better auditing of access to data
         `x-amz-server-side-encryption: ams:kms`  
       **SSE-C**: customer manages the keys  
-- S3 Versioning:
-  Versions are full versions of new objects - NOT incremental
-- S3 Events:
-  can trigger: SNS, SQS and Lambda as destination
 
-- Object locks (WORM):
-  "Retention period" or "legal hold" (same as ret. period, but w/o expire)
-  "Governance" or "compliance" mode
-  only for versioned buckets (versioning enabled automatically)
-  can be enabled only for new buckets
-  cannot disable object lock or suspend versioning after object lock enabled
-  apply to an individual version of an object in a versioned bucket
+S3 Versioning:
+  - Versions are full versions of new objects - NOT incremental
+
+S3 Events:
+  - can trigger: SNS, SQS and Lambda as destination
+
+Object locks (WORM):
+  - **Retention period** or **legal hold** (same as ret. period, but w/o expire)
+  - **Governance** or **compliance** mode
+  - only for versioned buckets (versioning enabled automatically)
+  - can be enabled only for new buckets
+  - cannot disable object lock or suspend versioning after object lock enabled
+  - apply to an individual version of an object in a versioned bucket
 
 ---
 # CloudFront
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/RequestAndResponseBehaviorS3Origin.html
+
 - caching based off the object name
+- For caching:
+  - configure your origin to add a `Cache-Control` or an `Expires` header field to each object
+  - specify a min TTL in CloudFront cache behaviors (default is 24h)
 - in order to serve a new version of the object, create a new obj with new name
-- you can set TTL
+- CloudFront adds `X-Forwarded-For` header to set the client IP address
 
 ---
 # ECS
@@ -758,10 +816,17 @@ Deployment Methods:
 > Immutable and Blue/Green (DNS update is required, can be used with CodeDeploy)  
 
 ## X-Ray
+https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html
 https://docs.aws.amazon.com/xray/latest/devguide/xray-api-sampling.html
 
 - Integrates with ELB, Lambda, API GTW, EC2, Beanstalk
 - Need to have X-Ray daemon running on EC2 instance (and role attached to EC2 instance to upload data onto X-Ray)
+
+X-Ray SDK provides:
+  - **Interceptors**: to add to your code to trace incoming HTTP requests
+  - **Client handlers**: to instrument AWS SDK clients that your application uses to call other AWS Services
+  - **HTTP Client**: to use to instrument calls to other internal or external HTTP services
+
 - For Lambda you should attach `AWSXrayWriteOnlyAccess` policy to the Lambda execution role
 - Error - Client errors `400-series errors`  
 - Fault - Server faults `500-series errors`  

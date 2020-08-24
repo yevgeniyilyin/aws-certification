@@ -127,10 +127,10 @@ You must call KMS API to use CMK
 Key deletion is not performed immedeately -> you can set a deletion date  
 
 Envelop Encryption  
-AWS Services that integrates with KMS _do not_ support asymmetric keys
-KMS symmectric CMK - 256-bit key
-KMS assymmetric CMK - mathematically related public and private key pair
-KMS supports RSA and ECC assymmetric CMKs
+AWS Services that integrates with KMS _do not_ support asymmetric keys  
+KMS symmectric CMK - 256-bit key  
+KMS assymmetric CMK - mathematically related public and private key pair  
+KMS supports RSA and ECC assymmetric CMKs  
 
 
 KMS API actions:
@@ -185,7 +185,7 @@ Cognito Role-Based Access Control
 
 ---
 # API Gateway
-https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html  
 https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/
 https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html
 https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
@@ -268,21 +268,20 @@ CORS support for Lambda or HTTP proxy integrations:
 
 ---
 # Lambda
-https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html
-https://docs.aws.amazon.com/lambda/latest/dg/runtimes-context.html
-https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html
-https://docs.aws.amazon.com/lambda/latest/dg/configuration-database.html?icmpid=docs_lambda_help
-https://docs.aws.amazon.com/lambda/latest/dg/lambda-environment-variables.html
-https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
-https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
-https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html
-https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics.html
-https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/
-https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/
-https://aws.amazon.com/lambda/faqs
-https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html
-https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html
-https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
+https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html  
+https://docs.aws.amazon.com/lambda/latest/dg/runtimes-context.html  
+https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-database.html?icmpid=docs_lambda_help  
+https://docs.aws.amazon.com/lambda/latest/dg/lambda-environment-variables.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html  
+https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html  
+https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html  
+https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics.html  
+https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/  
+https://aws.amazon.com/lambda/faqs  
+https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html  
+https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html  
 
 - max timeout 15m
 - priced per # of requests and duration
@@ -291,7 +290,8 @@ https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
 Soft Limits:
   - 1000 concurrent execution
   - 75GB function and layer storage
-  - 250 ENI per VPC
+  - 250 ENI per VPC  
+
 Hard Limits:
   - 6MB sync and 256KB async Invocation payload (request and response)
   - 512MB /tmp directory storage
@@ -299,38 +299,38 @@ Hard Limits:
   - 1024 execution processes/threads
 
 Version Control:
-  Each Lambda version has a unique ARN
-  After publishing, the version is immutable (you can edit only `$LATEST`)
-  `$LATEST` - maintains the latest code
-    _Qualified ARN_ - function ARN + version suffix
-    _Unqualified ARN_ - only function ARN, use `$LATEST`
-  Aliases: use to point specific ARN (application use alias incl. $LATEST)
-    aliases have static ARN but can point to any version of the same function
-    you can use weighted alias to shift traffic between versions
-    rollback as easy as updating the version in the alias
+  Each Lambda version has a unique ARN  
+  After publishing, the version is immutable (you can edit only `$LATEST`)  
+  `$LATEST` - maintains the latest code  
+    _Qualified ARN_ - function ARN + version suffix  
+    _Unqualified ARN_ - only function ARN, use `$LATEST`  
+  Aliases: use to point specific ARN (application use alias incl. $LATEST)  
+    aliases have static ARN but can point to any version of the same function  
+    you can use weighted alias to shift traffic between versions  
+    rollback as easy as updating the version in the alias  
 
 Invocation can be synchronous/asynchronous
 
 Function configuration:
-    Basic settings: Runtime, Handler (filename.functionname), Memory, Timeout
-    Monitoring (CloudWatch, X-Ray)
-    Permissions
-    Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit
-    VPC - function can access VPC resources in specified VPC
-    File System - connect to EFS
-    Asynchronous invocation settings + DQL - SQS or SNS
-    Concurrency, _provisioned concurrency_ (e.g. for weighted alias)
-    Database proxies (manages pool of connections)
+    Basic settings: Runtime, Handler (filename.functionname), Memory, Timeout  
+    Monitoring (CloudWatch, X-Ray)  
+    Permissions  
+    Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit  
+    VPC - function can access VPC resources in specified VPC  
+    File System - connect to EFS  
+    Asynchronous invocation settings + DQL - SQS or SNS  
+    Concurrency, _provisioned concurrency_ (e.g. for weighted alias)  
+    Database proxies (manages pool of connections)  
 
-Lambda API Actions:
-    `AddPermission`: add permission to the resource policy to invoke Lambda  
+Lambda API Actions:  
+    `AddPermission`: add permission to the resource policy to invoke Lambda   
     `CreateFunction`:  
     `Invoke`: synchronous  
     `InvokeAsync`   
     `CreateEventSourceMapping`: identifies a stream as an event source for Lambda
       can be DynamoDB stream or Kinesis
 
-Lambda metrics:
+Lambda metrics:  
     Invocation, Performace, Concurrency
 
 ---
@@ -423,12 +423,12 @@ https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
     `dynamodb:ReturnConsumedCapacity`  
 
 Read operations:
-    `GetItem`, `BatchGetItem` (up to 100 items and max 16MB),
-    Use `ProjectionExpression` to return only selected attributes
-    Query - max 1MB per call,
-        results are always sorted by Sort Key. Reverse by setting `ScanIndexForward`
-    Scan - max 1MB per, can scan only one partition at a time
-        can configure parallel scans by logically dividing a table or index
+    `GetItem`, `BatchGetItem` (up to 100 items and max 16MB)  
+    Use `ProjectionExpression` to return only selected attributes  
+    **Query** - max 1MB per call  
+        results are always sorted by Sort Key. Reverse by setting `ScanIndexForward`  
+    **Scan** - max 1MB per, can scan only one partition at a time  
+        can configure parallel scans by logically dividing a table or index  
 - No strongly consistent reads on GSI
 - Can delete GSI any time, cannot delete LSI
 
@@ -462,21 +462,21 @@ Throttling Issues and Fixes:
   Hot partitions  
   Capacity limitations  
   Fixes:  
-    - slowly increase provisioned capacity
-    - review capacity on GSI (throttle on index double-counted)
-    - implement error retries and exponential backoff (built-in in AWS SDK)
-    - distribute operations evently across partitions
-    - implement caching solution (ElastiCache or DAX)
-    - use TTL on items in the table
+    - slowly increase provisioned capacity  
+    - review capacity on GSI (throttle on index double-counted)  
+    - implement error retries and exponential backoff (built-in in AWS SDK)  
+    - distribute operations evently across partitions  
+    - implement caching solution (ElastiCache or DAX)  
+    - use TTL on items in the table  
   Partitions:  
-    - Can accomodate only 3000 RCU or 1000 WCU
-    - Max 10GB of data
-    - never deleted
+    - Can accomodate only 3000 RCU or 1000 WCU  
+    - Max 10GB of data  
+    - never deleted  
 
 DDB Streams  
-  - Time-ordered change log for the table, stored for 24 hours
-  - Encrypted by default
-  - Can trigger Lambda
+  - Time-ordered change log for the table, stored for 24 hours  
+  - Encrypted by default  
+  - Can trigger Lambda  
 
 Encryption at rest (only AWS owned CMK or AWS managed CMK)
   > DDB uses the CMK to generate and encrypt a DEK (known as __Table Key__). **AWS Owned** (free for charge)
@@ -611,37 +611,37 @@ https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html
 
 Container Def->Task Def->Service->Cluster (Fargate)
 
--> Task Definition: JSON, blueprint for application:
-    Task Role and Task Execution IAM Role
-    Network Mode
-    Task Memory/CPU
-    Volumes
-    Containers ->
-        -> Container Definition
-            Name, image link (repository link)
-            Port mappings
-            Volume mappings
-            Memory/CPU
-            Healthcheck
-            Environment
--> Task - instance of Task Definition
--> ECS Agent: run on each EC2 node in ECS cluster, reports on running task & resource utilisation
-      start/stop
--> Service:
-    Launch type (EC2, Fargate)
-    # of tasks (desired) ELB (optional)
-    Deployment type (rolling update or Blue/Green development)
-    Placement type (AZ balanced spread, AZ balanced binpack, BinPack, One task per host, custom)
-    Network (VPC), Subnets, Security Groups, PublicIP
-    Auto Scaling (min-desired-max)
-    Auto Scaling Policy: Target tracking or Step scaling
--> Cluster:
-    Templates: Networking only, EC2 Linux + Networking, EC2 Windows + Networking
+Task Definition: JSON, blueprint for application:  
+    Task Role and Task Execution IAM Role  
+    Network Mode  
+    Task Memory/CPU  
+    Volumes  
+    Containers:  
+            - Container Definition  
+            - Name, image link (repository link)  
+            - Port mappings  
+            - Volume mappings  
+            - Memory/CPU  
+            - Healthcheck  
+            - Environment  
+Task - instance of Task Definition  
+ECS Agent: run on each EC2 node in ECS cluster, reports on running task & resource utilisation
+      start/stop  
+Service:  
+    - Launch type (EC2, Fargate)  
+    - # of tasks (desired) ELB (optional)  
+    - Deployment type (rolling update or Blue/Green development)  
+    - Placement type (AZ balanced spread, AZ balanced binpack, BinPack, One task per host, custom)  
+    - Network (VPC), Subnets, Security Groups, PublicIP  
+    - Auto Scaling (min-desired-max)  
+    - Auto Scaling Policy: Target tracking or Step scaling  
+Cluster:  
+    - Templates: Networking only, EC2 Linux + Networking, EC2 Windows + Networking  
 
--> Dockers:
-    EC2 Cluster-*EC2 instances-*Task-*Container
+Dockers:
+    - EC2 Cluster-*EC2 instances-*Task-*Container  
 
--> IAM Roles for ECS Tasks
+IAM Roles for ECS Tasks
 
 ---
 # Elastic Beanstalk
@@ -693,8 +693,8 @@ Elastic Beanstalk Supports two methods of saving configuration option settings:
   - config files in YAML or JSON in `.ebextensions` folder
   - saved configurations created from a running environment or JSON option file
 
-Includes Auto Scaling Group to manage EC2 instances. You can modifiy the **launch configuration** to change the instance type, key pair, EBS, and other settings.
-You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html) in the root of the application source bundle to configure the environment name, solution stack and [environment links](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-links.html) to use.
+Includes Auto Scaling Group to manage EC2 instances. You can modifiy the **launch configuration** to change the instance type, key pair, EBS, and other settings.  
+You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html) in the root of the application source bundle to configure the environment name, solution stack and [environment links](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-links.html) to use.  
 
 ---
 # OpsWorks

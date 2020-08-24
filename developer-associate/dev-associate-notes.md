@@ -1,5 +1,7 @@
 # Developer Associate
 
+![CDA badge](../media/cda-badge.png)
+
 Training course notes
 
 # Whitepapers

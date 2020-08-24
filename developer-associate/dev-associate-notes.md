@@ -193,6 +193,7 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching
 https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html
 https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
 https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html
 
 - Resource URL
 - Stage is added to default API endpoint
@@ -217,7 +218,7 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.htm
   `Access-Control-Allow-Methods`  
 
 Integration types:
-  - `AWS`: AWS Service actions  
+  - `AWS`: AWS Service actions (integration with AWS services)  
       you must configure both integration request and response  
   - `AWS_PROXY`: Lambda proxy integration, API Gateway passes the incoming request direct to Lambda  
       you do not set integration request or response  
@@ -355,6 +356,13 @@ Lambda metrics:
 ---
 # Step Functions
 https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
+https://docs.aws.amazon.com/step-functions/latest/dg/tutorial-handling-error-conditions.html
+
+Based on the concepts of tasks and state machines
+
+Two types of state machines:  
+  - Standard  
+  - Express: for high-volume event processing workloads  
 
 - Components: Tasks, State Machines (defined using **JSON** Amazon States Language)
 - Activity can be:
@@ -392,14 +400,14 @@ https://docs.aws.amazon.com/streams/latest/dev/building-consumers.html
 
 ![Kinesis Consumers](../media/kinesis-consumers.jpg)  
 
-- **Shard**: sequence of data records in a stream
-  - up to 5tps for reads, up to 2MB/s - for each shard
-  - up to 1000 record/s for writes, up to 1MB/s - for each shard
+- **Shard**: sequence of data records in a stream  
+  - up to 5tps for reads, up to 2MB/s - for each shard  
+  - up to 1000 record/s for writes, up to 1MB/s - for each shard  
 
-- Data Encryption in Kinesis Firehose:
-  Depends on the source of data:
-    - Kinesis Data Stream as data source: Firehose reads encrypted data from the stream, buffers the data in memory and delivers to the destination without storing unencrypted data at rest
-    - If you send data to Firehose using `PutRecord` or `PutRecordBatch` - turn on SSE by using `StartDeliveryStreamEncryption`
+- Data Encryption in Kinesis Firehose:  
+  Depends on the source of data:  
+    - Kinesis Data Stream as data source: Firehose reads encrypted data from the stream, buffers the data in memory and delivers to the destination _without_ storing unencrypted data at rest  
+    - If you send data to Firehose using `PutRecord` or `PutRecordBatch` - turn on SSE by using `StartDeliveryStreamEncryption`  
 
 ---
 # DynamoDB
@@ -452,10 +460,11 @@ CommonErrors:
   - ProvisionedThroughputExceededException (number of requests is too high)
   - ResourceNotFoundException (e.g. table does not exist/in CREATING)
 
-Specify `ReturnConsumedCapacity=TOTAL` in Query request to obtain how much of capacity is being used
-DAX
-  - write-through
-  - Eventually consistent only!!!
+Specify `ReturnConsumedCapacity=TOTAL` in Query request to obtain how much of capacity is being used  
+
+DAX  
+  - write-through  
+  - Eventually consistent only!!!  
   - **For strongly consistent reads DAX pass all requests to DDB & does not cache for these requests**  
 
 Throttling Issues and Fixes:  
@@ -684,7 +693,7 @@ Environments are deployed via CloudFormation stack (behind the scenes)
   1. Clone current environment (or launch a new environment)
   2. Deploy the new application version to the new environment
   3. Test
-  4. In **Environment actions** choose **Swap environmetn URLs**  
+  4. In **Environment actions** choose **Swap environment URLs**  
   Elastic Beanstalk swaps the CNAME records
 
 ![Deployment options](../media/deployment-methods.jpg)  
@@ -693,8 +702,11 @@ Elastic Beanstalk Supports two methods of saving configuration option settings:
   - config files in YAML or JSON in `.ebextensions` folder
   - saved configurations created from a running environment or JSON option file
 
-Includes Auto Scaling Group to manage EC2 instances. You can modifiy the **launch configuration** to change the instance type, key pair, EBS, and other settings.  
+Elastic Beanstalk creates Auto Scaling Group to manage EC2 instances. You can modifiy the **launch configuration** to change the instance type, key pair, EBS, and other settings.  
 You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html) in the root of the application source bundle to configure the environment name, solution stack and [environment links](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-links.html) to use.  
+
+You can use Packer to create a custom platform  
+
 
 ---
 # OpsWorks
@@ -825,15 +837,20 @@ https://docs.aws.amazon.com/xray/latest/devguide/xray-api-sampling.html
 - Integrates with ELB, Lambda, API GTW, EC2, Beanstalk
 - Need to have X-Ray daemon running on EC2 instance (and role attached to EC2 instance to upload data onto X-Ray)
 
+X-Ray receives data from services as _segments_  
+Then groups segments that have common request into _traces_  
+Tracess processed to generate a _service graph_  
+
+
 X-Ray SDK provides:
   - **Interceptors**: to add to your code to trace incoming HTTP requests
   - **Client handlers**: to instrument AWS SDK clients that your application uses to call other AWS Services
   - **HTTP Client**: to use to instrument calls to other internal or external HTTP services
 
 - For Lambda you should attach `AWSXrayWriteOnlyAccess` policy to the Lambda execution role
-- Error - Client errors `400-series errors`  
-- Fault - Server faults `500-series errors`  
-- Throttle - Throttling errors `419 Too Many Requests`  
+- `Error` - Client errors `400-series errors`  
+- `Fault` - Server faults `500-series errors`  
+- `Throttle` - Throttling errors `419 Too Many Requests`  
 - Allow to search through request information using:
   - Annotations
   - Trace IDs
@@ -867,40 +884,40 @@ Running the X-Ray daemon on ECS:
   `aws codebuilt start-build --project-name`, with `buildspecOverride` can specify a new inline or buildspec file  
 
 ## CodeDeploy
-- Automated deployments to EC2, Lambda, on-prem
-- Uses YAML or JSON aplication specification file **AppSpec** for ECS, Lambda or EC2 compute platforms
-- Blue/Green Deployment: automatically creates blue/green environment
-- Blue/Green with Lambda:
-  - _Canary_: % of traffic shifted to the new version. Wait for specified time and shift the rest
-  - _Linear_: Traffic is shifted in equal increments with equal periods
-  - _All at once_: Traffic is immediately shifted
-- Lifecycle event hooks:
-  - BeforeInstall, AfterInstall, ApplicationStart, ApplicationStop, ValidateService
-- Sequence of the event hooks:
-  `ApplicationStop`->(DownloadBundle)->`BeforeInstall`->(install)->`AfterInstall`->`ApplicationStart`->`ValidateService`
+- Automated deployments to EC2, Lambda, on-prem  
+- Uses YAML or JSON aplication specification file **AppSpec** for ECS, Lambda or EC2 compute platforms  
+- Blue/Green Deployment: automatically creates blue/green environment  
+- Blue/Green with Lambda:  
+  - _Canary_: % of traffic shifted to the new version. Wait for specified time and shift the rest  
+  - _Linear_: Traffic is shifted in equal increments with equal periods  
+  - _All at once_: Traffic is immediately shifted  
+- Lifecycle event hooks:  
+  - BeforeInstall, AfterInstall, ApplicationStart, ApplicationStop, ValidateService  
+- Sequence of the event hooks:  
+  `ApplicationStop`->(DownloadBundle)->`BeforeInstall`->(install)->`AfterInstall`->`ApplicationStart`->`ValidateService`  
 
 ## CodePipeline
-- Automate release process
-- Stages, Actions, Transitions
-- Stages contain at least one action
-- Actions have a deployment artifact as input/output or both
-- Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code
-- Can add workflows (e.g. approvals via SNS)
-- Enable cross-account access (e.g. pipeline in one account, resources in another):
-  - Create CMK in KMS
-  - Add a cross-account role
+- Automate release process  
+- Stages, Actions, Transitions  
+- Stages contain at least one action  
+- Actions have a deployment artifact as input/output or both  
+- Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code  
+- Can add workflows (e.g. approvals via SNS)  
+- Enable cross-account access (e.g. pipeline in one account, resources in another):  
+  - Create CMK in KMS  
+  - Add a cross-account role  
 
 ## CodeStar
-- Project templates for various projects and programming languages
-- IDEs integration
-- Visualisation (Application activity, JIRA)
+- Project templates for various projects and programming languages  
+- IDEs integration  
+- Visualisation (Application activity, JIRA)  
 
 ## Blue/Green Development
-- Almost zero-downtime and rollback capabilities
-- Blue: current application
-- Green: new version
-- Provides isolation between blue and green environments
-- AWS Services to help automate deployments:
+- Almost zero-downtime and rollback capabilities  
+- Blue: current application  
+- Green: new version  
+- Provides isolation between blue and green environments  
+- AWS Services to help automate deployments:  
   > Route53, ELB, Auto Scaling, Elastic Beanstalk, OpsWorks, CloudFormation, CloudWatch  
 
 ---

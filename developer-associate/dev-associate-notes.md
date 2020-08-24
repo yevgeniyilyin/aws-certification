@@ -116,15 +116,17 @@ CMK:
 - components: [alias, creation data, desc, state, key material]
 - is ALWAYS stays inside KMS, can be NEVER exported, never leaves KMS unencrypted
 
-Setup CMK: Alias->Desc->Key Material (KMS, Own, CloudHSM)->Admin Permissions->Usage Permissions
-Two types of CMK - **AWS-managed** (aws/) and **Customer-managed**  
+Setup CMK:
+  Alias->Desc->Key Material (KMS, Own, CloudHSM)->Admin Permissions->Usage Permissions  
 
-KMS does not manage or store DATA KEYS
-KMS cannot use DATA KEYS to encrypt data for you
-You must call KMS API to use CMK
-Key deletion is not performed immedeately -> you can set a deletion date
+Two types of CMK - **AWS-managed** (`aws/`) and **Customer-managed**  
 
-Envelop Encryption
+KMS does not manage or store DATA KEYS  
+KMS cannot use DATA KEYS to encrypt data for you  
+You must call KMS API to use CMK  
+Key deletion is not performed immedeately -> you can set a deletion date  
+
+Envelop Encryption  
 AWS Services that integrates with KMS _do not_ support asymmetric keys
 KMS symmectric CMK - 256-bit key
 KMS assymmetric CMK - mathematically related public and private key pair

@@ -17,7 +17,40 @@ Training course notes
 
 ---
 # AWS General Reference
+https://aws.amazon.com/faqs/
 https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
+
+## Serverless
+  [Lambda](https://aws.amazon.com/lambda/faqs/), [API Gateway](https://aws.amazon.com/api-gateway/faqs/), [DynamoDB](https://aws.amazon.com/dynamodb/faqs/), [ElastiCache](https://aws.amazon.com/elasticache/faqs/), [S3](https://aws.amazon.com/s3/faqs/)
+
+## Dev Tools
+  [CodeCommit](https://aws.amazon.com/codecommit/faqs/), [CodePipeline](https://aws.amazon.com/codepipeline/faqs/), [CodeDeploy](https://aws.amazon.com/codedeploy/faqs/), [CodeBuild](https://aws.amazon.com/codebuild/faqs/)
+
+## Security
+  [IAM](https://aws.amazon.com/iam/faqs/), [Cognito](https://aws.amazon.com/cognito/faqs/), [KMS](https://aws.amazon.com/kms/faqs/)
+
+## Automation & Monitoring
+  [ElasticBeanstalk](https://aws.amazon.com/elasticbeanstalk/faqs/), [CloudFormation](https://aws.amazon.com/cloudformation/faqs/), [CloudWatch](https://aws.amazon.com/cloudwatch/faqs/), [X-Ray](https://aws.amazon.com/xray/faqs/)
+
+## Containers
+  [ECS](https://aws.amazon.com/ecs/faqs/) and [ECR](https://aws.amazon.com/ecr/faqs/)
+
+## Messaging & Streaming
+  [SQS](https://aws.amazon.com/sqs/faqs/), [SNS](https://aws.amazon.com/sns/faqs/), [Kinesis](https://aws.amazon.com/kinesis/streams/faqs/)
+
+## Databases
+  [RDS](https://aws.amazon.com/rds/faqs/), [Aurora](https://aws.amazon.com/rds/aurora/faqs/), [Redshift](https://aws.amazon.com/redshift/faqs/)  
+
+---
+## AWS CLI Pagination
+- control number of items included in the output of CLI
+- by default AWS CLI uses a page size of 1000
+- e.g. if you run `aws s3 list-objects my_bucket` on a bucket with 2500 objects - CLI makes 3 API calls to S3 but displays the entire output in one go
+- Possible errors: timed out or too many results returned
+- use `--page-size` option for small page size (CLI makes more calls to API but return all items in one go)  
+- use `--max-items` option to return fewer items in CLI output  
+
+
 
 ---
 # EC2
@@ -71,9 +104,12 @@ Inline Policies vs Managed Policies vs Custom Policies
 - Custom Policies: you create and manage, recommended to create on basis of Managed Policy
 - Inline Policies: _embedded_ within the user, group, or role
 
-Policy simulator:
+IAM Policy Simulator:
   1. Get the context keys first
   2. `aws iam simulate-custom-policy-command`
+
+  or use https://policysim.aws.amazon.com
+
 
 ---
 # STS
@@ -194,6 +230,7 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request
 https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
 https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
 https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html
+https://aws.amazon.com/appsync/
 
 - Resource URL
 - Stage is added to default API endpoint
@@ -283,18 +320,20 @@ https://aws.amazon.com/lambda/faqs
 https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html  
 https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html  
 https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html
 
 - max timeout 15m
 - priced per # of requests and duration
 - can be used cross-region
 
 Soft Limits:
-  - 1000 concurrent execution
+  - default *1000* concurrent execution across all functions per region per account (`TooManyRequestsException` if exceeded)
   - 75GB function and layer storage
   - 250 ENI per VPC  
 
 Hard Limits:
-  - 6MB sync and 256KB async Invocation payload (request and response)
+  - 6MB sync and 256KB async Invocation payload (request and response)  
+  - Deployment package size: 50MB (zipped, direct upload), 250MB (unzipped, including layers), 3MB (console editor)  
   - 512MB /tmp directory storage
   - 1024 file descriptors
   - 1024 execution processes/threads
@@ -305,7 +344,7 @@ Version Control:
   `$LATEST` - maintains the latest code  
     _Qualified ARN_ - function ARN + version suffix  
     _Unqualified ARN_ - only function ARN, use `$LATEST`  
-  Aliases: use to point specific ARN (application use alias incl. $LATEST)  
+  Aliases: use to point specific ARN (application use alias incl. `$LATEST`)  
     aliases have static ARN but can point to any version of the same function  
     you can use weighted alias to shift traffic between versions  
     rollback as easy as updating the version in the alias  
@@ -317,7 +356,15 @@ Function configuration:
     Monitoring (CloudWatch, X-Ray)  
     Permissions  
     Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit  
-    VPC - function can access VPC resources in specified VPC  
+    VPC - function can access VPC resources in specified VPC (e.g RDS)  
+      - Also provide Subnet ID and Security Group ID  
+      - Lambda sets up ENIs using an available IP address from your private subnet  
+      - in CLI: `--vpc-config SubnetIds=subnet-XXXX,SecurityGroupIds=sg-YYYYYY`  
+      - Lambda execution role should have the following EC2 permissions:
+        `ec2::CreateNetworkInterface`  
+        `ec2::DeleteNetworkInterface`  
+        `ec2::DescribeNetworkInterface`  
+
     File System - connect to EFS  
     Asynchronous invocation settings + DQL - SQS or SNS  
     Concurrency, _provisioned concurrency_ (e.g. for weighted alias)  
@@ -333,6 +380,15 @@ Lambda API Actions:
 
 Lambda metrics:  
     Invocation, Performace, Concurrency
+
+Lambda Layers:  
+  - ZIP archive that contains libraries, custom runtime or other dependencies
+  - You can use libraries in your function without needing to include them in your deployment package
+  - Up to 5 layers per function
+  - `update-function-configuration` to add layers to the function, include all layers every time  
+  - Layers are versioned  
+  - Layers are extracted to the `/opt` directory in the function execution environment  
+  - You can move runtime dependencies out of your function code by placing them in a layer  
 
 ---
 # SAM Templates
@@ -390,7 +446,8 @@ https://docs.aws.amazon.com/streams/latest/dev/building-consumers.html
 
 - Data record: sequence number, partition key, data blob (up to **1MB**)
 - Retention period 24h-168h (`IncreaseStreamRetentionPeriod` and `DecreaseStreamRetentionPeriod`)
-- Supports ordering of the messages in an individual shard (`PutRecord` with `sequenceNumberForOrdering` parameter) - strictly increasing sequence number for puts from the same client and same partition key
+- Supports ordering of the messages in an individual shard (`PutRecord` with `sequenceNumberForOrdering` parameter) - strictly increasing sequence number for puts from the same client and same partition key  
+
 - Consumers (Kinesis Data Stream Application):
   - _shared fan-out consumers_: fixed total 2MB/s per shard **shared** between all consumers. 200ms message propagation delay if there is one consumer reading from the stream. 1000ms delay with 5 consumers
   Pull mode over HTTP using `GetRecords`  
@@ -400,9 +457,16 @@ https://docs.aws.amazon.com/streams/latest/dev/building-consumers.html
 
 ![Kinesis Consumers](../media/kinesis-consumers.jpg)  
 
-- **Shard**: sequence of data records in a stream  
-  - up to 5tps for reads, up to 2MB/s - for each shard  
-  - up to 1000 record/s for writes, up to 1MB/s - for each shard  
+- **Shard**: sequence of data records in a stream, each record has a unique sequence number  
+  - **reads**: up to 5tps and up to 2MB/s - for each shard  
+  - **writes** up to 1000 record/s and up to 1MB/s - for each shard  
+
+  Kinesis Client Library (KCL) creates a record processor for each shard to read data from the shard and load balances the processors over existing consumers.  
+  With KCL generally you should ensure that **the number of instances does not exceed the number of shards**  
+  You **never** need multiple instances to handle the processing load of one shard  
+  However, one worker **can** process multiple shards  
+  CPU utilisation is what should drive the quantity of consumer instances you have, **not** the number of shards in your Kinesis stream  
+  Use ASG scaling based on CPU load  
 
 - Data Encryption in Kinesis Firehose:  
   Depends on the source of data:  
@@ -707,7 +771,6 @@ You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasti
 
 You can use Packer to create a custom platform  
 
-
 ---
 # OpsWorks
 Infrastructure management platform based on _Chef_ or _Puppet_ configuration management platform
@@ -791,7 +854,8 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
     - The name of FIFO queue must end with `.fifo`  
     - Supports message groups - allow multiple ordered message groups within a queue
 
-- Message up to **256KB** (but can link S3 with [Amazon SQS Extended Client Library for Java](https://github.com/awslabs/amazon-sqs-java-extended-client-lib))
+- Message up to **256KB** (but can link S3 with [Amazon SQS Extended Client Library for Java](https://github.com/awslabs/amazon-sqs-java-extended-client-lib) and AWS SDK for Java)
+
 - Up to 10 metadata attributes (outside of message body)
 - Message Components:
     - Body
@@ -804,7 +868,9 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
 
 - Queue configuration:
     - Visibility timeout (0s-12h): Use `ChangeMessageVisibility`  
-    - **Delay Queue**: Delivery delay (0s-15m): delay each message coming to the queue  
+    - **Delay Queue**: Delivery delay (0s-15m): delay each message coming to the queue   
+        not retrospective for standard queues  
+        retrospective for FIFO queues  
     - Receive message wait time (0-20s): max time polling will wait for messages  
     - Message retention period (1m-14d)  
     - Max message size (1-256KB)  
@@ -817,6 +883,7 @@ https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/
   - same as with SNS
 
 - AWS Lambda uses long polling for standard queues and message group ID for FIFO queues
+
 
 ---
 # Repos, Deployment, Builds, and CI/CD
@@ -845,12 +912,27 @@ Tracess processed to generate a _service graph_
 X-Ray SDK provides:
   - **Interceptors**: to add to your code to trace incoming HTTP requests
   - **Client handlers**: to instrument AWS SDK clients that your application uses to call other AWS Services
-  - **HTTP Client**: to use to instrument calls to other internal or external HTTP services
+  - **HTTP Client**: to use to instrument calls to other internal or external HTTP services  
+
+X-Ray Configuration:
+  - you need both **X-Ray SDK** and **X-Ray Daemon** on your systems
+
+  On-prem and EC2 instances:
+    - install X-Ray daemon on EC2 or on-prem  
+  In Elastic Beanstalk:  
+    - install X-Ray daemon on EC2 instances inside Beanstalk environment  
+  ECS:  
+    - install X-Ray daemon on its **own Docker container** on your ECS cluster alongside your app  
+
+If you want to record application specific information in the form of key-value pairs, use `annotations` to add user defined key-value pairs to X-Ray data  
 
 - For Lambda you should attach `AWSXrayWriteOnlyAccess` policy to the Lambda execution role
+
+X-Ray error classification:  
 - `Error` - Client errors `400-series errors`  
 - `Fault` - Server faults `500-series errors`  
 - `Throttle` - Throttling errors `419 Too Many Requests`  
+
 - Allow to search through request information using:
   - Annotations
   - Trace IDs

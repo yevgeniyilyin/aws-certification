@@ -30,8 +30,9 @@ These notes are incremental to AWS Certified Developer Associate and Solutions A
 
 - Can be used on-prem: Need to install SSM agent and CloudWatch agent
 
-Create EC2 custom metric [LAB](/labs/custom-cloudwatch-metric/script.sh):
+Create EC2 custom metric [LAB](sysops-associate/labs/custom-cloudwatch-metric/script.sh):
  - create a EC2 role with CloudWatch access policy
- - send a custom metric to CloudWatch from EC2 (use `curl https://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.2.zip -O`)
+ - send a custom metric to CloudWatch from EC2  
+    helper scripts: `curl https://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.2.zip -O`)
 
 ## Monitoring EBS

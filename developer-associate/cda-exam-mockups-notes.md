@@ -13,8 +13,6 @@ AWS sample exam questions: **8/10**
 
 
 
-
-Lambda Layers
 API Gateway authorisations
 GraphQL endpoint in API Gateway
 AppSync schema
@@ -22,10 +20,9 @@ cfn-init helper
 API Gateway models
 API Gateway Lambda Authorizers
 
-SAM - Deployment
+
 STS
 Cognito
-X-Ray setup
 
 CloudFormation Stacksets
 Route53 routing policies

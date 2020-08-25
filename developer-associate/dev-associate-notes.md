@@ -17,7 +17,7 @@ Training course notes
 
 ---
 # AWS General Reference
-https://aws.amazon.com/faqs/
+https://aws.amazon.com/faqs/  
 https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
 
 ## Serverless
@@ -33,7 +33,7 @@ https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
   [ElasticBeanstalk](https://aws.amazon.com/elasticbeanstalk/faqs/), [CloudFormation](https://aws.amazon.com/cloudformation/faqs/), [CloudWatch](https://aws.amazon.com/cloudwatch/faqs/), [X-Ray](https://aws.amazon.com/xray/faqs/)
 
 ## Containers
-  [ECS](https://aws.amazon.com/ecs/faqs/) and [ECR](https://aws.amazon.com/ecr/faqs/)
+  [ECS](https://aws.amazon.com/ecs/faqs/), [ECR](https://aws.amazon.com/ecr/faqs/)
 
 ## Messaging & Streaming
   [SQS](https://aws.amazon.com/sqs/faqs/), [SNS](https://aws.amazon.com/sns/faqs/), [Kinesis](https://aws.amazon.com/kinesis/streams/faqs/)
@@ -43,7 +43,7 @@ https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
 
 ---
 ## AWS CLI Pagination
-- control number of items included in the output of CLI
+- you can control number of items included in the output of CLI
 - by default AWS CLI uses a page size of 1000
 - e.g. if you run `aws s3 list-objects my_bucket` on a bucket with 2500 objects - CLI makes 3 API calls to S3 but displays the entire output in one go
 - Possible errors: timed out or too many results returned
@@ -265,6 +265,19 @@ Integration types:
       you do not set integration request or response   
   - `MOCK`: API Gateway return a response without sending the request to the backend  
 
+[Access Control](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-control-access-to-api.html) - supported mechanisms:
+  - **Resource policies**: resource-based policies to allow or deny access to APIs and methods from specified source IP or VPC endpoints (e.g. AWS accounts whitelist, IP range blacklist, Source VPC whitelist). These resource policies are attached to resources
+  - **Standard IAM roles and policies**: can be applied to entire API or individual methods (e.g. who can create, managed and invoke APIs).  
+    `authorizationType=AWS_IAM`  
+  - **IAM tags**: can be used together with IAM policies to control access - using `aws:ResourceTag` in IAM policies  
+  - **Endpoint policies for interface VPC endpoints**: allow you to attach IAM resource policies to interface VPC endpoints to improve the security of private APIs.  
+  - **Lambda authorizers**: _Lambda functions_ that control access to API methods using bearer token authentication (OAuth or SAML)- as well as information described by headers, paths, query strings, stage variables, or context variables request parameters to determine the caller's identity.  
+    - _token-based_: `TOKEN` authorizer: based on JWT or OAuth token (not supported for WebSocket APIs)  
+    - _request parameter-based_: `REQUEST` autorizer: receives the caller's identity in a combination of headers, query string parameters, stageVariables and $context variables  
+  - **Amazon Cognito user pools**: user pools are used to control who can invoke API methods.
+    `autorizationType=COGNITO_USER_POOLS`  
+
+
 ---
 # CORS
 https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
@@ -275,7 +288,7 @@ Cross-origin HTTP request:
 - A different _port_
 - A different _protocol_
 
-For simiple CORS POST method requests, the response from your resource needs to include the header `Access-Control-Allow-Origin` set to `'*'` or set of origins allowed to access that resource
+For simple CORS POST method requests, the response from your resource needs to include the header `Access-Control-Allow-Origin` set to `'*'` or set of origins allowed to access that resource
 
 For non-simple requests you need to enable CORS support:
 > When a browser receives a non-simple HTTP request, the CORS protocol requires the browser to send a preflight request to the server and wait for approval (or a request for credentials) from the server before sending the actual request. The preflight request appears to your API as an HTTP request that:
@@ -292,15 +305,15 @@ For non-simple requests you need to enable CORS support:
 
 > How you enable CORS support depends on your API's integration type.
 
-CORS support for mock integrations:
+CORS support for _mock integrations_:
 - create `OPTIONS` method to return the required response headers
 - each of CORS-enabled methods must return `Access-Control-Allow-Origin` header in at least its 200 response
 
-CORS support for Lambda or HTTP non-proxy integrations and AWS service integrations:
+CORS support for _Lambda custom (non-proxy) or HTTP non-proxy integrations and AWS Service integrations_ and AWS service integrations:
 - setup required headers by using API Gateway method response and integration response settings
 - API Gateway creates `OPTION` method and add `Access-Control-Allow-Origin` header to your existing methods integration responses (sometimes you need to manually add headers)
 
-CORS support for Lambda or HTTP proxy integrations:
+CORS support for _Lambda or HTTP proxy integrations_:
 - you can setup `OPTIONS` response headers in API Gateway
 - your backend is responsible for returning `Access-Control-Allow-Origin` and `Access-Control-Allow-Headers` headers, because proxy integration doesn't return and integration response
 
@@ -392,7 +405,9 @@ Lambda Layers:
 
 ---
 # SAM Templates
-- `sam init`, `sam build`, `sam deploy`  
+- `sam init`, `sam build`   
+- `sam package`: packages your application and uploaods to S3  
+- `sam deploy`: deploys your application using CloudFormation  
 - place the function code at the root level of the working directory with YAML file
 - use cloudformation package command to package the deployment
 

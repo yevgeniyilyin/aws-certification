@@ -1,28 +1,4 @@
-# Whizlabs Mock-up 7
--> 80.6%
-
-# Whizlabs Mock-up 4
--> 90.8%
-
-# Whizlabs Mock-up 1
--> 92.3%
-
-# LA Final Practice
--> 87%
-
-# Whizlabs Final Test
--> 86.2%
-
-# CSAA - Sample Exam Questions
--> 90%
-
-# Whizlabs Mock-up 6
--> 89.2%
-
-
-
-###############################################
-# Read
+# Additional reads
 CodeCommit, CodePipeline, CodeDeploy
 CloudFormation
 S3 throughput performance

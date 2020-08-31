@@ -365,23 +365,23 @@ Version Control:
 Invocation can be synchronous/asynchronous
 
 Function configuration:
-    Basic settings: Runtime, Handler (filename.functionname), Memory, Timeout  
-    Monitoring (CloudWatch, X-Ray)  
-    Permissions  
-    Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit  
-    VPC - function can access VPC resources in specified VPC (e.g RDS)  
-      - Also provide Subnet ID and Security Group ID  
-      - Lambda sets up ENIs using an available IP address from your private subnet  
-      - in CLI: `--vpc-config SubnetIds=subnet-XXXX,SecurityGroupIds=sg-YYYYYY`  
-      - Lambda execution role should have the following EC2 permissions:
-        `ec2::CreateNetworkInterface`  
-        `ec2::DeleteNetworkInterface`  
-        `ec2::DescribeNetworkInterface`  
+- Basic settings: Runtime, Handler (filename.functionname), Memory, Timeout  
+- Monitoring (CloudWatch, X-Ray)  
+- Permissions  
+- Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit  
+- VPC - function can access VPC resources in specified VPC (e.g RDS)  
+    - Also provide Subnet ID and Security Group ID  
+    - Lambda sets up ENIs using an available IP address from your private subnet  
+    - in CLI: `--vpc-config SubnetIds=subnet-XXXX, SecurityGroupIds=sg-YYYYYY`  
+    - Lambda execution role should have the following EC2 permissions:  
+      `ec2::CreateNetworkInterface`  
+      `ec2::DeleteNetworkInterface`  
+      `ec2::DescribeNetworkInterface`  
 
-    File System - connect to EFS  
-    Asynchronous invocation settings + DQL - SQS or SNS  
-    Concurrency, _provisioned concurrency_ (e.g. for weighted alias)  
-    Database proxies (manages pool of connections)  
+    - File System - connect to EFS  
+    - Asynchronous invocation settings + DQL - SQS or SNS  
+    - Concurrency, _provisioned concurrency_ (e.g. for weighted alias)  
+    - Database proxies (manages pool of connections)  
 
 Lambda API Actions:  
     `AddPermission`: add permission to the resource policy to invoke Lambda   
@@ -699,23 +699,27 @@ https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html
 
 Container Def->Task Def->Service->Cluster (Fargate)
 
-Task Definition: JSON, blueprint for application:  
+**Task Definition**: JSON, blueprint for application:  
     Task Role and Task Execution IAM Role  
-    Network Mode  
+    Network Mode (`awsvpc`: multiple containers sharing the single ENI)  
     Task Memory/CPU  
     Volumes  
-    Containers:  
-            - Container Definition  
+    Port that should be open on the instance
+    **Containers**:    
+            - Container Definition: packaged as readonly templates called docker images  
             - Name, image link (repository link)  
             - Port mappings  
             - Volume mappings  
             - Memory/CPU  
             - Healthcheck  
             - Environment  
-Task - instance of Task Definition  
+            - Storage and Logging  
+            - Network settings  
+            - Resouce Limits  
+**Task** - instance of Task Definition  
 ECS Agent: run on each EC2 node in ECS cluster, reports on running task & resource utilisation
       start/stop  
-Service:  
+**Service**:    
     - Launch type (EC2, Fargate)  
     - # of tasks (desired) ELB (optional)  
     - Deployment type (rolling update or Blue/Green development)  
@@ -723,7 +727,7 @@ Service:
     - Network (VPC), Subnets, Security Groups, PublicIP  
     - Auto Scaling (min-desired-max)  
     - Auto Scaling Policy: Target tracking or Step scaling  
-Cluster:  
+**Cluster**:    
     - Templates: Networking only, EC2 Linux + Networking, EC2 Windows + Networking  
 
 Dockers:

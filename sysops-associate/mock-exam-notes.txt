@@ -1,0 +1,55 @@
+Mock 1: 60%
+
+2
+
+6
+9
+
+
+
+
+
+
+18
+26
+
+30
+32
+33
+
+40
+43
+49
+
+51
+56
+57
+58
+59
+
+61
+63
+65
+
+
+StatsD
+collectd
+Public DNS name
+iam:PassRole
+IPv6
+AWS Organisation
+Route53
+AWS Cost&Usage Report
+Shield Standard vs Shield Advanced
+WAF rules
+S3 server access logs
+Valut Lock
+Systems Manager Setup (on-prem)
+State Manager
+Support plans (Developer, Basic, Business, Enterprise)
+AWS Config
+CloudFormation
+AWS Config Aggregator
+RAID 0-6
+QuickSight Editions
+Tags

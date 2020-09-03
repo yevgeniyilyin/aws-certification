@@ -186,11 +186,23 @@ Redis CPU Utilisation:
 Dashboards are cross-region (international), widget added on the region basis
 
 # AWS Organisations
+https://docs.aws.amazon.com/organizations/latest/userguide/orgs_getting-started_concepts.html
+
 Manage multiple AWS accounts, can create groups of accounts and apply policies to the groups
 - Central management of accounts
 - Control Access with SCP (allow or deny individual AWS services on account group basis). Attach policies to the OU (applies to all accounts within OU). Can select _black_ or _white_ listing for SCP
 - Automate AWS account creation
 - Consolidated billing
+
+## Service Control Policy (SCP)
+similar to IAM permissions policies but SCP don't grant any permissions
+- **Allow list strategy**: explicitly specify the access that is allowed. All other access is implicitly blocked.
+  By default, AWS Organisations attaches an AWS managed policy `FullAWSAccess` to all roots, OUs and accounts.
+  When you restrict permissions, you _replace_ the `FullAWSAccess`
+  You can't add permissions back at lower lever in the hierarchy
+- **Deny list strategy**: explicitly specify the access that is not allowed. All other access is allowed.
+  This is the default behavior of AWS Organisations.
+  You leave the default `FullAWSAccess` policy in place and attach additional policies that explicitly _deny_ access to unwanted services and actions
 
 # Tagging and Resource Groups
 - Sometimes can be inherited
@@ -217,6 +229,10 @@ Display data from the last 13 months, projected for the next 3 months
 
 AWS Trusted Advisor
 
+# AWS Cost & Usage Report
+cost details for all resources in AWS
+customized reports
+Multiple files with flexible column structure + manifest file listing data files in report
 
 # EC2 Pricing Refresher
 On Demand
@@ -375,31 +391,58 @@ https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html
 ## AWS Batch
 Runs batch computing workloads at scale
 
-# S3 cross-region replicaton
+# S3 cross-region replication
 - Bucket-level
 - versioning must be enabled
 - can select key name prefixes (folders)
-- can seletet different storage class for destination
+- can select different storage class for destination
 - what is not replicated:
   - objects that existed before replication was activated
   - encrypted objects:
     - SSE-C and SSE-KMS (but for KMS can be explicitly enabled by selecting destination KMS key)
   - objects that were replicated to source bucket (no transitive replication)
 
+# S3 Server Access Logs
+https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerLogs.html
+provides detailed records for the requests that are made to a bucket
+Details: single access request, requester, bucket name, request time, request action, response status, error code
+No extra charge for enabling and PUTs (but usual charge for storing)
+Logs are saved to a bucket in the same AWS regions as the source bucket
+Uses a special log delivery account _Log Delivery Group_ to write access log  
+Best effort server log delivery:
+The completeness and timeliness of server logging is not guaranteed. The log record for a particular request might be delivered long after the request was actually processed, or _it might not be delivered at all_.
+
+To enable:
+1. Turn on logging on S3 bucket
+2. Grant S3 _Log Delivery group_ write persmission on the target bucket
+    **only through bucket ACL** and not through bucket policy
+    only SSE-S3 can be used, **SSE-KMS is not supported**  
+    Object Lock cannot be enabled on the target bucket
+You can _optionally_ specify prefix in the target bucket while enabling logging
+
+# Amazon GuardDuty
+Maintains two types of lists:
+- Trusted IP list: whitelisted IPs
+- Threat List: malicious IPs for which GuardDuty generates findings
+
+
+
 # AWS Storage Gateway
 **File Gateway**: stores data on S3
 - NFS or SMB
 **Volume Gateway**
-- Cached Volumes:
-  - mounted iSCSI devices, data stored on S3, cached on-prem
-- Stored Volumes:
-  - store all data locally
-  - takes snapshot periodically as incremental backup and store on S3
+  - _Cached Volumes_:
+    - mounted iSCSI devices, data stored on S3, cached on-prem
+  - _Stored Volumes_:
+    - store all data locally
+    - takes snapshot periodically as incremental backup and store on S3
 **Tape Gateway**
 - Virtual tape library writes to Glacier
 - Can run as VM on-prem or EC2 instance
 
 # AWS Systems Manager
+https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-managedinstances.html
+
 Provisioning, Deployment, Management
 managed policy `AmazonEC2RoleforSSM` to attach to EC2 role to communicate with SSM
 Parts:
@@ -409,6 +452,30 @@ Parts:
 - Run Command
 - Parameter Store
 - Trusted Advisor and PHD
+
+For set-up of Systems Manager for Hybrid environment:
+
+Step 1: Complete general Systems Manager setup steps
+Step 2: Create an IAM service role for a hybrid environment (to communicate with SSM service)
+Step 3: Install a TLS certificate on on-premises servers and VMs
+Step 4: Create a managed-instance activation for a hybrid environment
+Step 5: Install SSM Agent for a hybrid environment (Linux or Windows)
+Step 6: (Optional) Enable Advanced-Instances Tier for more than 1000 servers per account per region
+
+## SSM State Manager
+https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-ssm-docs.html
+
+uses **Command Documentn** to keep EC2 in predefined state
+Different Types of SSM Documents
+Type | Use with
+---|---
+Command Document | Run command, State Manager, Maintenance Windows, apply to configuration
+Automation Document | Automation, common deployment/maintenance tasks
+Package Document | ZIP archive files that contain software to install on managed instances
+Session Document | Session Manager (type of session to start)
+Policy Document | Enforcing a policy on a managed instance
+Change Calendar Document | Associated events that can allow/prevent Automation ations
+
 
 # Disaster Recovery
 RTO
@@ -485,7 +552,8 @@ Components:
 - VPN connnection - two VPN tunnels - you need to provision two IP addresses on the customer side
 
 ## AWS Direct Connect
-For dedicated connections DX requires **single-mode fiber**: 1Gbps or 10Gbps
+For dedicated connections DX requires **single-mode fiber**: 1Gbps (1000BASE-LX) or 10Gbps
+The network device on-prem must support BGP
 Using a private peered connection might not need extra security
 
 ## Elastic IP (EIP) and Elastic Network Interface (ENI)
@@ -512,7 +580,124 @@ when attaching/reattaching to instances, the attributes (SG) and traffic follow 
 you can modify attributes (SG and IP) after creation
 
 # Security
+https://aws.amazon.com/compliance/shared-responsibility-model/
 https://aws.amazon.com/security/penetration-testing/
+
+![AWS Foundational and Layered Security Services](../media/aws-security-services.png)
+
+## IAM Roles
+- Temporary credentials in AWS managed by STS
+- another entity can **assume** the specific permissions defined by the role
+- roles must be used because policies cannot be directly attached to AWS services
+- Services can have only **one** role attached at a time
+
+Other use of roles:
+- Cross-account access (delegation)
+- Identity Federation
+  - these users assume an **identity provider** access role
+
+## PassRole
+https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html
+
+- A trust policy for the role that allows the service to assume the role
+- A permission policy attached to IAM user that allows the user to pass only those roles that are approved
+  `iam:PassRole` is usually is accompanied by `iam:GetRole` (so the user can get details of the role to be passed)
+
+
+
+## S3 Bucket Policies
+Mandatory elements:
+- Effect (Deny or Allow)
+- Action
+- Resource
+- Principal
+  - account or user that this policy applies to
+  - Specific to S3 bucket policies
+
+Optional:
+- Sid
+- Condition
+
+Use `/*` to apply policy to **all objects** in the
+
+## Data Integrity
+To enable MFA delete the versioning must be enabled on the bucket
+Can enforce the use of MFA:
+```
+"Condition": {
+  "Null": {
+    "aws:MultiFactorAuthAge": true
+  }
+}
+```
+
+## Security Groups and NACLs
+Security Group - Instance level
+NACL - Subnet level
+
+## AWS STS: Federation
+credentials remain active 15m to 1h (default)
+credentials are not stored with the user or service, token is used
+uses a single endpoint https://sts.amazonaws.com, resides in `us-east-1`
+temporary credentials have global scope
+
+Web Identity Federation Playground
+
+## Amazon Inspector
+- Analyze the behavior of your AWS resources
+- Test network accessibility and security state
+- Accesses for security vulnerabilities and deviations from best practices
+- Provides recommendation for resolution
+
+Target: a collection of EC2 instances
+Requires an agent installed on EC2 instance
+
+## AWS Certificate Manager (ACM
+Naitive integration with AWS Services
+No associated costs for certificates
+Certificates auto-renew
+
+## AWS WAF
+integrated with
+- ALB
+- API Gateway
+- CloudFront
+
+WAF Rules are based on conditions:
+- IP addresses
+- HTTP headers
+- HTTP body
+- URI strings
+- SQL injection
+- Cross-site scripting (XXS)
+
+when using WAF on ALB, rules run in region
+
+## AWS Trusted Advisor
+Cost Optimization
+Perfromance
+Security
+Fault Tolerance
+Service Limits
+
+Available to all **customers**:  
+- seven core checks:
+  1. S3 Bucket Permissions
+  2. Security Groups - Specific Ports Unrestricted
+  3. IAM Use
+  4. MFA on Root Account
+  5. EBS Public Snapshots
+  6. RDS Public Snapshots
+  7. Service Limits
+Available to **Business and Enterprise Support Customers**:  
+- Access to the full set of checks
+- Notifications (CloudWatch alerts)
+- Programmatic access
+  - Retrieve results from the AWS Support API
+
+
+
+
 
 
 

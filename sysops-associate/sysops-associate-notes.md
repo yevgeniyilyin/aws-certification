@@ -26,6 +26,9 @@ Free metrics:
     SNS, SQS, EC2, ECS Task, Lambda, CodeBuild, CodePipeline, Step Function, SSM, Eventbus in other account, Kinesis Data Streams and Firehose  
     Event Source for the rule can be almost any AWS Service (Event type: CloudTrail API Call)
 
+CloudWatch agents on Windows use `StatsD` protocol and `collectd` on Linux
+
+
 CloudWatch Events:
 - consists of three parts:
   - **Event Source**  
@@ -40,7 +43,7 @@ CloudWatch Events:
 - Metric resolution:
   - Default: 5m
   - Detailed: 1m
-  - High-resolution: 10 or
+  - High-resolution: CloudWatch stores it with resolution 1s and you can read and retrieve it with a period of 1, 5, 10, 30 or any multiple of 60s
 
 - Can be used on-prem: Need to install SSM agent and CloudWatch agent
 
@@ -97,14 +100,30 @@ sudo fio --filename=/dev/xvdf \
   --name=volume-initialise
 ```
 
+## EBS Snapshots
+You can use Data Lifecycle Manager to schedule creation and deletion of EBS snapshots
+
 ## Monitoring ELB
 ### ALB
+https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html
+
 **CloudWatch**: metrics to monitor:
   - `ActiveConnectionCount`  
   - `HealthyHostCount`  
   - `HTTP code totals`  
 
-**Access logs**: disabled by default, can store data where EC2 instance has been deleted. Detailed information for every request received by ELB, including client IP and server responses. Stored in S3  
+**Access logs**: disabled by default, can store data where EC2 instance has been deleted. Detailed information for every request (including requests that never made it to the target, e.g. mailformed requests) received by ELB (logs are stored in S3):
+ - client IP:port
+ - target IP:port
+ - latencies (request processing time, target processing time, response processing time)
+ - request paths
+ - server responses
+ - send/received bytes
+ - SSL details (cipher, protocol)
+
+ Each log is automatically encrypted using SSE-S3
+ No additional charge (only S3 costs)
+
 **Request tracing**: _for ALB only_. Track HTTP requests from clients to targets or other services. ALB adds `X-Amzn-Trace-Id` header that includes a trace ID  
 **CloudTrail**: calls made to ELB API
 
@@ -113,6 +132,12 @@ sudo fio --filename=/dev/xvdf \
   - `ActiveFlowCount`, `HealthyHostCount`, `UnhealthyHostCount`  
 **VPC Flow Logs**: detailed log of traffic to and from NLB
 **CloudTrail**:  records API activity
+
+### Classic LB
+https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-cloudwatch-metrics.html
+
+The Classic Load Balancer metric `SurgeQueueLength` measures the total number of requests queued by your Classic Load Balancer. An increased maximum statistic for `SurgeQueueLength` indicates that backend systems aren't able to process incoming requests as fast as the requests are received (`HTTP 503 Service Unvailable` or `HTTP 504 Gateway Timeout`)
+
 
 ## ALB components
 - Load Balancer
@@ -136,8 +161,12 @@ ALB content-based routing:
   - InstanceID: source addresses of clients are preserved
   - IP Address: source addresses of clients are the private IP of NLB node (NLB will re-write the headers)
 
+## ASG
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-suspend-resume-processes.html
+
 ## SSL Offloading
-https://aws.amazon.com/blogs/aws/new-application-load-balancer-sni/#
+https://aws.amazon.com/blogs/aws/new-application-load-balancer-sni/
+
 
 Terminate HTTPS on ELB
 
@@ -156,7 +185,16 @@ Bandwidth limitations on your VPN to AWS VPC
 Use AWS
 
 ## CloudFront
-
+Common CloudFront errors:
+- `4xx`: client side errors - something wrong with client request
+  - `400 Bad Request`  
+  - `403 Access Denied`  
+  - `404 File Not Found`  
+- `5xx`: server side errors
+  - `502 Bad gateway`: cannot connect to origin  
+  - `503 Service unavailable`: performance issues on origin server  
+  - `504 Gateway timeout`: request expired before a response was received from the origin  
+  usually caused by high traffic to the website
 
 ## Monitoring Elasticache
 Memcached: https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/CacheMetrics.WhichShouldIMonitor.html  
@@ -183,9 +221,14 @@ Redis CPU Utilisation:
  - No `SwapUsage` metric, instead use `reserved-memory`  
 
 ## CloudWatch Dashboard
-Dashboards are cross-region (international), widget added on the region basis
+https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_xaxr_dashboard.html
+
+All dashboards are global, not Region-specific, widget added on the region basis
+`PutDashboard` and `PutMetricData` permissions are needed
+To create a custom dashboard with metric data from different regions, **Detailed Monitoring** is required to be enabled  
 
 # AWS Organisations
+https://aws.amazon.com/organizations/faqs/
 https://docs.aws.amazon.com/organizations/latest/userguide/orgs_getting-started_concepts.html
 
 Manage multiple AWS accounts, can create groups of accounts and apply policies to the groups
@@ -193,6 +236,14 @@ Manage multiple AWS accounts, can create groups of accounts and apply policies t
 - Control Access with SCP (allow or deny individual AWS services on account group basis). Attach policies to the OU (applies to all accounts within OU). Can select _black_ or _white_ listing for SCP
 - Automate AWS account creation
 - Consolidated billing
+
+Master account:
+- A master account is the AWS account you use to create your organization
+- You cannot change which account in your organization is the master account
+- Create organisations and OUs
+- Invite an external account to join organisation
+- Pay all charges accrued by all accounts in organisation
+- Never affected by SCP
 
 ## Service Control Policy (SCP)
 similar to IAM permissions policies but SCP don't grant any permissions
@@ -205,6 +256,8 @@ similar to IAM permissions policies but SCP don't grant any permissions
   You leave the default `FullAWSAccess` policy in place and attach additional policies that explicitly _deny_ access to unwanted services and actions
 
 # Tagging and Resource Groups
+https://d1.awsstatic.com/whitepapers/aws-tagging-best-practices.pdf
+
 - Sometimes can be inherited
 - You can group resources that shares one or more tags
 - Region based
@@ -214,18 +267,36 @@ similar to IAM permissions policies but SCP don't grant any permissions
   - select Tags to group upon
 - You can execute automation on the resource group via **Systems Manager**
 
+To ensure all resources are launched with tags:
+**Proactive approach**:  
+- Use IAM resource-level permissions to add tags to all AWS resources during creation
+- Use AWS Service Catalog to add tags to all AWS resources during resource creation
+- Use CloudFormation to create resources with tags
+
+**Reactive approach**:  
+- Resource Groups Tagging API
+- AWS Config Rules
+- Custom Scripts
+
+
 # AWS Cost Explorer & Cost Allocation Tags
 Can generate cost allocation report (need to activate cost allocation tags)
 Display data from the last 13 months, projected for the next 3 months
 
 # Cost Optimisation
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-requests.html#fixed-duration-spot-instances
+
 - EC2 Reserved Instances
 - Spot Instances
+- Spot Instances with defined duration: _Spot blocks_, ideal for jobs that take a finite time to complete.
+  You can use a duration 1,2,3,4,5,6 hours, price depends on the specified duration
 - Low Utilisation: set CloudWatch alarms to terminate underutilized instances
 - Unused ELBs
 - EBS Volumes (delete unused, take snapshot. Storing snapshot is cheaper)
 - Elastic IPs
 - Idle RDS Instances
+
+
 
 AWS Trusted Advisor
 
@@ -245,6 +316,9 @@ Spot
 Dedicated Hosts
 
 # AWS Config
+https://aws.amazon.com/blogs/aws/aws-config-rules-dynamic-compliance-checking-for-cloud-resources
+https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config-rules.html
+
 AWS resource inventory, configuration history and configuration change notification
 Region-based
 Stores all in S3 Bucket
@@ -255,22 +329,37 @@ Can enable rule compliance by monitoring and triggering SNS notification
 Compliance checks - periodic or triggered
 Managed Rules available (AWS Config Rules)
 You can see the timeline of changes and retrieve past configurations
+
 AWS Config requires IAM role with permissions:
- - RO to recorded resources
+ - Read-only to recorded resources
  - Write to S3 logging bucket
  - Publish access to SNS
 
+AWS Config rules can:
+- Ensure that EC2 instances launched in a particular VPC are properly tagged.
+- Make sure that every instance is associated with at least one security group.
+- Check to make sure that port 22 is not open in any production security group.
+
 
 # CloudWatch vs Cloudtrail vs Config
+https://aws.amazon.com/cloudtrail/faqs/
+https://aws.amazon.com/config/faq/
 
 CloudWatch|CloudTrail|Config
 ---|---|---
 Monitors performance|Monitors API calls|Records the state of resources and notify about changes
 e.g. what was the CPU utilisation 3 weeks ago|e.g. who provisioned SG 3 weeks ago|e.g. what were the rules on my SG 3 weeks ago
 
+CloudTrail is enabled when an account is created and can be used globally
+
 # Health Dashboards
+https://docs.aws.amazon.com/health/latest/ug/getting-started-phd.html
+https://docs.aws.amazon.com/health/latest/ug/cloudwatch-events-health.html
+https://www.youtube.com/watch?v=rCq8OH_8Rko
+
  - Service Health Dashboard: https://status.aws.amazon.com/
  - Personal Health Dashboard (global by default), personalised view of performance and availability of AWS services for your AWS resources: https://phd.aws.amazon.com
+ Only AWS Health events that are specific to your AWS account and resources are published to CloudWatch Events. This includes events such as Amazon Elastic Block Store (Amazon EBS) volume lost, Amazon Elastic Compute Cloud (Amazon EC2) instance store drive performance degraded, and all the scheduled change events
 
 # AWS API Access
 All interactions with AWS API signed with `AccessKeyId` and `SecretAccessKey` using Sig4
@@ -363,9 +452,9 @@ The data in an instance store persists only during the lifetime of its associate
   - Standard
 - can apply lifecycle policies
 - throughput for parallel workloads
-- for on-prem servers, use AWS DX or VPN
+- for on-prem servers, use **AWS DX or VPN**  
 - Linux only
-- 2 Performance modes (should be selected at creation time):
+- 2 Performance modes (should be selected at _creation_ time):
   - **General Purpose**: ideal for latency-sensitive use cases
   - **Max I/O**: high level of aggregate throughput, but higher latency. Use for highly parallelized apps
   - monitor `PercentIOLimit`
@@ -374,6 +463,13 @@ The data in an instance store persists only during the lifetime of its associate
   - **Provisioned throughput**: independent of the amount of data
   - < 1TB - burst to 100MB/s
   - > 1TB - burst to 100MB/s per 1TB of data stored
+
+EFS Mount Targets can be accessed only on following systems:
+- Amazon EC2 instance in local VPC
+- EC2 instance in VPC having VPC peering with other VPC
+- On-prem servers having AWS DX or VPN to Amazon VPC
+
+Security groups attached to mount target should allow inbound connection on NFS port
 
 # EFS Monitoring
 https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html
@@ -402,6 +498,12 @@ Runs batch computing workloads at scale
     - SSE-C and SSE-KMS (but for KMS can be explicitly enabled by selecting destination KMS key)
   - objects that were replicated to source bucket (no transitive replication)
 
+# S3 large file encryption with KMS key
+https://aws.amazon.com/premiumsupport/knowledge-center/s3-large-file-encryption-kms-key/
+
+The AWS CLI, AWS SDKs, and many third-party programs automatically perform a multipart upload when the file is large. To perform a multipart upload with encryption using an AWS KMS key, the requester must have `kms:GenerateDataKey` permissions to initiate the upload, and `kms:Decrypt` permissions to upload object parts. The requester must have `kms:Decrypt` permissions so that newly uploaded parts can be encrypted with the same key used for previous parts of the same object.
+
+
 # S3 Server Access Logs
 https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerLogs.html
 provides detailed records for the requests that are made to a bucket
@@ -417,14 +519,21 @@ To enable:
 2. Grant S3 _Log Delivery group_ write persmission on the target bucket
     **only through bucket ACL** and not through bucket policy
     only SSE-S3 can be used, **SSE-KMS is not supported**  
-    Object Lock cannot be enabled on the target bucket
+    Object Lock _cannot_ be enabled on the target bucket
 You can _optionally_ specify prefix in the target bucket while enabling logging
 
 # Amazon GuardDuty
+https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html
+
+Amazon GuardDuty is a continuous security monitoring service that analyzes and processes the following Data sources:
+- VPC Flow Logs
+- AWS CloudTrail management event logs
+- Cloudtrail S3 data event logs
+- DNS logs
+
 Maintains two types of lists:
 - Trusted IP list: whitelisted IPs
 - Threat List: malicious IPs for which GuardDuty generates findings
-
 
 
 # AWS Storage Gateway
@@ -527,6 +636,21 @@ Default VPC
 - Default DHCP option
 
 ## VPC Flog Logs
+https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html#flow-log-records
+https://docs.aws.amazon.com/athena/latest/ug/vpc-flow-logs.html
+
+```
+<version> <account-id> <interface-id> <srcaddr> <dstaddr> <srcport> <dstport> <protocol> <packets> <bytes> <start> <end> <action> <log-status>
+```
+Protocol:
+id | Protocol
+---|---
+1 | ICMP
+6 | TCP
+17 | UDP
+27 | RDP
+
+
 Stored in CloudWatch logs (but can be sent to S3 bucket)
 Each network interface has a unique log stream
 Can be on the level:
@@ -534,8 +658,51 @@ Can be on the level:
   - Subnet
   - Network interface
 **Not real-time** - delay of several min
+
 Ability to create multiple flog logs per interface (e.g. accepted, rejected or all traffic)
 Launching EC2 _after_ creating flow logs will automatically create logs for each new NI
+
+Log schema:
+```
+CREATE EXTERNAL TABLE IF NOT EXISTS vpc_flow_logs (
+  version int,
+  account string,
+  interfaceid string,
+  sourceaddress string,
+  destinationaddress string,
+  sourceport int,
+  destinationport int,
+  protocol int,
+  numpackets int,
+  numbytes bigint,
+  starttime int,
+  endtime int,
+  action string,
+  logstatus string
+)
+PARTITIONED BY (`date` date)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ' '
+LOCATION 's3://your_log_bucket/prefix/AWSLogs/{account_id}/vpcflowlogs/{region_code}/'
+TBLPROPERTIES ("skip.header.line.count"="1");
+```
+
+https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-troubleshooting.html
+
+`LogDestinationNotFoundException` or `Access Denied for LogDestination` error
+- Ensure that you have specified the ARN for an existing S3 bucket, and that the ARN is in the correct format
+- If you do not own the S3 bucket, verify that the bucket policy has sufficient permissions to publish logs to it. In the bucket policy, verify the account ID and bucket name
+
+`LogDestinationPermissionIssueException`:  
+Amazon S3 bucket policies are limited to 20 KB in size.
+Each time that you create a flow log that publishes to an Amazon S3 bucket, we automatically add the specified bucket ARN, which includes the folder path, to the Resource element in the bucket's policy.
+Creating multiple flow logs that publish to the same bucket could cause you to exceed the bucket policy limit.
+
+- Clean up the bucket's policy by removing the flow log entries that are no longer needed.
+- Grant permissions to the entire bucket by replacing the individual flow log entries with the following:
+```
+arn:aws:s3:::bucket_name/*
+```
 
 ## VPC Peering
 direct network routing between different VPCs using private IP addresses
@@ -545,16 +712,38 @@ Limitations:
 - one peering connection for same two VPC
 - DNS resolution for private hostnames must be enabled
 
+Inter-Region VPC peering:
+possible to have cross-region
+
+## VPC Lambda Configuration
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html
+
+You can configure a Lambda function to connect to private subnets in VPC
+Lambda create an ENI for each combination of SG and subnet in your Lambda VPC configuration
+Lambda uses **Condition keys** to specify additional permission controls:
+
+IAM condition parameters:
+`lambda:VpcIds`: to allow or deny specific VPC to be used by function
+`lambda:SubnetIds`: Subnets
+`lambda:SecurityGroupIds`: Security groups
+
+
+
 ## VPN
 Components:
 - Customer Gateway (initiates VPN connection)
 - Virtual private gateway: One per VPC - used with IPSec and AWS DX
 - VPN connnection - two VPN tunnels - you need to provision two IP addresses on the customer side
 
+If customer gateway becomes unavailable you can setup a second VPN connection to VPC and Virtual Private gateway by using a second customer gateway
+
 ## AWS Direct Connect
 For dedicated connections DX requires **single-mode fiber**: 1Gbps (1000BASE-LX) or 10Gbps
 The network device on-prem must support BGP
 Using a private peered connection might not need extra security
+
+### Multi-account Access to Direct Connect
+Access to up to 10 VPC in multi-account, all accounts must be in AWS Organisations which have the same payer account - they can share the same DX Gateway
 
 ## Elastic IP (EIP) and Elastic Network Interface (ENI)
 EIP:
@@ -598,14 +787,19 @@ Other use of roles:
 
 ## PassRole
 https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html
+https://aws.amazon.com/blogs/security/granting-permission-to-launch-ec2-instances-with-iam-roles-passrole-permission/
 
 - A trust policy for the role that allows the service to assume the role
 - A permission policy attached to IAM user that allows the user to pass only those roles that are approved
   `iam:PassRole` is usually is accompanied by `iam:GetRole` (so the user can get details of the role to be passed)
 
 
-
 ## S3 Bucket Policies
+https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html
+https://docs.aws.amazon.com/AmazonS3/latest/dev/example-policies-s3.html
+
+Limited to 20KB in size
+
 Mandatory elements:
 - Effect (Deny or Allow)
 - Action
@@ -620,14 +814,231 @@ Optional:
 
 Use `/*` to apply policy to **all objects** in the
 
-## Data Integrity
-To enable MFA delete the versioning must be enabled on the bucket
-Can enforce the use of MFA:
+Bucket policies apply to all files in a bucket **owned by a bucket owner**  
+
+`*` makes sense only with objects, not with buckets
+Bucket-level Actions
+- CreateBucket, DeleteBucket, ListBucket, ListAllMyBuckets
+- `arn:aws:s3:::bucket`
+
+Object-level Actions
+- GetObject
+- DeleteObject
+- PubObject
+- RestoreObject
+-`arn:aws:s3:::bucket/*`
+
+Amazon **S3 inventory** creates lists of the objects in an Amazon S3 bucket, and Amazon **S3 analytics** export creates output files of the data used in the analysis
+
+Policy examples:
+- Allowing an IAM User Access to One of Your Buckets
 ```
-"Condition": {
-  "Null": {
-    "aws:MultiFactorAuthAge": true
-  }
+{
+   "Version":"2012-10-17",
+   "Statement":[
+      {
+         "Effect":"Allow",
+         "Action": "s3:ListAllMyBuckets",
+         "Resource":"arn:aws:s3:::*"
+      },
+      {
+         "Effect":"Allow",
+         "Action":["s3:ListBucket","s3:GetBucketLocation"],
+         "Resource":"arn:aws:s3:::awsexamplebucket1"
+      },
+      {
+         "Effect":"Allow",
+         "Action":[
+            "s3:PutObject",
+            "s3:PutObjectAcl",
+            "s3:GetObject",
+            "s3:GetObjectAcl",
+            "s3:DeleteObject"
+         ],
+         "Resource":"arn:aws:s3:::awsexamplebucket1/*"
+      }
+   ]
+}
+```  
+Note you need also `s3:ListAllMyBuckets`, `s3:GetBucketLocation`, and `s3:ListBucket` permissions for the AWS console
+
+using unique userid:
+```
+{
+   "Version":"2012-10-17",
+   "Statement":[
+      {
+         "Effect":"Allow",
+         "Action":[
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:GetObjectVersion",
+            "s3:DeleteObject",
+            "s3:DeleteObjectVersion"
+         ],
+         "Resource":"arn:aws:s3:::mycorporatebucket/home/${aws:userid}/*"
+      }
+   ]
+}
+```
+
+- Allowing a Partner to Drop Files into a Specific Portion of the Corporate Bucket:
+```
+{
+   "Version":"2012-10-17",
+   "Statement":[
+      {
+         "Effect":"Allow",
+         "Action":"s3:PutObject",
+         "Resource":"arn:aws:s3:::mycorporatebucket/uploads/widgetco/*"
+      },
+      {
+         "Effect":"Deny",
+         "NotAction":"s3:PutObject",
+         "Resource":"arn:aws:s3:::mycorporatebucket/uploads/widgetco/*"
+      },
+      {
+         "Effect":"Deny",
+         "Action":"s3:*",
+         "NotResource":"arn:aws:s3:::mycorporatebucket/uploads/widgetco/*"
+      }
+   ]
+}
+```
+
+- access to specific IP Addresses:
+```
+{
+  "Version": "2012-10-17",
+  "Id": "S3PolicyId1",
+  "Statement": [
+    {
+      "Sid": "IPAllow",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+	 "arn:aws:s3:::awsexamplebucket1",
+         "arn:aws:s3:::awsexamplebucket1/*"
+      ],
+      "Condition": {
+	 "NotIpAddress": {"aws:SourceIp": "54.240.143.0/24"}
+      }
+    }
+  ]
+}
+```
+
+- Allowing IPv4 and IPv6 addresses:
+```
+{
+  "Id":"PolicyId2",
+  "Version":"2012-10-17",
+  "Statement":[
+    {
+      "Sid":"AllowIPmix",
+      "Effect":"Allow",
+      "Principal":"*",
+      "Action":"s3:*",
+      "Resource":"arn:aws:s3:::awsexamplebucket1/*",
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": [
+            "54.240.143.0/24",
+	    "2001:DB8:1234:5678::/64"
+          ]
+        },
+        "NotIpAddress": {
+          "aws:SourceIp": [
+	     "54.240.143.128/30",
+	     "2001:DB8:1234:5678:ABCD::/80"
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+- Restricting Access to a Specific HTTP Referer:
+```
+{
+  "Version":"2012-10-17",
+  "Id":"http referer policy example",
+  "Statement":[
+    {
+      "Sid":"Allow get requests originating from www.example.com and example.com.",
+      "Effect":"Allow",
+      "Principal":"*",
+      "Action":["s3:GetObject","s3:GetObjectVersion"],
+      "Resource":"arn:aws:s3:::awsexamplebucket1/*",
+      "Condition":{
+        "StringLike":{"aws:Referer":["http://www.example.com/*","http://example.com/*"]}
+      }
+    }
+  ]
+}
+```
+
+- Granting Permission to an Amazon CloudFront OAI:
+```
+{
+    "Version": "2012-10-17",
+    "Id": "PolicyForCloudFrontPrivateContent",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity EH1HDMB1FH2TC"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::awsexamplebucket1/*"
+        }
+    ]
+}
+```
+
+- Adding a Bucket Policy to Require MFA:
+```
+{
+    "Version": "2012-10-17",
+    "Id": "123",
+    "Statement": [
+      {
+        "Sid": "",
+        "Effect": "Deny",
+        "Principal": "*",
+        "Action": "s3:*",
+        "Resource": "arn:aws:s3:::awsexamplebucket1/taxdocuments/*",
+        "Condition": { "Null": { "aws:MultiFactorAuthAge": true }}
+      }
+    ]
+ }
+```
+
+- Granting Cross-Account Permissions to Upload Objects While Ensuring the Bucket Owner Has Full Control:
+```
+{
+   "Version":"2012-10-17",
+   "Statement":[
+     {
+       "Sid":"111",
+       "Effect":"Allow",
+       "Principal":{"AWS":"123456789012"},
+       "Action":"s3:PutObject",
+       "Resource":"arn:aws:s3:::awsexamplebucket1/*"
+     },
+     {
+       "Sid":"112",
+       "Effect":"Deny",
+       "Principal":{"AWS":"123456789012" },
+       "Action":"s3:PutObject",
+       "Resource":"arn:aws:s3:::awsexamplebucket1/*",
+       "Condition": {
+         "StringNotEquals": {"s3:x-amz-grant-full-control":["emailAddress=xyz@amazon.com"]}
+       }
+     }
+   ]
 }
 ```
 
@@ -643,7 +1054,12 @@ temporary credentials have global scope
 
 Web Identity Federation Playground
 
-## Amazon Inspector
+## AWS Inspector
+https://aws.amazon.com/inspector/
+https://docs.aws.amazon.com/inspector/latest/userguide/inspector_network-reachability.html
+
+Amazon Marketplace has Amazon Linux AMI with built-in Inspector agent
+
 - Analyze the behavior of your AWS resources
 - Test network accessibility and security state
 - Accesses for security vulnerabilities and deviations from best practices
@@ -652,16 +1068,25 @@ Web Identity Federation Playground
 Target: a collection of EC2 instances
 Requires an agent installed on EC2 instance
 
+### Network Reachability
+An Amazon Inspector agent **is not required** to assess your EC2 instances with this rules package. However, an installed agent can provide information about the presence of any processes listening on the ports. Do not install an agent on an operating system that Amazon Inspector does not support. If an agent is present on an instance that runs an unsupported operating system, then the Network Reachability rules package will not work on that instance.
+
 ## AWS Certificate Manager (ACM
 Naitive integration with AWS Services
 No associated costs for certificates
 Certificates auto-renew
 
 ## AWS WAF
+https://docs.aws.amazon.com/waf/latest/developerguide/how-aws-waf-works.html
+
 integrated with
 - ALB
 - API Gateway
-- CloudFront
+- CloudFront - WAF is available globally, but you must use us-east-1 for all of your work
+
+- **Web ACLs**: contain rules  
+- **Rules**: block, allow or count matching requests  
+- **Rules Groups**: reusable rule group
 
 WAF Rules are based on conditions:
 - IP addresses
@@ -680,6 +1105,8 @@ Security
 Fault Tolerance
 Service Limits
 
+Can be used to check usage details of AWS resources and if they are within the service limits for a resource
+
 Available to all **customers**:  
 - seven core checks:
   1. S3 Bucket Permissions
@@ -694,6 +1121,98 @@ Available to **Business and Enterprise Support Customers**:
 - Notifications (CloudWatch alerts)
 - Programmatic access
   - Retrieve results from the AWS Support API
+
+# RAID configuration options
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/raid-config.html
+
+Use RAID 0 (performance) or RAID 1 (Fault-tolerance)
+Do not use RAID 5 or RAID 6
+
+# QuickSight
+https://docs.aws.amazon.com/quicksight/latest/user/editions.html
+
+Enterpise Edition:
+- can select AD groups in directory services for access to Amazon QuickSight
+- supports encryption at rest (Standard doesn't)
+
+# Service Catalog
+Create catalog of approved AWS products and make available for your users
+Pesonalised Portal - deploy only approved resources that comply with organisational policies and budget constraint
+Access Control
+Enforce Standards
+
+Portfolio - collection or grouping of products, selectively grant access
+Product - definition, support contract, owner, CFN template
+Add users to the portfolio
+Can share portfolio cross-account or within AWS Organisations
+
+# CloudFormation
+https://aws.amazon.com/blogs/devops/aws-cloudformation-security-best-practices/
+
+Best practices:
+- IAM
+- be aware of service limits
+- avoid manual updates
+- use CloudTrail to log API calls
+- Use StackPolicy: JSON doc that describes what update actions can be performed on resources
+
+Rolling Back:
+by default, CloudFormation will roll back to the previous
+can fail if something has been changed outside of CloudFormation
+E.g.
+- resource no longer exists -> manually sync resources, e.g. recreate that resource with same name and properties before you try to rn rollback
+
+you cannot update a stack in `UPDATE_ROLLBACK_FAILED` state
+
+Sections:
+- `Metadata`    
+- `Parameters`  
+- `Conditions`: e.g. provision resources based on environment
+- `Mappings`: e.g. set values based on region, key->values matching  
+- `Templates`: include snippets of code outside the main template, can reference addtional code stored in S3, e.g. for Lambda code  
+- `Resources`: mandatory  
+- `Outputs`  
+
+
+# Support Plans
+https://aws.amazon.com/premiumsupport/plans/
+
+# EC2 key pairs
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+
+
+# Route53
+https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+
+## Services with maintenance window
+- RDS
+- ElastiCache
+- Redshift
+- DynamoDB DAX
+- Neptune
+- DocumentDB
+
+## AWS Shield
+Free service that protects:
+- ELB
+- CloudFront
+- Route53
+
+Against SYN/UDP floods, reflection attacks and other layer3/4 attacks
+
+Advanced edition:
+- protection against larger and more sophisticated attacks
+- always-on, flow-based monitoring, near-real time notifications of DDoS
+- DDoS response Team (DRT) 24x7
+- protects AWS bill against higher fees during DDoS
+
+
+
+
+
+
+
+
 
 
 

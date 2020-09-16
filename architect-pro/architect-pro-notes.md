@@ -5,9 +5,9 @@
 Training course notes
 
 # Whitepapers
-[AWS Securing Data at Rest with Encryption](https://d0.awsstatic.com/whitepapers/aws-securing-data-at-rest-with-encryption.pdf)  
-[AWS Web Hosting Best Practices](https://d0.awsstatic.com/whitepapers/aws-web-hosting-best-practices.pdf?refid=em_)  
-[AWS Migrate resources to a new Region](http://d0.awsstatic.com/whitepapers/aws-migrate-resources-to-new-region.pdf?refid=70138000001adyu)  
+📒[AWS Securing Data at Rest with Encryption](https://d0.awsstatic.com/whitepapers/aws-securing-data-at-rest-with-encryption.pdf)  
+📒[AWS Web Hosting Best Practices](https://d0.awsstatic.com/whitepapers/aws-web-hosting-best-practices.pdf?refid=em_)  
+📒[AWS Migrate resources to a new Region](http://d0.awsstatic.com/whitepapers/aws-migrate-resources-to-new-region.pdf?refid=70138000001adyu)  
 
 # AWS Accounts
 Consist of three discrete domains:
@@ -45,7 +45,7 @@ Authorization Store
   - _EFS_
 
 # OSI 7-Layer Networking Model
-https://en.wikipedia.org/wiki/OSI_model
+📒https://en.wikipedia.org/wiki/OSI_model
 
 1. **Physical**
 2. **Data Link**: Mac-Addresses
@@ -65,9 +65,9 @@ Only two ways for user to authenticate: via username/password or via access keys
 5000 IAM users per account limit
 
 ## Identity and Resource Policies
-https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
-https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html
-https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_variables.html
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_variables.html
 
 Mandatory elements:
  - `Statement` - contain single statement or array of individual statements
@@ -107,7 +107,7 @@ Available in ALL requests
 
 
 ## IAM Roles and Temporary Security Credentials
-https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-instance-metadata.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-instance-metadata.html
 
 A role has tow components: a **trust** policy (which defines a principle and conditions under which the role can be assumed) and a **permission** policy which defines the AWS access rights granted during `AssumeRole`
 
@@ -138,8 +138,8 @@ _Revoke session_ adds an additional `Deny` policy to the role with the condition
 You _cannot_ revoke the existing temporary credentials, but _Revoke session_ (with the condition policy) will invalidate (with explicit Deny) all sessions with token older than the specified `aws:TokenIssueTime`
 
 ### Cross-Account Access
-https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html#example-bucket-policies-use-case-8  
-https://aws.amazon.com/blogs/security/iam-policies-and-bucket-policies-and-acls-oh-my-controlling-access-to-s3-resources/
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html#example-bucket-policies-use-case-8  
+📒https://aws.amazon.com/blogs/security/iam-policies-and-bucket-policies-and-acls-oh-my-controlling-access-to-s3-resources/
 
 Cross-Account Access to S3 Buckets and Objects
 
@@ -184,7 +184,7 @@ To give full control to the bucket owner account, the following bucket policy sh
 # Account Management
 
 ## AWS Accounts and AWS Organisations
-https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-discounts.html
+📒https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-discounts.html
 
 Only one single master account in any organisation
 **Master account** (root container):
@@ -218,19 +218,19 @@ If multiple SCPs apply to an account - only the **overlap** of those SCPs is per
   You leave the default `FullAWSAccess` policy in place and attach additional policies that explicitly _deny_ access to unwanted services and actions
 
 ## AWS Account Limits
-https://docs.aws.amazon.com/general/latest/gr/aws-general.pdf#aws-service-information
-https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html
-https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html
+📒https://docs.aws.amazon.com/general/latest/gr/aws-general.pdf#aws-service-information
+📒https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html
 
 ## AWS Support Tiers
-https://aws.amazon.com/premiumsupport/plans/
+📒https://aws.amazon.com/premiumsupport/plans/
 - Developer
 - Business
 - Enterprise
 
 # AWS Config
-https://aws.amazon.com/blogs/aws/aws-config-rules-dynamic-compliance-checking-for-cloud-resources
-https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config-rules.html
+📒https://aws.amazon.com/blogs/aws/aws-config-rules-dynamic-compliance-checking-for-cloud-resources
+📒https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config-rules.html
 
 - AWS resource inventory, configuration history and configuration change notification
 - Region-based
@@ -252,6 +252,47 @@ AWS Config rules can, e.g:
 - Ensure that EC2 instances launched in a particular VPC are properly tagged.
 - Make sure that every instance is associated with at least one security group.
 - Check to make sure that port 22 is not open in any production security group.
+
+# AWS Service Catalog
+📒https://docs.aws.amazon.com/servicecatalog/latest/adminguide/getstarted-iamenduser.html
+
+Regional service
+
+Administrators define products and portfolios (groups of products and configurations) make them available for end users
+personalised portal - deploy only approved resources that comply with organisational policies and budget constraints
+- Access Control
+- Enforce Standards
+
+Portfolio - collection or grouping of products, selectively grant access
+Product - definition, support contract, owner - CFN template
+Add users to the portfolio
+Can share portfolio cross-account or within AWS Organisations
+
+Service Catalog Admin:
+1. Create portfolio
+2. Author template (CloudFormation)
+3. Create product (upload the CloudFormation template)
+4. Add constraints and access
+8. Events from CloudFormation
+
+need to create a `Service Catalog` service role for product cloud formation template (which creates all resources for the product, not the end users)
+
+End Users:
+5. Browse products
+6. Launch products
+7. Events from CloudFormation
+
+# Resource Billing Modes: On-Demand, Reserved, and Spot
+📒https://aws.amazon.com/blogs/compute/new-amazon-ec2-spot-pricing/
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-instances.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-reserved-instances.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-purchasing-options.html
+📒https://github.com/open-guides/og-aws#billing-and-cost-management
+
+![Differences between Capacity Reservations, Reserved Instances, and Savings Plans](../media/capacity-reservation.png)
+
+
 
 
 # EC2

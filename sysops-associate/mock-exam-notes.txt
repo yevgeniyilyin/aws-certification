@@ -1,8 +1,4 @@
-Mock 1: 60%
-AWS Sample Questions: 90%
-Mock 2: 86.15%
-Mock 3: 80%
-Mock 4: 
+
 
 
 

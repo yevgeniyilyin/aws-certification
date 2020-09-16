@@ -319,23 +319,23 @@ Dedicated Hosts
 https://aws.amazon.com/blogs/aws/aws-config-rules-dynamic-compliance-checking-for-cloud-resources
 https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config-rules.html
 
-AWS resource inventory, configuration history and configuration change notification
-Region-based
-Stores all in S3 Bucket
-Snapshot of current configuration of your account
-Can stream configuration changes to SNS
-Can trigger Lambda on Events
-Can enable rule compliance by monitoring and triggering SNS notification
-Compliance checks - periodic or triggered
-Managed Rules available (AWS Config Rules)
-You can see the timeline of changes and retrieve past configurations
+- AWS resource inventory, configuration history and configuration change notification
+- Region-based
+- Stores all in S3 Bucket
+- Snapshot of current configuration of your account
+- Can stream configuration changes to SNS
+- Can trigger Lambda on Events
+- Can enable rule compliance by monitoring and triggering SNS notification
+- Compliance checks - periodic or triggered
+- Managed Rules available (AWS Config Rules)
+- You can see the timeline of changes and retrieve past configurations
 
 AWS Config requires IAM role with permissions:
  - Read-only to recorded resources
  - Write to S3 logging bucket
  - Publish access to SNS
 
-AWS Config rules can:
+AWS Config rules can, e.g:
 - Ensure that EC2 instances launched in a particular VPC are properly tagged.
 - Make sure that every instance is associated with at least one security group.
 - Check to make sure that port 22 is not open in any production security group.
@@ -812,7 +812,7 @@ Optional:
 - Sid
 - Condition
 
-Use `/*` to apply policy to **all objects** in the
+Use `/*` to apply policy to **all objects** in the bucket
 
 Bucket policies apply to all files in a bucket **owned by a bucket owner**  
 
@@ -832,7 +832,7 @@ Amazon **S3 inventory** creates lists of the objects in an Amazon S3 bucket, and
 
 Policy examples:
 - Allowing an IAM User Access to One of Your Buckets
-```
+```json
 {
    "Version":"2012-10-17",
    "Statement":[
@@ -863,7 +863,7 @@ Policy examples:
 Note you need also `s3:ListAllMyBuckets`, `s3:GetBucketLocation`, and `s3:ListBucket` permissions for the AWS console
 
 using unique userid:
-```
+```json
 {
    "Version":"2012-10-17",
    "Statement":[
@@ -883,7 +883,7 @@ using unique userid:
 ```
 
 - Allowing a Partner to Drop Files into a Specific Portion of the Corporate Bucket:
-```
+```json
 {
    "Version":"2012-10-17",
    "Statement":[
@@ -907,7 +907,7 @@ using unique userid:
 ```
 
 - access to specific IP Addresses:
-```
+```json
 {
   "Version": "2012-10-17",
   "Id": "S3PolicyId1",
@@ -922,7 +922,7 @@ using unique userid:
          "arn:aws:s3:::awsexamplebucket1/*"
       ],
       "Condition": {
-	 "NotIpAddress": {"aws:SourceIp": "54.240.143.0/24"}
+	    "NotIpAddress": {"aws:SourceIp": "54.240.143.0/24"}
       }
     }
   ]
@@ -930,7 +930,7 @@ using unique userid:
 ```
 
 - Allowing IPv4 and IPv6 addresses:
-```
+```json
 {
   "Id":"PolicyId2",
   "Version":"2012-10-17",
@@ -961,7 +961,7 @@ using unique userid:
 ```
 
 - Restricting Access to a Specific HTTP Referer:
-```
+```json
 {
   "Version":"2012-10-17",
   "Id":"http referer policy example",
@@ -981,7 +981,7 @@ using unique userid:
 ```
 
 - Granting Permission to an Amazon CloudFront OAI:
-```
+```json
 {
     "Version": "2012-10-17",
     "Id": "PolicyForCloudFrontPrivateContent",
@@ -999,7 +999,7 @@ using unique userid:
 ```
 
 - Adding a Bucket Policy to Require MFA:
-```
+```json
 {
     "Version": "2012-10-17",
     "Id": "123",
@@ -1017,7 +1017,7 @@ using unique userid:
 ```
 
 - Granting Cross-Account Permissions to Upload Objects While Ensuring the Bucket Owner Has Full Control:
-```
+```json
 {
    "Version":"2012-10-17",
    "Statement":[

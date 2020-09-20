@@ -152,7 +152,7 @@ Scenarios for **ACL** use:
 - S3 Logging (Log Delivery Group)
 
 You can grant bucket/object access to other account (using canonical id) via ACL
-**Main limitation** for ACL - all objects created by the account B in the bucket owned by account A, owned by the account B and the account A doesn't have permission to these objects
+**Main limitation** for ACL - all objects created by the account B in the bucket owned by account A, are owned by the account B and the account A doesn't have permission to these objects
 
 The same situation with access via **Bucket Policy** (the objects are owned by the creator of the object and not by the bucket owner account).
 
@@ -359,10 +359,70 @@ End Users:
 ![Differences between Capacity Reservations, Reserved Instances, and Savings Plans](../media/capacity-reservation.png)
 
 
-
-
 # EC2
 https://aws.amazon.com/ec2/faqs/
+
+## Virtualization and EC2 Instance Type
+📒https://aws.amazon.com/ec2/instance-types/
+
+![EC2 Virtualization types](http://www.brendangregg.com/blog/images/2017/ec2-types-numbered.png)
+
+🔸General Purpose (A, T, M)
+  - M5: default instance type, general workhorse inside AWS, steady state 80-90% CPU
+  - M5a: using AMD CPU
+  - T*: burstable CPU performance
+  - A1: Arm CPU AWS Graviton
+
+🔸Compute Optimized (C)
+  - instances use more CPUs
+  - C5
+  - C5n with additional network capabilities
+
+🔸Memory Optimized (R, X)
+  - more memory
+  - X1 and X1e: the highest amount of memory
+
+🔸Accelerated Computing (P, Inf, G, F)
+  - GPU-based instances
+  - P: GPU-based general computing
+  - G: graphic-intense application
+  - F: customizable hardware-acceleration with FPGAs
+
+🔸Storage Optimized (I, D, H)
+  - additional NVMe SSD-backed instance storage optimized for low latency
+  - H: up to 16TB local HDD-storage
+  - I: up to 60TB local NVMe SSD-storage
+
+## Creating and using AMIs
+- AMIs are objects (meta data) containing all the information required to launch an instance, the owner of AMI, launch permissions (public, explicit or implicit), the architecture and operating system and block device mapping of all volumes required.
+
+- AMIs contain mapping to any volumes, these mappings reference EBS volume snapshots in the same region
+- AMIs are regional but can be copied between regions which **also copies any volume snapshots**
+
+When AMI created from the instance `create image`:
+- Root volume snapshot created
+- other volume snapshots created
+
+By default no permissions are stored when AMI is created (implicit creator permission)
+You can modify permission to be public or private (shared with specific AWS accounts)
+
+❗when creating AMIs from instances with instance store root volumes - a **bundle** is created and stored on S3 containing ALL the root volume data
+
+## EC2 Storage and Snapshots
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSPerformance.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
+
+Block-level storage:
+- **Instance store** (local physical storage attached to hosts):
+  - Temporary storage
+  - High I/O and Throughput (highest I/O available in AWS)
+  - volumes mapped as `ephemmeral0` to `23` (max 24 volumes)
+  - included in the instance cost
+
+  **no support for snapshots and not resilience**  
+
+- EBS
 
 
 # ELB
@@ -597,9 +657,174 @@ use route table | do not use route table
 Do not use DNS | Use DNS. Create unique DNS names for AZ and region. Public service DNS can be resolved to private IP (private DNS must enabled)
 
 ### VPC Peering
+VPC can be in another account and another region
+VPC peering connections are created as logical objects and require route table entries on both sides
+SG's can reference SG's in the **same** region
+Process to create:
+- create connection, accept on the receiving VPC side
+- update RTs for requesting and receiving VPC
+- update SGs/NACL if needed
+
+All VPC peering connections are fully encrypted
+
+🔹By default, DNS resolves the other VPC names to public IP. You can enable DNS resolution from accepter VPC and from requester VPC - in this case names will be resolved to private IP.
+
+### AWS Site-to-Site VPN
+3 components:
+1. VGW (attached to a single VPC)
+2. CGW
+3. VPC connection(s)
 
 
+VPN connections link the VGW and CGW. They provision tunnel endpoints(2 for HA in different AZ), set authentication and define dynamic BGP or static routing. Dynamic learn remote CIDRs - static VPN must have them set
 
+Virtual private gateways (VGW) are **logical** devices inside VPC - can be used as route targets
+Customer gateways (CGW) are **physical** customer routers AND a record inside AWS for there devices. IP address and optionally ASN are provided (Allowing BGP
+
+Different architectures:
+(all have the single VGW object, HA by design)
+
+#### No HA
+Single tunnel
+Single CGW
+
+#### AWS HA
+2 tunnel endpoint (in different AZs) - dual endpoint design - you need to provision two IP addresses on the customer side
+Requires BGP (dynamic routing)
+
+#### Full HA
+2 VPN connections to different CGW (2), each with 2 tunnels in different AZs
+
+### Direct Connect Architecture
+📒https://docs.aws.amazon.com/directconnect/latest/UserGuide/getting_started.html  
+📒https://aws.amazon.com/answers/networking/aws-multiple-data-center-ha-network-connectivity  
+
+For dedicated connections DX requires **single-mode fiber**: 1Gbps (1000BASE-LX) or 10Gbps
+The network device on-prem must support BGP
+
+1. Submit App for DX port (on DX location)
+2. Connect your customer router to port on DX location
+3. Create **Public** or **Private VIF** associated with VGW and
+  - Public VIF allows only to contact the AWS public services **globally**
+  - Private VIF is associated with VPC via VGW - **same** region
+
+Connection over DX is **unencrypted**
+
+❗You can use Direct Connect Gateway (DXGW) to connect CGW to multiple VGW in different VPC in different regions
+
+### AWS Transit Gateway
+📒https://aws.amazon.com/about-aws/whats-new/2019/12/aws-transit-gateway-supports-inter-region-peering/
+📒https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html
+
+Transit Gateways have multiple route tables allowing complex routing hierarchies to be defined from true hub-and-spoke to edge consolidation and anywhere in between
+
+Compatible with RAM (can be shared between accounts)
+
+# Account and Service Security
+
+## KMS
+📒https://en.wikipedia.org/wiki/FIPS_140-2  
+📒https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys.html  
+📒https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#enveloping  
+📒https://aws.amazon.com/blogs/security/how-to-protect-the-integrity-of-your-encrypted-data-by-using-aws-key-management-service-and-encryptioncontext/  
+📒https://docs.aws.amazon.com/kms/latest/developerguide/grants.html  
+📒https://aws.amazon.com/kms/details/#compliance  
+
+KMS is compliant with FIPS 140-2
+
+CMK with imported material:
+- Not portable (cannot decrypt a ciphertext encrypted under a CMK by using raw key material outside of AWS KMS)
+- Only symmetric CMK are supported  
+- No automatic key rotation (only manual)
+
+CMK never leave KMS and never leave a region
+Access to CMK is governed by key policies
+
+`GenerateDataKey` creates a encrypted and plaintext data key. The plaintext version is used to encrypt and then discarded. It's never stored in plaintext. The encrypted version is stored along with the encrypted data (envelop encryption).
+KMS is used to decrypt the encrypted key, returning plaintext, and the data is decrypted. Encrypt and decrypt perform those functions and are handled by KMS
+
+Key rotation can be automatic (every 3y for AWS managed CMK or once per year for customer managed) where a new backing key is added. Or they can be manual, where a new CMK is generated and an alias is changed.
+
+Role separation with Key Policies
+
+## AWS CloudHSM
+📒https://docs.aws.amazon.com/cloudhsm/latest/userguide/initialize-cluster.html
+
+FIPS 140-3
+
+Dedicated HSM which runs within your VPC (via dedicated ENI) (or on-prem connected via DX, Peered or VPN), accessible only to you in a single tenant architecture.
+AWS manages and maintains the hardware but has **no access** to the cryptographic component.
+Interaction via _industry standards_, **no normal AWS APIs**
+
+**No HA** unless multiple HSM's are provisioned
+On-prem - if you **really need to control own physical hardware**
+
+## AWS Certificate Manager
+📒https://docs.aws.amazon.com/acm/latest/userguide/acm-concepts.html  
+
+managed service providing **X509 v4 SSL/TLS certificates**. The certificates are asymmetric. One half is private and stored on resources (Servers, Load Balancers) and the other half is public.
+
+ACM is **regional**
+KMS is used - certificates are **never** stored unencrypted
+
+Only supported on ELB, CloudFront, Elastic Beanstalk, API Gateway
+
+## AWS Directory Service
+Group of products:
+- Simple AD
+- Microsoft Active Directory (AD)
+- AD Connector
+- Amazon Cognito
+- Amazon Cloud Directory (Graph based store of information)
+
+![Directory Service](../media/directory-service.png)
+
+# Network Security
+
+## AWS WAF and Shield
+📒https://docs.aws.amazon.com/waf/latest/developerguide/getting-started-ddos.html
+📒https://aws.amazon.com/shield/features/
+📒https://docs.aws.amazon.com/waf/latest/developerguide/aws-shield-use-case.html
+
+Ingress traffic > AWS Shield > AWS WAF > Resources (CloudFront, API GW, ELB)
+
+WebACL - rules for **allow/block/count** any traffic which matches them
+**regular** or **rate-based** rules
+
+three layers in rules:
+conditions > rules > webACL
+
+🔹webACLs contains rules each with their own action, and a default action for any traffic not explicitly matching a rule
+🔹webACLs are processed in order and processing stops when a rule is triggered in the ACL
+
+### AWS Shield Standard
+- Always on
+- Network flow monitoring
+- Layer 3 and 4 DDOS attacks
+- CloudFront and R53 (automatic protection)
+- No cost protection
+
+### AWS Shield Advanced
+- Layer 3,4,7
+- Application traffic monitoring (layer 7)
+- Layer 7 anomaly detection
+- CloudFront
+- R53 hosted zones
+- Global Accelerator accelerators
+- ALB
+- ELB
+- EC2 Elastic IP
+- WAF and Firewall Manager is included
+- Cost protection
+- 24x7 access to DRT (DDoS Response Team)
+
+## AWS GuardDuty
+📒https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html
+
+GuardDuty monitors event sources (VPC Flow  Logs, R53 DNS Query logs, Cloudtrail events)
+Publish events to Guard Duty console or CloudWatch events
+Multiple AWS accounts (via AWS Organisation) can be added to Guard Duty
+Requires role permission
 
 
 # EFS

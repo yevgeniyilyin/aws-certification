@@ -367,28 +367,28 @@ https://aws.amazon.com/ec2/faqs/
 
 ![EC2 Virtualization types](http://www.brendangregg.com/blog/images/2017/ec2-types-numbered.png)
 
-🔸General Purpose (A, T, M)
+🔸**General Purpose (A, T, M)**
   - M5: default instance type, general workhorse inside AWS, steady state 80-90% CPU
   - M5a: using AMD CPU
   - T*: burstable CPU performance
   - A1: Arm CPU AWS Graviton
 
-🔸Compute Optimized (C)
+🔸**Compute Optimized (C)**
   - instances use more CPUs
   - C5
   - C5n with additional network capabilities
 
-🔸Memory Optimized (R, X)
+🔸**Memory Optimized (R, X)**
   - more memory
   - X1 and X1e: the highest amount of memory
 
-🔸Accelerated Computing (P, Inf, G, F)
+🔸**Accelerated Computing (P, Inf, G, F)**
   - GPU-based instances
   - P: GPU-based general computing
   - G: graphic-intense application
   - F: customizable hardware-acceleration with FPGAs
 
-🔸Storage Optimized (I, D, H)
+🔸**Storage Optimized (I, D, H)**
   - additional NVMe SSD-backed instance storage optimized for low latency
   - H: up to 16TB local HDD-storage
   - I: up to 60TB local NVMe SSD-storage
@@ -414,15 +414,108 @@ You can modify permission to be public or private (shared with specific AWS acco
 📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
 
 Block-level storage:
-- **Instance store** (local physical storage attached to hosts):
+- **Instance store**
+  - local physical storage attached to hosts
   - Temporary storage
-  - High I/O and Throughput (highest I/O available in AWS)
+  - High I/O and Throughput (**highest** I/O available in AWS)
   - volumes mapped as `ephemmeral0` to `23` (max 24 volumes)
   - included in the instance cost
 
-  **no support for snapshots and not resilience**  
+  ❗**no support for snapshots and not resilience**  
 
-- EBS
+- **EBS**
+ - network storage associated with one instance
+ - Persistence
+ - Durability (but EBS is not the most durable storage service)
+ - Elasticity - requirements for variable or changing performance demands over time
+ - Provisioned Performance - certain EBS types can provide guaranteed performance levels
+ - EBS Optimized instances provide a dedicated storage network (dedicated ENI)
+
+ ❗Max IOPS per instance - 160000
+ ❗Max throughput per instance - 4750MB/s
+
+  🔸**General Purpose gp2**
+    - 1-16TB
+    - max 16000 IOPS
+    - max throughput 250 MB/s
+    - burst up to 3000 IOPS
+    - baseline 3 IOPS/GB (100 - 16000)
+  🔸**Provisioned IOPS SSD io1, io2**
+    - 4-16TB
+    - max 64000 IOPS
+    - max 1000 MB/s
+  🔸**Throughput Optimized HDD st1**
+    - 500GB-16TB
+    - max 500 IOPS
+    - max 500 MB/s
+  🔸**Cold HDD sc1**
+    - 500GB-16TB
+    - max 250 IOPS
+    - max 250 MB/s
+
+## EC2 Instance Profiles and Roles
+Instance profile allow a role to be assumed to a single EC2 instance, and for applications running on that instance to assume a role while being abstracted away from any AWS identity. Applications running on EC2 are not AWS Identities and so it's instance profile which bridges that gap.
+
+`http://169.254.169.254/latest/meta-data/iam/security-credentials/ROLENAME`
+
+Credentials are automatically renewed when expired
+Only a single instance profile can be associated with an EC2 instance containing a single EC2 role
+
+❗If associating a role via the console, the instance profile is **automatically** created and associated.
+If using API or CLI or CloudFormation the two steps are distinct and must be done explicitly.
+
+❗All applications running on the instance share the role credentials - it's not possible to be more granular
+
+## HPC and Placement Groups
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
+
+Not possible to modify placement group after creation
+
+### Cluster Placement Groups
+- exist in a **single AZ**
+- High speed, low latency
+- reserve physical capacity keeping instances in physical vicinity
+- higher chance of capacity related failures
+- not every instance type supports cluster PG
+- deploy in advance
+
+### Partition Placement Groups
+- isolated blocks of infrastructure in isolated fault-domains
+- used when you need to ensure HA, but need physical location control
+- instances in one partition do not share the underlying hardware with groups of instances in different partitions
+- typically used by large distributed and replicated workloads like Hadoop, Cassandra, Kafka
+
+### Spread Placement Groups
+- designed for a **small** number of critical components where you **need** to ensure separation
+- can be single- or multi-AZ
+- up to 7 instances per AZ per group
+- highest level of availability
+- strictly places a small group of instances across distinct underlying hardware
+
+## Custom Logging to CloudWatch
+📒https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance-fleet.html  
+📒https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html  
+📒https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file.html  
+
+Roles needed for EC2:
+`AmazonEC2RoleforSSM` - if SSM is used
+`CloudWatchAgentServerPolicy`
+
+Install CloudWatch Agent on the instance
+Create a CloudWatch agent configuration file (JSON)
+Start agent
+
+# Containers
+
+## ECS Architecture
+📒https://linuxacademy.com/cp/modules/view/id/261  
+📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/example_task_definitions.html  
+
+Container > Task > Service > Cluster
+
+# ECS Security
+📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html  
+📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html  
 
 
 # ELB

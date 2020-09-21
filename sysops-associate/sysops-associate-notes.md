@@ -574,7 +574,7 @@ Step 6: (Optional) Enable Advanced-Instances Tier for more than 1000 servers per
 ## SSM State Manager
 https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-ssm-docs.html
 
-uses **Command Documentn** to keep EC2 in predefined state
+uses **Command Document** to keep EC2 in predefined state
 Different Types of SSM Documents
 Type | Use with
 ---|---

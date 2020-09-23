@@ -360,7 +360,7 @@ End Users:
 
 
 # EC2
-https://aws.amazon.com/ec2/faqs/
+:question:https://aws.amazon.com/ec2/faqs/
 
 ## Virtualization and EC2 Instance Type
 📒https://aws.amazon.com/ec2/instance-types/
@@ -505,6 +505,9 @@ Install CloudWatch Agent on the instance
 Create a CloudWatch agent configuration file (JSON)
 Start agent
 
+# VMware
+:tv:https://www.youtube.com/watch?v=RStQrGmHqy0
+
 # Containers
 
 ## ECS Architecture
@@ -517,43 +520,255 @@ Container > Task > Service > Cluster
 📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html  
 📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html  
 
+Fargate-type:
+- Each task is associated with ENI in VPC
+- ENI is associated with a SG - you can use the SG to restrict traffic to the container
 
-# ELB
-https://aws.amazon.com/elasticloadbalancing/faqs/
-https://www.youtube.com/watch?v=VIgAT7vjol8
+EC2-type:
+- **hosts** have EC2 role attached (`AmazonEC2ContainerServiceEC2Role`):
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeTags",
+                "ecs:CreateCluster",
+                "ecs:DeregisterContainerInstance",
+                "ecs:DiscoverPollEndpoint",
+                "ecs:Poll",
+                "ecs:RegisterContainerInstance",
+                "ecs:StartTelemetrySession",
+                "ecs:UpdateContainerInstancesState",
+                "ecs:Submit*",
+                "ecr:GetAuthorizationToken",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+- **Tasks** have IAM role attached - allows fine-graned permission on the task-level (and only way to manage permissions with Fargate)
 
-# Elastic Beanstalk
-https://aws.amazon.com/elasticbeanstalk/faqs/
-
-# Lambda
-https://www.youtube.com/watch?v=QdzV04T%5C_kec
+❗Task execution role - used by ECS on your behalf to interact with CloudWatch, ECR etc - given to ECS container agent
 
 # EKS
-https://www.youtube.com/watch?v=EDaGpxZ6Qi0
+:tv:https://www.youtube.com/watch?v=EDaGpxZ6Qi0
 
-# VMware
-https://www.youtube.com/watch?v=RStQrGmHqy0
+
+# Serverless
+
+# Lambda
+:tv:https://www.youtube.com/watch?v=QdzV04T_kec
+
+- max timeout 15m
+- priced per # of requests and duration
+- can be used cross-region
+
+Soft Limits:
+  - default *1000* concurrent execution across all functions per region per account (`TooManyRequestsException` if exceeded)
+  - 75GB function and layer storage
+  - 250 ENI per VPC  
+
+Hard Limits:
+  - 6MB sync and 256KB async Invocation payload (request and response)  
+  - Deployment package size: 50MB (zipped, direct upload), 250MB (unzipped, including layers), 3MB (console editor)  
+  - 512MB /tmp directory storage
+  - 1024 file descriptors
+  - 1024 execution processes/threads
+
+Version Control:
+  Each Lambda version has a unique ARN  
+  After publishing, the version is immutable (you can edit only `$LATEST`)  
+  `$LATEST` - maintains the latest code  
+    _Qualified ARN_ - function ARN + version suffix  
+    _Unqualified ARN_ - only function ARN, use `$LATEST`  
+  Aliases: use to point specific ARN (application use alias incl. `$LATEST`)  
+    aliases have static ARN but can point to any version of the same function  
+    you can use weighted alias to shift traffic between versions  
+    rollback as easy as updating the version in the alias  
+
+Invocation can be synchronous/asynchronous
+
+Function configuration:
+- Basic settings: Runtime, Handler (filename.functionname), Memory, Timeout  
+- Monitoring (CloudWatch, X-Ray)  
+- Permissions  
+- Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit  
+- VPC - function can access VPC resources in specified VPC (e.g RDS)  
+    - Also provide Subnet ID and Security Group ID  
+    - Lambda sets up ENIs using an available IP address from your private subnet  
+    - in CLI: `--vpc-config SubnetIds=subnet-XXXX, SecurityGroupIds=sg-YYYYYY`  
+    - Lambda execution role should have the following EC2 permissions:  
+      `ec2::CreateNetworkInterface`  
+      `ec2::DeleteNetworkInterface`  
+      `ec2::DescribeNetworkInterface`  
+
+    - File System - connect to EFS  
+    - Asynchronous invocation settings + DQL - SQS or SNS  
+    - Concurrency, _provisioned concurrency_ (e.g. for weighted alias)  
+    - Database proxies (manages pool of connections)  
+
+Lambda API Actions:  
+    `AddPermission`: add permission to the resource policy to invoke Lambda   
+    `CreateFunction`:  
+    `Invoke`: synchronous  
+    `InvokeAsync`   
+    `CreateEventSourceMapping`: identifies a stream as an event source for Lambda
+      can be DynamoDB stream or Kinesis
+
+Lambda metrics:  
+    Invocation, Performace, Concurrency
+
+## Lambda Layers
+https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html
+https://docs.aws.amazon.com/lambda/latest/dg/runtimes-walkthrough.html
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path
+https://github.com/awslabs/aws-lambda-cpp
+
+- ZIP archive that contains libraries, custom runtime or other dependencies
+- You can use libraries in your function without needing to include them in your deployment package
+- Up to 5 layers per function
+- `update-function-configuration` to add layers to the function, include all layers every time  
+- Layers are versioned and **immutable**
+- Layers are extracted to the `/opt` directory in the function execution environment  
+- You can move runtime dependencies out of your function code by placing them in a layer  
+
+# API Gateway
+:tv:https://www.youtube.com/watch?v=tIfqpM3o55s
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-http-integrations.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-aws-proxy.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html  
+https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/
+https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html
+https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
+https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html
+https://aws.amazon.com/appsync/
+
+- Resource URL
+- Stage is added to default API endpoint
+- Respond to request: Lambda, HTTP Endpoints, other AWS services
+- Deployments -> snapshot of API's resources and methods
+- Stages -> dev, prod, beta.
+  Specific settings: caching, request throttling, logging, stage variables
+- Caching -> set capacity, encryption, TTL, per-key invalidation
+- Dashboard -> API calls, Latency, Integration Latency, 4xx and 5xx Errors
+- Can import API from Swagger 2.0
+- Throttling -> by default limits the steady-state request rate to 10000 rps
+    Max 5000 concurrent requests accross all APIs within AWS account
+    429 Too Many Requests error
+- Can configure SOAP Webservice Passthrough (doesn't convert XML!)
+- Canary releases - create/promote canary
+- Stage variables:
+  - name-value pairs you can define as configuration attributes associated with a deployment stage
+  - use as environment variables in API setup and mapping templates (`${stageVariables.Name}`)
+- To support CORS, API resource needs to implement an OPTIONS method that can respond to the OPTIONS request with following header:
+  `Access-Control-Allow-Headers`
+  `Access-Control-Allow-Origin`
+  `Access-Control-Allow-Methods`  
+
+Integration types:
+  - `AWS`: AWS Service actions (integration with AWS services)  
+      you must configure both integration request and response  
+  - `AWS_PROXY`: Lambda proxy integration, API Gateway passes the incoming request direct to Lambda  
+      you do not set integration request or response  
+  - `HTTP`: HTTP endpoints in the backend  
+      you must configure both integration request and response  
+  - `HTTP_PROXY`: access to HTTP backend with a streamlined integration setup on single API method  
+      you do not set integration request or response   
+  - `MOCK`: API Gateway return a response without sending the request to the backend  
+
+[Access Control](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-control-access-to-api.html) - supported mechanisms:
+  - **Resource policies**: resource-based policies to allow or deny access to APIs and methods from specified source IP or VPC endpoints (e.g. AWS accounts whitelist, IP range blacklist, Source VPC whitelist). These resource policies are attached to resources
+  - **Standard IAM roles and policies**: can be applied to entire API or individual methods (e.g. who can create, managed and invoke APIs).  
+    `authorizationType=AWS_IAM`  
+  - **IAM tags**: can be used together with IAM policies to control access - using `aws:ResourceTag` in IAM policies  
+  - **Endpoint policies for interface VPC endpoints**: allow you to attach IAM resource policies to interface VPC endpoints to improve the security of private APIs.  
+  - **Lambda authorizers**: _Lambda functions_ that control access to API methods using bearer token authentication (OAuth or SAML)- as well as information described by headers, paths, query strings, stage variables, or context variables request parameters to determine the caller's identity.  
+    - _token-based_: `TOKEN` authorizer: based on JWT or OAuth token (not supported for WebSocket APIs)  
+    - _request parameter-based_: `REQUEST` autorizer: receives the caller's identity in a combination of headers, query string parameters, stageVariables and $context variables  
+  - **Amazon Cognito user pools**: user pools are used to control who can invoke API methods.
+    `autorizationType=COGNITO_USER_POOLS`  
+
+# Scaling Architectures
+
+## AWS Service Resilience
+- IAM: global, same data globally, accessible from all region
+- EC2 and EBS-volumes are in specific AZ (failure of AZ will cause failure of EC2 and volumes)
+- EBS snapshots are replicated across AZs (optionally copied cross-region)
+- S3 replication is over 3 AZ, S3 is regional service
+- R53 operates its name servers from edge locations globally (resistant even to issues in AWS region)
+- ELB: regional service, ELB node is placed in specific AZ, ELB place ENI per configured AZ
+- VPC: regional service
+- NAT gateways operates in specific subnet (single AZ) - place NAT GW in each AZ
+- ASG: operates in VPC across subnets in AZs
+- VPN - provision 2 IPSEC endpoints (in different AZs)
+
+## Stateless Architectures
+
+## Deciding between Spot, OnDemand and Reserved Instances
+🔸**OnDemand**: ad-hoc usage, where you can't calculate future usage patterns
+
+🔸**Reserved**: usage is known and steady-state (base consistent load 24x7), Reserved model can also reserve capacity, providing high-priority startup (e.g for fail-over AZ)
+
+🔸**Spot**: sporadic workloads where you can tolerate interruptions. Have the lowest startup priority
+
+## Auto Scaling Groups
+https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
+
+:question:https://aws.amazon.com/ec2/autoscaling/faqs/
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroupLifecycle.html
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-simple-step.html
+https://aws.amazon.com/premiumsupport/knowledge-center/cloudwatch-alarms-trigger-actions/
+https://aws.amazon.com/premiumsupport/knowledge-center/auto-scaling-troubleshooting/
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/Cooldown.html
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-suspend-resume-processes.html
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-instance-termination.html
+
+
+## ELB
+:tv:https://www.youtube.com/watch?v=VIgAT7vjol8
+:question:https://aws.amazon.com/elasticloadbalancing/faqs/
+https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html
+https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html
+https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html
+https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/introduction.html
+
+
+# Elastic Beanstalk
+:question:https://aws.amazon.com/elasticbeanstalk/faqs/
 
 # S3 & Glacier
-https://www.youtube.com/watch?v=rHeTn9pHNKo
-https://www.youtube.com/watch?v=gidUa4lJd9Y
+:tv:https://www.youtube.com/watch?v=rHeTn9pHNKo
+:tv:https://www.youtube.com/watch?v=gidUa4lJd9Y
 
 # Databases
 
 ## RDS
-https://www.youtube.com/watch?v=HuvUD7-RyoU
+:tv:https://www.youtube.com/watch?v=HuvUD7-RyoU
 
 ## DynamoDB
-https://www.youtube.com/watch?v=HaEPXoXVf2k
-https://www.youtube.com/watch?v=eTbBdXJq8ss
+:tv:https://www.youtube.com/watch?v=HaEPXoXVf2k
+:tv:https://www.youtube.com/watch?v=eTbBdXJq8ss
 
 ## Aurora
-https://www.youtube.com/watch?v=2WG01wJIGSQ
+:tv:https://www.youtube.com/watch?v=2WG01wJIGSQ
 
 # Networking
 
 ## VPC
-https://www.youtube.com/watch?v=fnxXNZdf6ew
+:tv:https://www.youtube.com/watch?v=fnxXNZdf6ew
 
 VPC tenancy modes - Default or Dedicated
 Can have only one DHCP Option set
@@ -953,16 +1168,16 @@ https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html
 - metric sent at 1m intervals and retained for 15months
 
 ## Transit Gateway
-https://www.youtube.com/watch?v=yQGxPEGt%5C_-w
-https://www.youtube.com/watch?v=ar6sLmJ45xs
+:tv:https://www.youtube.com/watch?v=yQGxPEGt%5C_-w
+:tv:https://www.youtube.com/watch?v=ar6sLmJ45xs
 
 ## VPN
-https://www.youtube.com/watch?v=qmKkbuS9gRs
+:tv:https://www.youtube.com/watch?v=qmKkbuS9gRs
 
 ## DNS
-https://www.youtube.com/watch?v=D1n5kDTWidQ
+:tv:https://www.youtube.com/watch?v=D1n5kDTWidQ
 
 # Analytics, Streaming, IOT
 
 ## Redshift
-https://www.youtube.com/watch?v=TJDtQom7SAA
+:tv:https://www.youtube.com/watch?v=TJDtQom7SAA

@@ -724,27 +724,167 @@ Integration types:
 🔸**Spot**: sporadic workloads where you can tolerate interruptions. Have the lowest startup priority
 
 ## Auto Scaling Groups
-https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
+https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245  
 
-:question:https://aws.amazon.com/ec2/autoscaling/faqs/
-https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroupLifecycle.html
-https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-simple-step.html
-https://aws.amazon.com/premiumsupport/knowledge-center/cloudwatch-alarms-trigger-actions/
-https://aws.amazon.com/premiumsupport/knowledge-center/auto-scaling-troubleshooting/
-https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html
-https://docs.aws.amazon.com/autoscaling/ec2/userguide/Cooldown.html
-https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-suspend-resume-processes.html
-https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-instance-termination.html
+:question:https://aws.amazon.com/ec2/autoscaling/faqs/  
+📒https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroupLifecycle.html  
+📒https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-simple-step.html  
+📒https://aws.amazon.com/premiumsupport/knowledge-center/cloudwatch-alarms-trigger-actions/  
+📒https://aws.amazon.com/premiumsupport/knowledge-center/auto-scaling-troubleshooting/  
+📒https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html  
+📒https://docs.aws.amazon.com/autoscaling/ec2/userguide/Cooldown.html  
+📒https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-suspend-resume-processes.html  
+📒https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-instance-termination.html  
 
 
 ## ELB
-:tv:https://www.youtube.com/watch?v=VIgAT7vjol8
-:question:https://aws.amazon.com/elasticloadbalancing/faqs/
-https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html
-https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html
-https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html
-https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/introduction.html
+:tv:https://www.youtube.com/watch?v=VIgAT7vjol8  
+📒:question:https://aws.amazon.com/elasticloadbalancing/faqs/  
+📒https://aws.amazon.com/elasticloadbalancing/features/#compare  
+📒https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html  
+📒https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html  
+📒https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html  
+📒https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/introduction.html  
 
+❗Do **not** assign public IPs to load balancers - communication is based on CNAME
+
+### ALB
+- Layer 7 device
+  - **Host-based rules**  
+  - **Path-based rules**
+- both IPv4 and IPv6
+- supports ECS, EKS, HTTPS, HTTP/2, WebSockets, AccessLogs, Sticky Sessions, AWS WAF
+- Targets can belong to multiple target groups
+- ALB can send traffic to Lambda functions
+- can manage multiple SSL certificates
+- you can use the single ALB to serve multiple applications - via multiple DNS names and target groups
+
+### Network Load Balancers
+- Layer 4
+- supports static IP and ultra low latency
+- accepts TCP, UDP and TSL termination
+- NLB assigned a single IP address per AZ (EIP can be assigned as well) - easier firewall management
+- Preserve the client IP - its passthrough device
+
+# CloudFront
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/high_availability_origin_failover.html  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-viewer-📒protocols-ciphers.html  
+
+- Viewer Protocol
+- Origin Protocol
+
+Use Alias recordset for R53 for CloudFront
+
+## Distributions
+Isolated configuration containers:
+  - set of settings
+  - collection of origin and origin groups
+  - behaviors
+  - restrictions
+  - invalidations
+
+- additional cost for clients not supporting SNI (CF need to allocate dedicated IP addresses at each edge location)
+
+## Behaviors
+- Lambda associations with events:
+  - Viewer Request
+  - Viewer Response
+  - Origin Request
+  - Origin Response
+- Path Pattern - e.g. separation of static and dynamic content
+
+## Working with custom origins
+- EC2 instances
+- on-prem servers
+
+❗Custom origins need to be accessible via public internet
+
+## CloudFront Security
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-signed-urls.html  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/georestrictions.html#georestrictions-cloudfront  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/georestrictions.html#georestrictions-geolocation-service  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/field-level-encryption.html  
+
+### SSL
+- two connections - 1) Client to Edge Location and 2) Edge Location to Origin
+- install certificate for 1) on the Edge location (Distribution settings), must be trusted by client (publicly trusted and valid, on self-signed certificates)!
+
+### Signed URL
+allows an entity (generally application) to create a RUL which includes the necessary information to provide the holder of that URL with read/write access to an object, even if they have no permissions on that object.
+
+- Linked to an existing identity (Role/User) and they have permissions of that entity
+- have validity period (default 60m)
+- expire either at the end of the period or until the entity on which they are based expire (e.g. when the role temp credentials expire)
+- anyone can create a signed URL, even if they don't have permissions on the object
+- with CF you define the accounts which can sign, the key pair TrustedSigners is needed for CF
+
+Cookies extend this, allowing access to an object type or area/folder and don't need a specifically formatted URL
+
+Use `Restrict Viewer Access` in **Behavior** settings to create private CF distribution
+
+### Restrictions
+two methods:
+- **Geo-Restrictio Whitelist or Blacklist** - based on GeoIP Database (99.8% accurancy) country location ONLY
+- **Third-Party Geo Restriction** needs a server/serverless app - Signed URL's are used. Used for extra accuracy - e.g. city, locale, Lat/Long in some cases
+
+### Field-level Encryption
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/field-level-encryption.html  
+
+configured in Behaviors
+
+
+## Optimizing Caching
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html
+
+Distribution settings -> Behaviors
+
+## Lambda@Edge
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html  
+
+Function associations are defined at **Behaviors** level:
+- Lambda associations with events:
+  - Viewer Request
+  - Viewer Response
+  - Origin Request
+  - Origin Response
+
+## CloudFront Logging, Reporting, Monitoring
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html  
+
+Cache Statistics Report
+CloudFront Usage Reports
+Popular objects
+Usage
+Top Referrers
+
+# Route 53 (R53
+📒https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html  
+📒https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/traffic-flow.html  
+📒https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/traffic-policies.html  
+📒https://aws.amazon.com/premiumsupport/knowledge-center/multivalue-versus-simple-policies/  
+
+Hosted Zones:
+- **public hosted zone**
+- **private hosted zone**: attached to VPC
+
+R53 Record Sets:
+- comprising:
+  - Record type: A, AAAA, CNAME, MX
+  - Standard/alias: alias can point to _AWS specific resource_ (S3, ELB, CloudFront distribution, Elastic Beanstalk)
+  - Routing policy
+  - Evaluate target health: Endpoint IP address or Domain name
+
+Routing types:
+- Simple - all values delivered in random order
+- Failover (primary/secondary)
+- Geolocation
+- Latency
+- Weighted
+- Multivalue answer (same as simple, but with health checks)
 
 # Elastic Beanstalk
 :question:https://aws.amazon.com/elasticbeanstalk/faqs/
@@ -752,6 +892,27 @@ https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/introduction.htm
 # S3 & Glacier
 :tv:https://www.youtube.com/watch?v=rHeTn9pHNKo
 :tv:https://www.youtube.com/watch?v=gidUa4lJd9Y
+
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/Introduction.html#ConsistencyModel
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/ListingKeysHierarchy.html
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+📒https://aws.amazon.com/s3/storage-classes/
+
+100 (soft) and 1000 (hard) buckets limit for the account
+
+S3 Objects:
+- Key (simple keys or complex keys)
+- Version ID
+- Value
+- Metadata
+- Subresources
+- Access Control information
+
+All storage classes offer 99.999999999% (elven nines) durability
+
+## Versioning and Locking
+
 
 # Databases
 
@@ -764,6 +925,19 @@ https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/introduction.htm
 
 ## Aurora
 :tv:https://www.youtube.com/watch?v=2WG01wJIGSQ
+
+# AWS Storage Gateway
+**File Gateway**: stores data on S3
+- NFS or SMB
+**Volume Gateway**
+  - _Cached Volumes_:
+    - mounted iSCSI devices, data stored on S3, cached on-prem
+  - _Stored Volumes_:
+    - store all data locally
+    - takes snapshot periodically as incremental backup and store on S3
+**Tape Gateway**
+- Virtual tape library writes to Glacier
+- Can run as VM on-prem or EC2 instance
 
 # Networking
 

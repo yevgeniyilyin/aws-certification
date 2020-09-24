@@ -898,6 +898,7 @@ Routing types:
 📒https://docs.aws.amazon.com/AmazonS3/latest/dev/ListingKeysHierarchy.html
 📒https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
 📒https://aws.amazon.com/s3/storage-classes/
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html
 
 100 (soft) and 1000 (hard) buckets limit for the account
 
@@ -909,32 +910,143 @@ S3 Objects:
 - Subresources
 - Access Control information
 
-All storage classes offer 99.999999999% (elven nines) durability
+All storage classes offer 99.999999999% (eleven nines) durability
 
 ## Versioning and Locking
+Locking methods:
+- retention periods: prevent updates or deletions for a period of time
+- legal holds: no expiration date
+- works only on new buckets
 
+## Controlling Access to S3 Buckets
+https://docs.aws.amazon.com/AmazonS3/latest/dev/PresignedUrlUploadObject.html
+
+Bucket policies attached **only** to bucket (not an IAM user)
+Both buckets and **objects** can have ACLs - enables sharing of the object via URL
+
+Objects are owned by creator by default
+
+## Cross-region replication
+- one way only and noretroactive replication - from the point of enabling onwards
+- **SSE-C is not supported**, SSE-S3 enabled by default (SSE-KMS can be enabled)
+- only non-system actions are replicated
+- can change the storage class or object ownership
+- Need a IAM role for replication
+
+## Object encryption
+🔸**SSE-S3**: S3 encrypts an objet with a key which is stored with the object. All keys are encrypted with a master key, all operations are managed in S3  
+🔸**SSE-C (AES-256)**: customer-provided key, `x-amz-server-side-encryption-customer-key`. Key used for encryption and then discarded. The customer is 100% responsible for key management and rotation  
+🔸**SSE-KMS**: master keys are managed in KMS. Allows for role separation
+
+## Optimizing S3 performance
+📒http://s3-accelerate-speedtest.s3-accelerate.amazonaws.com/en/accelerate-speed-comparsion.html
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/request-rate-perf-considerations.html  
+📒https://docs.aws.amazon.com/AmazonS3/latest/user-guide/enable-transfer-acceleration.html  
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/transfer-acceleration.html#transfer-acceleration-requirements
+
+### Multipart upload
+from 5GB is mandatory
+
+### Transfer Acceleration
+enabled on per-bucket basis and uses the cloudfront edge location network
+
+### Partitions and Object Naming
+S3 allows max 3500 write TPS and 5500 read TPS **per partition**  
+Partition are determined by prefixes of objects in the bucket
+
+## Glacier Architecture
+📒https://docs.aws.amazon.com/amazonglacier/latest/dev/data-retrieval-policy.html  
+📒https://docs.aws.amazon.com/amazonglacier/latest/dev/retrieving-vault-info.html  
+📒https://docs.aws.amazon.com/amazonglacier/latest/dev/vault-inventory.html  
+📒https://docs.aws.amazon.com/amazonglacier/latest/dev/vault-lock.html  
+📒https://docs.aws.amazon.com/amazonglacier/latest/dev/working-with-archives.html  
+
+A vault is a container in Glacier created in a specific AWS region. Name need to be unique in a region/account
+Archives are data and are located in ONE vault
+No user-definable metadata is stored with archives in glacier
+Archives don't have a name, only a unique ID and optional description set when initially uploaded
+Archives cannot be edited, only deleted and new ones uploaded (given a new Archive ID)
+
+Any jobs to download archives are asynchronous, and there are three speeds:
+- **Expedited**: 1-5m for < 250MB archives
+- **Standard**: 3-5h
+- **Bulk**: for large amounts - 5-12h
 
 # Databases
+🔹[AWS Database Offering Cheatsheet](../databases/aws-data-services.pdf)
+
+## EC2 Self-Managed Databases
+provides OS level root user access and full control over all OS and DB vendors & components
+
+## Database Data Models and Engines
+- Relational DB: ACID
+- NoSQL
+  - Key-Value
+  - DocumentDB
+  - GraphDB
+  - Column Based DB
 
 ## RDS
 :tv:https://www.youtube.com/watch?v=HuvUD7-RyoU
+📒https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html#UsingWithRDS.IAMDBAuth.Availability  
+📒https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Enabling.html  
+📒https://aws.amazon.com/premiumsupport/knowledge-center/users-connect-rds-iam/  
+
+By default is a private VPC service. Can be exposed to the public internet
+Encryption - underlying EBS volume encryption
+
+**Cannot be changed** after creation:
+- Encryption
+- VPC
+- Option Group
+
+## Aurora
+:tv:https://www.youtube.com/watch?v=2WG01wJIGSQ
+:tv:https://www.youtube.com/watch?v=U42mC_iKSBg
+
+Replica Autoscaling
+
+### Aurora Global
+Logs are streamed between the replication server and agent
+Replication server - local region
+Replication agent - remote region
+Lag less than 1s
+
+### Aurora Serverless
+📒https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.how-it-works.html  
+:tv:https://www.youtube.com/watch?v=4DqNk7ZTYjA  
+📒https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.html  
+
+ - On-demand, autoscaling configuration that automatically starts up, shuts down, scales capacity up or down based on the application’s need.
+ - Aurora Serverless maintains a warm pool of instances (without any data) ready to swap into an existing rerverless cluster as capacity is needed
+ - Connections are made by a shared proxy layer which brokers connections and stops interruptions due to scaling events or failures
+ - Serverless applications can use a new AWS DATA API 
+
+ 1 ACU = 1vCPU and 2GB RAM
+
+ ❗No multi-AZ architecture. Fail will result in failover to a new AZ (slower than Multi-AZ setup)
 
 ## DynamoDB
 :tv:https://www.youtube.com/watch?v=HaEPXoXVf2k
 :tv:https://www.youtube.com/watch?v=eTbBdXJq8ss
 
-## Aurora
-:tv:https://www.youtube.com/watch?v=2WG01wJIGSQ
-
 # AWS Storage Gateway
+📒https://docs.aws.amazon.com/storagegateway/latest/userguide/HardwareAppliance.html  
+📒https://docs.aws.amazon.com/storagegateway/latest/userguide/StorageGatewayConcepts.html  
+
 **File Gateway**: stores data on S3
 - NFS or SMB
+- 1:1 mapping between files and S3 objects
 **Volume Gateway**
   - _Cached Volumes_:
     - mounted iSCSI devices, data stored on S3, cached on-prem
+    - from 1GB to 32TB
+    - max 32 volumes for total max volume 1PB
   - _Stored Volumes_:
     - store all data locally
     - takes snapshot periodically as incremental backup and store on S3
+    - from 1GB to 16TB
+    - max 32 volumes for total max 512TB
 **Tape Gateway**
 - Virtual tape library writes to Glacier
 - Can run as VM on-prem or EC2 instance
@@ -1310,7 +1422,15 @@ Requires role permission
 
 
 # EFS
+📒https://docs.aws.amazon.com/efs/latest/ug/performance.html
+📒https://docs.aws.amazon.com/efs/latest/ug/performance.html
+📒https://docs.aws.amazon.com/efs/latest/ug/using-amazon-efs-utils.html
+
+
+- resides inside VPC
 - Multiple AZs
+- create mount targets in each availability zone
+- NFS v4/4.1
 - Storage classes (Lifecycle Management):
   - Infrequent Access
   - Standard
@@ -1322,7 +1442,7 @@ Requires role permission
   - **General Purpose**: ideal for latency-sensitive use cases
   - **Max I/O**: high level of aggregate throughput, but higher latency. Use for highly parallelized apps
   - monitor `PercentIOLimit`
-- 2 throughput modes:
+- 2 throughput modes (can be adjusted _after_ creation):
   - **Bursting**: scales as size grows
   - **Provisioned throughput**: independent of the amount of data
   - < 1TB - burst to 100MB/s
@@ -1336,8 +1456,32 @@ Requires role permission
 
 ❗Security groups attached to mount target should allow inbound connection on NFS port
 
+Supports POSIX permissions
+
+Can use:
+- AWS DataSync
+- AWS Backup
+
+## FSx
+https://docs.aws.amazon.com/fsx/latest/WindowsGuide/using-file-shares.html
+https://docs.aws.amazon.com/fsx/latest/WindowsGuide/multi-az-deployments.html
+https://docs.aws.amazon.com/fsx/latest/WindowsGuide/group-file-systems.html
+https://docs.aws.amazon.com/fsx/latest/WindowsGuide/limits.html
+
+SMB file share for Windows
+integration with AD (AD Trust must be configured)
+encrypted by default
+
+FSx for Lustre (for Lustre file system for HPC)
+**Not HA**, need be deployed in two AZ
+
+- Resilience:
+VSS Backup
+Microsoft DFS Replication
+
+
 # EFS Monitoring
-https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html
+📒https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html
 
 - metric sent at 1m intervals and retained for 15months
 
@@ -1351,7 +1495,23 @@ https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html
 ## DNS
 :tv:https://www.youtube.com/watch?v=D1n5kDTWidQ
 
-# Analytics, Streaming, IOT
+# Analytics, Streaming,
+
+## Athena
+https://docs.aws.amazon.com/athena/latest/ug/querying-AWS-service-logs.html  
+https://gist.github.com/mojodna/292a825eb5b111f306615301c80a5782  
+https://planet.openstreetmap.org/  
+https://s3.console.aws.amazon.com/s3/buckets/osm-pds/planet/?region=us-east-1&tab=overview#  
+
+Source formats: XML, JSON, CSV, TSV, AVRO, ORC, PARQUET
+Schema-on-read
+
+Used to query:
+- CloudTrail logs
+- CloudFront logs
+- ELB logs
+- VPC Flow logs
+
 
 ## Redshift
 :tv:https://www.youtube.com/watch?v=TJDtQom7SAA

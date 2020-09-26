@@ -358,6 +358,209 @@ End Users:
 
 ![Differences between Capacity Reservations, Reserved Instances, and Savings Plans](../media/capacity-reservation.png)
 
+# CloudWatch
+📒https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html  
+
+- **Alarm** can trigger:
+    SNS (multiple SNS topics are possible)  
+    Auto scaling action (ASG or ECS)  
+    EC2 action (recover, stop, terminate, reboot) - _Per-instance_ metric is required  
+- **Rule** can trigger:  
+    SNS, SQS, EC2, ECS Task, Lambda, CodeBuild, CodePipeline, Step Function, SSM, Eventbus in other account, Kinesis Data Streams and Firehose  
+    Event Source for the rule can be almost any AWS Service (Event type: CloudTrail API Call)
+
+CloudWatch agents on Windows use `StatsD` protocol and `collectd` on Linux
+
+
+CloudWatch Events:
+- consists of three parts:
+  - **Event Source**  
+  - **Rule**  
+  - **Target**: can be more than one  
+
+- Retention:
+  - 1m metric - 15d
+  - 5m metric - 63d
+  - 1h metric - 455d
+
+- Metric resolution:
+  - Default: 5m
+  - Detailed: 1m
+  - High-resolution: CloudWatch stores it with resolution 1s and you can read and retrieve it with a period of 1, 5, 10, 30 or any multiple of 60s
+
+- Can be used on-prem: Need to install SSM agent and CloudWatch agent
+
+## CloudWatch Logs
+📘https://linuxacademy.com/cp/courses/lesson/course/4478/lesson/1/module/341
+
+Log Group 0..N Log Stream
+
+# CloudTrail
+📒https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-an-organizational-trail-prepare.html  
+
+You can create many different **Trails** each with own configuration
+**Trail** is sent to S3 bucket
+
+Trail configuration options:
+  - **Management Events**: enabling will log control plane events, such as:
+    - User login events
+    - Configuring security
+    - Setting up logging
+  - **Data Events**:
+    - Object-level events in **S3**
+    - Function-level events in **Lambda**
+  - **Encryption**:
+    - encrypted in S3 by default, can be changed to KMS
+
+You can enable log file validation (tamper-check), stored in `-Digest` folder
+
+❗CloudTrail can also deliver logs to CloudWatch log group
+
+# Route 53 Logging
+Only for public hosted zones
+Integrates with CloudWatch
+Logs any DNS resolution requests
+
+Format:
+  Timestamp
+  DNS Zone
+  Query Type
+  Query response code
+  Layer 4 protocol used (TCP/UDP)
+  R53 Edge location code
+  Resolver IP
+
+# S3 Logging
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerLogs.html  
+provides detailed records for the requests that are made to a bucket
+Details:
+```
+single access request, requester, bucket name, request time, request action, response status, error code
+```
+No extra charge for enabling and PUTs (but usual charge for storing)
+Logs are saved to a bucket in the same AWS regions as the source bucket
+Uses a special log delivery account _Log Delivery Group_ to write access log  
+Best effort server log delivery:
+The completeness and timeliness of server logging is not guaranteed. The log record for a particular request might be delivered long after the request was actually processed, or _it might not be delivered at all_.
+
+To enable:
+1. Turn on logging on S3 bucket
+2. Grant S3 _Log Delivery group_ write persmission on the target bucket
+    **only through bucket ACL** and not through bucket policy
+    only SSE-S3 can be used, **SSE-KMS is not supported**  
+    Object Lock _cannot_ be enabled on the target bucket
+You can _optionally_ specify prefix in the target bucket while enabling logging
+
+# AWS Systems Manager
+:question:https://aws.amazon.com/systems-manager/faq/  
+📒https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-managedinstances.html  
+
+Access methods:
+- Console
+- SDK's
+- Powershell
+- CLI
+
+❗SSM runs inside public zone and EC2 instance need either an Internet GW or VPC endpoint to access the SSM
+
+Provisioning, Deployment, Management
+
+managed policy `AmazonEC2RoleforSSM` to attach to EC2 role to communicate with SSM
+Parts:
+- **SSM Automation**  
+- SSM Inventory
+- **Patch Manager**  
+- **Run Command**  
+- Parameter Store
+- Trusted Advisor and PHD
+
+For set-up of Systems Manager for Hybrid environment:
+
+Step 1: Complete general Systems Manager setup steps
+Step 2: Create an IAM service role for a hybrid environment (to communicate with SSM service)
+Step 3: Install a TLS certificate on on-premises servers and VMs
+Step 4: Create a **managed-instance activation** for a hybrid environment
+Step 5: Install SSM Agent for a hybrid environment (Linux or Windows)
+Step 6: (Optional) Enable Advanced-Instances Tier for **more than 1000 servers per account per region**  
+
+## SSM State Manager
+📒https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-ssm-docs.html  
+
+uses **Command Document** to keep EC2 in predefined state
+Different Types of SSM Documents
+Type | Use with
+---|---
+Command Document | Run command, State Manager, Maintenance Windows, apply to configuration
+Automation Document | Automation, common deployment/maintenance tasks
+Package Document | ZIP archive files that contain software to install on managed instances
+Session Document | Session Manager (type of session to start)
+Policy Document | Enforcing a policy on a managed instance
+Change Calendar Document | Associated events that can allow/prevent Automation actions
+
+## SSM Parameter Store
+- Can store parameters in hierarchies
+- Keeps history of value changes
+- Tiers:
+  - Standard: 10K parameters, size max 4KB, no parameter policies
+  - Advanced: >10K parameters, size max 8KB, parameter policies
+- Parameter policy: Expiration, Notification
+- Parameter Types: `String`, `StringList`, `SecureString`  
+- API Actions:
+  - `PutParameter`  
+  - `GetParameter`  
+  - `GetParameters`  
+  - `DeleteParameter`
+
+
+# AWS CloudFormation
+📘https://linuxacademy.com/cp/modules/view/id/157  
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html  
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html  
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html  
+
+- Template JSON or YAML
+- Only `Resources` section is required
+- Max 60 parameters
+- **CloudFormer**: create CloudFormation template from existing resources
+- Resources:
+  - Format `AWS::aws-product-name::data-type-name`
+  - Properties depending on resource
+  - Policies:
+    - _CreationPolicy_
+    - _DeletionPolicy_
+    - _DependsOn_
+    - _Metadata_
+    - _UpdatePolicy_
+- Parameter data types:
+  - String
+  - Number
+  - List: array of integers or floats separated by commas
+  - CommaDelimitedList: array of literal strings separated by commas
+  - AWS-Specific Parameter Types: such as EC2 key pair names and VPC IDs
+  - SSM Parameter Types: points to SSM parameter store, CloudFormation fetches automatically the parameter values  
+- CloudFormation Stacks
+  - Stack resources are treaded as one single unit
+- You can create nested CloudFormation stacks by using `AWS::CloudFormation::Stack` resource
+- CloudFormation Functions (intrinsic functions), here is some:
+  - `Fn::GetAtt`
+  - `Fn::GetAZs`  
+  - `Fn::Join`  
+  - `Ref`  
+  - `Fn::ImportValue`  
+
+## Stack Updates
+You can create new resources, update or delete existing
+
+Update behaviors of Stack Resources:
+- Update with no Interruption (no changing physical ID)
+- Updates with some interruption (no changing physical ID)
+- Replacement (new physical ID)
+
+## Template Portability and Reuse
+
+
 
 # EC2
 :question:https://aws.amazon.com/ec2/faqs/
@@ -1013,8 +1216,8 @@ Replication agent - remote region
 Lag less than 1s
 
 ### Aurora Serverless
-📒https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.how-it-works.html  
 :tv:https://www.youtube.com/watch?v=4DqNk7ZTYjA  
+📒https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.how-it-works.html  
 📒https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.html  
 
  - On-demand, autoscaling configuration that automatically starts up, shuts down, scales capacity up or down based on the application’s need.
@@ -1029,6 +1232,172 @@ Lag less than 1s
 ## DynamoDB
 :tv:https://www.youtube.com/watch?v=HaEPXoXVf2k
 :tv:https://www.youtube.com/watch?v=eTbBdXJq8ss
+
+📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-indexes-general.html
+📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html
+
+Accessible via private VPC endpoints (VPC gateway) or using public endpoints
+
+- max item size is **400KB**, but S3 can be used to save items and object identifier is saved in DDB table
+- **1 WCU**: 1 write of 1 item of 1KB or less (round up to nearest KB)
+- Writes are applied in the order received
+- There are "conditional writes" - only succeed if the attributes meet some conditions
+- **1 RCU**: 1 read of 1 item of 4KB or less (**strongly** consistent) or 2 reads 4KB per sec for **eventually** consistent
+- IAM condition parameter: fine-graned access per-item or per-attribute
+📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/specifying-conditions.html  
+    `dynamodb:LeadingKeys` - allow users to access only the items where partition key = user_id
+    `dynamodb:Attributes` - limits access to the specified attributes
+    `dynamodb:Select`  
+    `dynamodb:ReturnValues`  
+    `dynamodb:ReturnConsumedCapacity`  
+
+Read operations:
+    `GetItem`, `BatchGetItem` (up to 100 items and max 16MB)  
+    Use `ProjectionExpression` to return only selected attributes  
+    **Query** - max 1MB per call  
+        results are always sorted by Sort Key. Reverse by setting `ScanIndexForward`  
+    **Scan** - max 1MB per, can scan only one partition at a time  
+        can configure parallel scans by logically dividing a table or index  
+- No strongly consistent reads on GSI
+- Can delete GSI any time, cannot delete LSI
+
+- For query: specify the search criteria:
+  - partition key name and value in _quality condition_
+
+**Partitions**:    
+    - Can accomodate max 3000 RCU or 1000 WCU  
+    - Max 10GB of data  
+    - never deleted  
+
+**LSI**:  
+  - same PK, different Sort Key
+  - share capacity with the  table
+**GSI**:  
+  - different PK and Sort Key
+  - independent capacity
+
+TTL
+📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html  
+  - Any attribute of your choice
+  - In epoch time format
+
+Encryption
+  - always encrypted at rest
+
+DynamoDB Transactions:
+  - ACID
+  - across multiple tables
+
+Atomic Counters:
+  - writes applied in the order received - can be used to increment existing value
+Conditional writes
+  - only succeed if condition is met (`ConditionalCheckFailedException` if not met
+CommonErrors:
+  - ThrottlingError
+  - ProvisionedThroughputExceededException (number of requests is too high)
+  - ResourceNotFoundException (e.g. table does not exist/in CREATING)
+
+Specify `ReturnConsumedCapacity=TOTAL` in Query request to obtain how much of capacity is being used  
+
+DAX  
+📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.concepts.html  
+  - write-through  
+  - ❗Eventually consistent only!!!  
+  - **For strongly consistent reads DAX pass all requests to DDB & does not cache for these requests**  
+
+Throttling Issues and Fixes:  
+  Hot partitions  
+  Capacity limitations  
+  Fixes:  
+    - slowly increase provisioned capacity  
+    - review capacity on GSI (throttle on index double-counted)  
+    - implement error retries and exponential backoff (built-in in AWS SDK)  
+    - distribute operations evently across partitions  
+    - implement caching solution (ElastiCache or DAX)  
+    - use TTL on items in the table  
+
+DDB Streams  
+  - Time-ordered change log for the table, stored for 24 hours  
+  - Encrypted by default  
+  - Can trigger Lambda: **Triggers**  
+
+Encryption at rest (only AWS owned CMK or AWS managed CMK)
+  > DDB uses the CMK to generate and encrypt a DEK (known as __Table Key__). **AWS Owned** (free for charge)
+  > or **AWS Managed CMK** (charge) can be used. Customer managed CMK's are not supported.
+
+Global Tables
+ - DDB Streams should be enabled
+ - Ansync replication
+ - Cannot add new regions after the table is populated (but can remove a region)
+
+## Neptune
+:tv:https://www.youtube.com/watch?v=VGxYE4-pors  
+
+Open Source APIs:
+- TinkerPop Gremlin
+- RDF SPARQL
+
+- HA (3 AZ)
+- up to 64TB, 15 read replicas
+- SSE
+
+Use cases:
+- Social Network
+- Knowledge Graphs
+- Fraud Detections
+- Recommendation Engines
+
+## QLDB
+:tv:https://www.youtube.com/watch?v=7G9epn3BfqE  
+
+full DBaaS product, requires no IO provisioning
+
+immutable DB using cryptographically verifiable ledger technology to track every change to data in a way which cannot be manipulated
+
+"Hash chained" journal
+
+ACID based with strong transactional consistency
+
+## DocumentDB
+📒https://docs.aws.amazon.com/documentdb/latest/developerguide/document-database-documents-understanding.html  
+📒https://docs.aws.amazon.com/documentdb/latest/developerguide/getting-started.connect.html  
+
+MongoDB compatibility
+
+Build on **Cluster Storage Volume**  
+
+Primary instance (writer) + 1 to 15 read replicas
+
+PITR 1-35 days
+
+# ElastiCache
+
+Engines:
+- Redis: sophisticated data types, multi-AZ, replication, backup/restore, transactions, pub/sub
+- Memcached: simplicity, simple key-value store, large nodes with multi-threaded, vertical scaling
+
+
+Feature | Memcached | Redis (Cluster mode Disabled) | Redis (Cluster mode)
+---|---|---|---
+Data types | Simple | Complex | Complex
+Data partitioning | **Yes** | No | **Yes**
+Cluster modifiable | **Yes** | **Yes** | **Yes**
+Online resharding | No | No | **Yes**
+Compliance Certification | No | **Yes** | **Yes**
+Multi-threaded | **Yes** | No | No
+Node type upgrade | No | **Yes** | No
+HA/Replication | No | **Yes** | **Yes**
+Auto failover | No | Optional | Required
+Pub/Sub | No | **Yes** | **Yes**
+Sorted sets | No | **Yes** | **Yes**
+Backup/restore | No **Yes** | **Yes**
+Geospatial indexing | No | **Yes** | **Yes**
+Transactions | No | **Yes** | **Yes**
+
+
+
+
+
 
 # AWS Storage Gateway
 📒https://docs.aws.amazon.com/storagegateway/latest/userguide/HardwareAppliance.html  
@@ -1463,10 +1832,10 @@ Can use:
 - AWS Backup
 
 ## FSx
-https://docs.aws.amazon.com/fsx/latest/WindowsGuide/using-file-shares.html
-https://docs.aws.amazon.com/fsx/latest/WindowsGuide/multi-az-deployments.html
-https://docs.aws.amazon.com/fsx/latest/WindowsGuide/group-file-systems.html
-https://docs.aws.amazon.com/fsx/latest/WindowsGuide/limits.html
+📒https://docs.aws.amazon.com/fsx/latest/WindowsGuide/using-file-shares.html  
+📒https://docs.aws.amazon.com/fsx/latest/WindowsGuide/multi-az-deployments.html  
+📒https://docs.aws.amazon.com/fsx/latest/WindowsGuide/group-file-systems.html  
+📒https://docs.aws.amazon.com/fsx/latest/WindowsGuide/limits.html  
 
 SMB file share for Windows
 integration with AD (AD Trust must be configured)
@@ -1495,13 +1864,130 @@ Microsoft DFS Replication
 ## DNS
 :tv:https://www.youtube.com/watch?v=D1n5kDTWidQ
 
-# Analytics, Streaming,
+
+# IoT Platform
+📒https://docs.aws.amazon.com/iot/latest/developerguide/iot-rules.html  
+📒https://docs.aws.amazon.com/iot/latest/developerguide/iot-basic-ingest.html  
+
+uses MQTT
+
+IoT Devices
+Device Gateway
+IoT Shadows (allows asynchrounous communication)
+Topics -> Subscribers
+IoT Rule
+
+**Basic ingest** allows devices to publish directly to rules using $aws/rules/rule-name avoiding messaging costs incurred when using pub/sub
+
+# Elasticsearch
+📘https://linuxacademy.com/cp/modules/view/id/193  
+📘https://linuxacademy.com/cp/modules/view/id/213  
+
+Implementation of ELK stack (Elasticsearch, Logstash, Kibana)
+
+Components:
+- Kibana: Visualize
+- Elasticsearch: Store, Search, Analyze (stores data in document-based format)
+- Beats + Logstash: Ingest & Transform
+
+Use case: Real-time monitoring of logs
+
+Configure:
+  - Data nodes
+  - Dedicated master nodes
+  - Storage
+
+Can be deployed in 3-AZ (recommendation for production workloads) or 2-AZ
+
+
+# Analytics, Streaming, Big Data
+
+## Kinesis
+📒https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html  
+📒https://docs.aws.amazon.com/firehose/latest/dev/encryption.html  
+📒https://docs.aws.amazon.com/streams/latest/dev/building-consumers.html  
+
+- `Data record`: sequence number, partition key, data blob (up to **1MB**)
+- Retention period **24h-168h** (`IncreaseStreamRetentionPeriod` and `DecreaseStreamRetentionPeriod`)
+- Supports ordering of the messages in an individual shard (`PutRecord` with `sequenceNumberForOrdering` parameter) - strictly increasing sequence number for puts from the same client and same partition key  
+
+- Consumers (Kinesis Data Stream Application):
+  - _shared fan-out consumers_: fixed total 2MB/s per shard **shared** between all consumers. 200ms message propagation delay if there is one consumer reading from the stream. 1000ms delay with 5 consumers
+  Pull mode over HTTP using `GetRecords`  
+
+  - _enhanced fan-out consumers_: 2 MB/s per consumer per shard. 70ms propagation delay
+  Push mode over HTTP/2 using `SubscribeToShard`  
+
+![Kinesis Consumers](../media/kinesis-consumers.jpg)  
+
+- **Shard**: sequence of data records in a stream, each record has a unique sequence number  
+  - **reads**: up to 5tps and up to 2MB/s - for each shard  
+  - **writes** up to 1000 record/s and up to 1MB/s - for each shard  
+
+  Kinesis Client Library (KCL) creates a record processor for each shard to read data from the shard and load balances the processors over existing consumers.  
+  With KCL generally you should ensure that **the number of instances does not exceed the number of shards**  
+  You **never** need multiple instances to handle the processing load of one shard  
+  However, one worker **can** process multiple shards  
+  CPU utilisation is what should drive the quantity of consumer instances you have, **not** the number of shards in your Kinesis stream  
+  Use ASG scaling based on CPU load  
+
+❗Data Encryption in Kinesis Firehose:  
+  Depends on the source of data:  
+    - Kinesis Data Stream as data source: Firehose reads encrypted data from the stream, buffers the data in memory and delivers to the destination _without_ storing unencrypted data at rest  
+    - If you send data to Firehose using `PutRecord` or `PutRecordBatch` - turn on SSE by using `StartDeliveryStreamEncryption`  
+
+Kinesis Producers:
+- put data into named stream, specify partition key (shard selected based on PK)
+
+Kinesis Consumers:
+- KCL
+- Lambda Functions set to invoke based on stream data records
+- Kinesis Firehose
+
+
+Components:
+ - Kinesis Data Streams
+ - Kinesis Firehose (stores data in Elasticsearch, S3, Redshift)
+ - Kinesis Data Analytics
+
+### Kinesis Firehose (Delivery Stream)
+🔹Sources:
+  - Kinesis Data Stream
+  - Direct Put from the source (`PutRecord` or `PutRecordBatch`)
+🔹Destinations:
+  - S3
+  - Redshift
+  - Elasticsearch
+  - HTTP Endpoint
+  - 3rd party providers (Datadog, MongoDB Cloud, New Relic, Splunk)
+🔹Optional S3 backup for all destinations
+🔹Allows for data tranformation using lambda functions and format conversion (e.g. to PARQUET)
+
+### Data Analytics in Kinesis
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/how-it-works-input.html  
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/continuous-queries-concepts.html  
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/windowed-sql.html  
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/examples.html  
+
+Runtime:
+- SQL
+- Apache Flink
+
+Queries:
+ - Continuous
+ - Windowed
+
+Components:
+ - Kinesis Streams/Firehose :arrow_right: In-application input stream
+ - In-application output stream :arrow_right: Kinesis Streams/Firehose
+ - In-application error stream :arrow_right: Kinesis Streams/Firehose
+ - Reference tables
 
 ## Athena
-https://docs.aws.amazon.com/athena/latest/ug/querying-AWS-service-logs.html  
-https://gist.github.com/mojodna/292a825eb5b111f306615301c80a5782  
-https://planet.openstreetmap.org/  
-https://s3.console.aws.amazon.com/s3/buckets/osm-pds/planet/?region=us-east-1&tab=overview#  
+📒https://docs.aws.amazon.com/athena/latest/ug/querying-AWS-service-logs.html  
+📒https://gist.github.com/mojodna/292a825eb5b111f306615301c80a5782  
+📒https://planet.openstreetmap.org/  
+📒https://s3.console.aws.amazon.com/s3/buckets/osm-pds/planet/?region=us-east-1&tab=overview#  
 
 Source formats: XML, JSON, CSV, TSV, AVRO, ORC, PARQUET
 Schema-on-read
@@ -1512,6 +1998,72 @@ Used to query:
 - ELB logs
 - VPC Flow logs
 
-
 ## Redshift
-:tv:https://www.youtube.com/watch?v=TJDtQom7SAA
+:tv:https://www.youtube.com/watch?v=TJDtQom7SAA  
+📒https://docs.aws.amazon.com/redshift/latest/dg/c_choosing_dist_sort.html  
+📒https://aws.amazon.com/redshift/pricing/#Amazon_Redshift_node_types  
+
+Column-based
+
+### Disaster Recovery in Redshift
+
+- Single-AZ cluster Data is replicated within the cluster (each drive’s data is mirrored to other nodes)
+- Backups are stored on S3 (eleven nines of durability)  
+- Automated provision of a node and rebuild of a drive from replicas in case of failure. The most frequently queried data is restored first. The cluster will be unavailable for queries and updates until a replacement is provisioned and added to the cluster. Single-node clusters do not support replication.
+- In case of AZ failure you can restore the cluster from the backup in a different AZ - this will create a new cluster with a new endpoint.
+- You can run several clusters in multiple AZs by loading data into your clusters from the same set of Amazon S3 input files. 
+- You can restore a cluster in a new region from the cross-region snapshot (cross-region snapshots should be enabled)
+
+You can copy snapshots cross-region (automatically and manually)
+Can perform either a **full restore** or **table restore**  
+
+## QuickSight
+https://docs.aws.amazon.com/quicksight/latest/user/editions.html
+
+Enterpise Edition:
+- can select AD groups in directory services for access to Amazon QuickSight
+- supports encryption at rest (Standard doesn't)
+
+## EMR
+📒https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html  
+
+Cluster configuration
+Software configuration:
+- Core Hadoop (Hadoop, Hive, Hue, Mahout, Pig, Tez)
+- HBase (HBase, Hadoop, Hive, Hue, Phoenix, ZooKeeper)
+- Presto
+- Spark (Spark, YARN, Zeppelin)
+
+Configuration:
+- Master Node: HDFS Name node
+- Core Node: HDFS Data node, run the map/reduce tasks
+- Task Node: used to execute tasks, but no involvement in HDFS storage - Spot instances are ideal
+
+Data can be retrieved from S3 and output to S3. Intermediate data can be stored either on HDFS or EMRFS (S3 backed cluster storage).
+All nodes in the same AZ (by default)
+
+### EMR Cost and Performance Optimization
+📒https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html  
+
+- Place EMR cluster in the same region where data resides (S3), especially for EMRFS
+
+Guidelines for instance type selection:
+- The master node does not have large computational requirements.
+  fewer then 50 nodes - **m5.xlarge**  
+  more than 50 nodes - **m4.xlarge**  
+- Core and task nodes - depends on the type of processing
+  general - **m5.xlarge** (balanced)
+  if there are exernal dependencies introducing delays - **t2.medium** to save costs
+  improved performance - **m4.xlarge**
+  DB and memory-caching - High Memory Instances (**X family**)
+
+- Total number of nodes you can have in a cluster - 20 (max number of EC2 instances you can run on a single AWS account)
+
+
+![EMR Plan Instances Guidelines](../media/emr-instances-guidelines.png)
+
+The amount of HDFS storage available to your cluster depends on these factors:
+- The number of EC2 instances used for core nodes.
+- The capacity of the EC2 instance store for the instance type used. For more information on instance store volumes, see Amazon EC2 Instance Store in the Amazon EC2 User Guide for Linux Instances.
+- The number and size of EBS volumes attached to core nodes.
+- A replication factor, which accounts for how each data block is stored in HDFS for RAID-like redundancy. By default, the replication factor is three for a cluster of 10 or more core nodes, two for a cluster of 4-9 core nodes, and one for a cluster of three or fewer nodes.

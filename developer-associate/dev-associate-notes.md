@@ -1032,7 +1032,7 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-sectio
 - **CloudFormer**: create CloudFormation template from existing resources
 - Resources:
   - Format `AWS::aws-product-name::data-type-name`
-  - Properties dependend on resource
+  - Properties depending on resource
   - Policies:
     - _CreationPolicy_
     - _DeletionPolicy_

@@ -5,9 +5,9 @@
 Training course notes
 
 # Whitepapers
-📒[AWS Securing Data at Rest with Encryption](https://d0.awsstatic.com/whitepapers/aws-securing-data-at-rest-with-encryption.pdf)  
-📒[AWS Web Hosting Best Practices](https://d0.awsstatic.com/whitepapers/aws-web-hosting-best-practices.pdf?refid=em_)  
-📒[AWS Migrate resources to a new Region](http://d0.awsstatic.com/whitepapers/aws-migrate-resources-to-new-region.pdf?refid=70138000001adyu)  
+📘[AWS Securing Data at Rest with Encryption](https://d0.awsstatic.com/whitepapers/aws-securing-data-at-rest-with-encryption.pdf)  
+📘[AWS Web Hosting Best Practices](https://d0.awsstatic.com/whitepapers/aws-web-hosting-best-practices.pdf?refid=em_)  
+📘[AWS Migrate resources to a new Region](http://d0.awsstatic.com/whitepapers/aws-migrate-resources-to-new-region.pdf?refid=70138000001adyu)  
 
 # AWS Accounts
 Consist of three discrete domains:
@@ -195,7 +195,7 @@ When to use STS:
 - Roles for Amazon EC2 and other AWS services
   - grant access to application running on EC2 to access other AWS services without having to imbed credentials
 
-For mobile applications [**Cognito use is recommended**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_cognito.html)
+For mobile applications [**Cognito use is recommended**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_cognito.html)  
 
 STS API:
 - `AssumeRole`  
@@ -215,7 +215,7 @@ When requested via STS API call, a credential object is returned containing:
 4. Use temp credentials to call AWS API
 
 **`AssumeRoleWithSAML`**  
-❗Possible to have [access to AWS Console](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-saml.html) - SSO - (not possible with WebIdentity)
+❗Possible to have [access to AWS Console](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-saml.html) - SSO - (not possible with WebIdentity)  
 
 ![SAML-Federation](../media/SAML-Federation.png)
 
@@ -241,7 +241,7 @@ Used to delegate the access
 **Session policies** – Session policies are advanced policies that you pass as a parameter when you programmatically create a temporary session for a role or federated user. The permissions for a session come from the IAM entity (user or role) used to create the session and from the session policy. The entity's identity-based policy permissions are limited by the session policy and the permissions boundary. The effective permissions for this set of policy types are the intersection of all three policy types.
 
 ### Policy Evaluation Logic
-📒https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html  
 
 Organisation Boundaries -> User or Role Boundaries -> Role Polices -> Permissions (Identity Polices + Resource Polices)
 
@@ -250,7 +250,7 @@ explicit DENY -> explicit ALLOW -> implicit DENY
 # Account Management
 
 ## AWS Accounts and AWS Organisations
-📒https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-discounts.html  
+📒https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-discounts.html   
 
 Only one single master account in any organisation
 **Master account** (root container):
@@ -356,7 +356,7 @@ End Users:
 📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-purchasing-options.html  
 📒https://github.com/open-guides/og-aws#billing-and-cost-management  
 
-![Differences between Capacity Reservations, Reserved Instances, and Savings Plans](../media/capacity-reservation.png)
+![Differences between Capacity Reservations, Reserved Instances, and Savings Plans](../media/capacity-reservation.png)  
 
 # CloudWatch
 📒https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html  
@@ -391,12 +391,12 @@ CloudWatch Events:
 - Can be used on-prem: Need to install SSM agent and CloudWatch agent
 
 ## CloudWatch Logs
-📘https://linuxacademy.com/cp/courses/lesson/course/4478/lesson/1/module/341
+📘https://linuxacademy.com/cp/courses/lesson/course/4478/lesson/1/module/341  
 
 Log Group 0..N Log Stream
 
 # CloudTrail
-📒https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-an-organizational-trail-prepare.html  
+📒https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-an-organizational-trail-prepare.html   
 
 You can create many different **Trails** each with own configuration
 **Trail** is sent to S3 bucket
@@ -432,6 +432,7 @@ Format:
 
 # S3 Logging
 📒https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerLogs.html  
+
 provides detailed records for the requests that are made to a bucket
 Details:
 ```
@@ -587,7 +588,7 @@ Allows for role separation
 - Using an administrator account, you define and manage an AWS CloudFormation template, and use the template as the basis for provisioning stacks into selected target accounts across specified regions.
 
 ## Using CloudFormation for DR
-📗https://d1.awsstatic.com/asset-repository/products/CloudEndure/CloudEndure_Affordable%20Enterprise-Grade%20Disaster%20Recovery%20Using%20AWS%20082019.pdf
+📗https://d1.awsstatic.com/asset-repository/products/CloudEndure/CloudEndure_Affordable%20Enterprise-Grade%20Disaster%20Recovery%20Using%20AWS%20082019.pdf  
 
 ### DR Scenarios
 🔸**Backup and Restore Method**  
@@ -617,7 +618,7 @@ Allows for role separation
 - uses ASG and instance resizing to increase capacity in a disaster scenario
 
 ## Custom Resources
-📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html  
 
 Use the `AWS::CloudFormation::CustomResource` or `Custom::<MyCustomResourceTypeName>` resource type to define custom resources in your templates.
 
@@ -632,7 +633,7 @@ The service token specifies where AWS CloudFormation sends requests to, such as 
 ## Virtualization and EC2 Instance Type
 📒https://aws.amazon.com/ec2/instance-types/
 
-![EC2 Virtualization types](http://www.brendangregg.com/blog/images/2017/ec2-types-numbered.png)
+![EC2 Virtualization types](http://www.brendangregg.com/blog/images/2017/ec2-types-numbered.png)  
 
 🔸**General Purpose (A, T, M)**
   - M5: default instance type, general workhorse inside AWS, steady state 80-90% CPU
@@ -676,9 +677,9 @@ You can modify permission to be public or private (shared with specific AWS acco
 ❗when creating AMIs from instances with instance store root volumes - a **bundle** is created and stored on S3 containing ALL the root volume data
 
 ## EC2 Storage and Snapshots
-📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html
-📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSPerformance.html
-📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html  
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSPerformance.html  
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html  
 
 Block-level storage:
 - **Instance store**
@@ -734,7 +735,7 @@ If using API or CLI or CloudFormation the two steps are distinct and must be don
 ❗All applications running on the instance share the role credentials - it's not possible to be more granular
 
 ## HPC and Placement Groups
-📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html  
 
 Not possible to modify placement group after creation
 
@@ -773,7 +774,7 @@ Create a CloudWatch agent configuration file (JSON)
 Start agent
 
 # VMware
-:tv:https://www.youtube.com/watch?v=RStQrGmHqy0
+:tv:https://www.youtube.com/watch?v=RStQrGmHqy0  
 
 # Containers
 
@@ -826,13 +827,13 @@ EC2-type:
 ❗Task execution role - used by ECS on your behalf to interact with CloudWatch, ECR etc - given to ECS container agent
 
 # EKS
-:tv:https://www.youtube.com/watch?v=EDaGpxZ6Qi0
+:tv:https://www.youtube.com/watch?v=EDaGpxZ6Qi0  
 
 
 # Serverless
 
 # Lambda
-:tv:https://www.youtube.com/watch?v=QdzV04T_kec
+:tv:https://www.youtube.com/watch?v=QdzV04T_kec  
 
 - max timeout 15m
 - priced per # of requests and duration
@@ -894,10 +895,10 @@ Lambda metrics:
     Invocation, Performace, Concurrency
 
 ## Lambda Layers
-https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html
-https://docs.aws.amazon.com/lambda/latest/dg/runtimes-walkthrough.html
-https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path
-https://github.com/awslabs/aws-lambda-cpp
+📒https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html  
+📒https://docs.aws.amazon.com/lambda/latest/dg/runtimes-walkthrough.html  
+📒https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path  
+📒https://github.com/awslabs/aws-lambda-cpp  
 
 - ZIP archive that contains libraries, custom runtime or other dependencies
 - You can use libraries in your function without needing to include them in your deployment package
@@ -908,19 +909,19 @@ https://github.com/awslabs/aws-lambda-cpp
 - You can move runtime dependencies out of your function code by placing them in a layer  
 
 # API Gateway
-:tv:https://www.youtube.com/watch?v=tIfqpM3o55s
-https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-http-integrations.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-aws-proxy.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html  
-https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/
-https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html
-https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/
-https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
-https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html
-https://aws.amazon.com/appsync/
+:tv:https://www.youtube.com/watch?v=tIfqpM3o55s  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-http-integrations.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-aws-proxy.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html    
+📒https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html  
+📒https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html  
+📒https://aws.amazon.com/appsync/  
 
 - Resource URL
 - Stage is added to default API endpoint
@@ -1035,7 +1036,7 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 
 # CloudFront
 📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/high_availability_origin_failover.html  
-📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-viewer-📒protocols-ciphers.html  
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-viewer-protocols-ciphers.html  
 
 - Viewer Protocol
 - Origin Protocol
@@ -1103,7 +1104,7 @@ configured in Behaviors
 
 
 ## Optimizing Caching
-📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html
+📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html  
 
 Distribution settings -> Behaviors
 
@@ -1181,19 +1182,205 @@ Workflow-style data transformations or data pipelines
 Use EMR in background
 
 # AWS Snow
+📒https://docs.aws.amazon.com/snowball/latest/developer-guide/device-differences.html  
+📒https://docs.aws.amazon.com/snowball/latest/developer-guide/how-it-works.html  
+📒https://docs.aws.amazon.com/snowball/latest/developer-guide/BestPractices.html  
 
+- Snowball: 50-100TB, economical when transferring more than 10TB
+- Snowball Edge: +local compute (lambda/instances), up to 100TB
+  - Storage Optimized
+  - Compute Optimized
+  - Compute Optimized with GPU
+- Snowmobile: up to 100PB, use for data transfers > 10PB
 
+Encrypted at rest
+
+# SQS
+:question:https://aws.amazon.com/sqs/faqs/  
+📒https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html  
+📒https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-delay-queues.html  
+📒https://aws.amazon.com/blogs/compute/new-for-aws-lambda-sqs-fifo-as-an-event-source/  
+📒https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html  
+📒https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html  
+📒https://aws.amazon.com/getting-started/hands-on/send-fanout-event-notifications/  
+
+❗Public service - needs NAT or IGW or VPC endpoint
+
+- HA with the region
+- can be PCI compliant and encrypt messages using KMS
+- Polling types:  
+    - short polling (0s receive message wait time), queries **only subset** of the SQS servers, will not return all possible messages in a poll
+    - long polling (1-20s receive message wait time)
+
+- Queue types (has to be selected BEFORE creating queue):  
+    - **Standard** (nearly unlimited throughput, **at least once** semantic)  
+    - 120K in-flight messages (received from a queue by a consumer, but not yet deleted)
+    - Multiple producers and multiple consumers
+
+    - **FIFO** (**exactly once**, soft limits 3000 mps with batching or 300 without by default)
+    - Multiple producers, but multiple consumers only through Group IDs
+    - 20K in-flight messages
+    - The name of FIFO queue must end with `.fifo`  
+    - Supports message groups - allow multiple ordered message groups within a queue
+
+- Message up to **256KB** (but can link S3 with [Amazon SQS Extended Client Library for Java](https://github.com/awslabs/amazon-sqs-java-extended-client-lib) and AWS SDK for Java)
+
+- Up to 10 metadata attributes (outside of message body)
+- Message Components:
+    - Body
+    - ReceiptHandle - allows to delete message after processing
+    - Metadata attributes (up to 10)
+    - VisibilityTimeout
+    - DelaySeconds
+
+- Can have attached resource policy (access policy)
+
+- Queue configuration:
+    - Visibility timeout (0s-12h): Use `ChangeMessageVisibility`  
+    - **Delay Queue**: Delivery delay (0s-15m): delay each message coming to the queue   
+        not retrospective for standard queues  
+        retrospective for FIFO queues  
+    - Receive message wait time (0-20s): max time polling will wait for messages  
+    - Message retention period (1m-14d)  
+    - Max message size (1-256KB)  
+    - Access policy -> defines who can send and who can receive  
+    - DLQ: should be the same type as the main queue  
+- Use URL to access
+- `ApproximateNumberOfMessages` -> metric for ASG
+
+- Managing Access to SQS
+  - same as with SNS
+
+- AWS Lambda uses long polling for standard queues and message group ID for FIFO queues
+
+# SNS
+📒https://docs.aws.amazon.com/sns/latest/api/CommonErrors.html   
+📒https://docs.aws.amazon.com/sns/latest/dg/mobile-push-send-register.html  
+
+❗Public service - needs NAT or IGW or VPC endpoint
+
+- HA within a region
+- Messages up to **256KB**
+
+- Topics: name max 256 characters, alphanumeric + "-" and "_
+    - Encryption (optional), AWS KMS
+    - Access Policy (default access for topic owner)
+    - Delivery retry policy (to HTTP/S endpoints)
+    - Delivery status logging (successful/failed deliveries) for Lambda, SQS, HTTP/S, APP
+
+- Subscriptions:  
+    Endpoints:  
+      `HTTP/S`  
+      `Email, Email JSON`  
+      `SQS (Fun-out)`  
+      `Lambda`  
+      `Platform application endpoint (mobile application)`  
+      `SMS`  
+    Filters
+    DLQ settings
+- SNS Message attributes:
+    `Name, Value, Type (String, String array, number, binary)`
+
+- SNS Message Delivery Retries:
+
+![SNS message delivery retries](../media/sns-message-delivery-retries.png)
+
+- Access to SNS resources:
+  SNS access control policies:
+    - Grant access to SNS topic to another AWS service or account
+      API: `AddPermission`
+    - Grant right to some AWS services to publish to SNS topic (many services will use IAM Role instead)
+    - Can use IAM Policies and Access Control Policies at the same time
+
+- Message Data:
+    - Message Body:
+        Message, MessageID, Signature, SigningCertURL, Subject, Timestamp, TopicARN, Type, UnsubscribeURL
+    - Message Attributes:
+        Name, Type, Value (useful for SQS and mobile push)
+
+- Mobile Push with SNS:
+    - MPNS Process
+    Create a platform application->Add endpoints->Publish messages
+    - Can publish additionally a notification to SNS topics (endpoint created, deleted, updated, failure)
+
+- SNS API and Errors:
+  - `CreateTopic`: Name  
+  - `Publish`: Send message: Message  
+  - `Subscribe`  
+  - `Unsubscribe`  
+
+# Amazon MQ
+📒https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/network-of-brokers.html  
+📒https://aws.amazon.com/amazon-mq/features/  
+📒https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/amazon-mq-getting-started.html  
+
+- Opensource message broker
+- Managed Apache ActiveMQ
+- Compatible with JMS API or AMQP, MQTT, OpenWire, STOMP
+- Can function as **Queue** or **Topic** or **Virtual Topic** (like fan-out)
+- **One-to-One** or **One-to-Many**  
+- supports **Network of Brokers**  
+
+Associated with VPC, not a public service
+Not controllable by AWS API or permissions
+
+Components:
+- Broker:
+  - Single instance or
+  - HA pair (active/standby)
+  - Managed updates
+- ActiveMQ Web Console
+
+# Step Functions
+📒https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html  
+📒https://docs.aws.amazon.com/step-functions/latest/dg/tutorial-handling-error-conditions.html  
+
+Based on the concepts of tasks and state machines
+
+Two types of state machines:  
+  - Standard  
+  - Express: for high-volume event processing workloads  
+
+- Components: Tasks, State Machines (defined using **JSON** Amazon States Language)
+- Activity can be:
+  - Program code interacting with Step Function API actions
+  - Lambda function
+- State Types (7 types):
+  - Task: do some work
+  - Choice:
+  - Fail/Succeed
+  - Pass: Pass inputs to outputs, do some transformation
+  - Wait
+  - Parallel
+- Transitions
+- API Actions:
+  - `CreateStateMachine`  
+  - `StartExecution`  
+  - `ListExecution` - list executions is eventually consistent (use `nextToken`)  
+  - `StopExecution`  
+
+# Simple Workflow Service
+- Workflow coordinates and manages the execution of **activities** that can be run asynchronous across multiple devices
+- Consistent execution
+- No duplication of tasks
+- Guarantees delivery order of messages/tasks
+- Primarily an API which an application can integrate its workflow into
+- Execution can last up to 1y
+- Components:
+  - Workflows (Decider)
+  - Activities (single step in workflow)
+  - Tasks: what interacts with the workers that are part of a workflow
 
 # S3 & Glacier
-:tv:https://www.youtube.com/watch?v=rHeTn9pHNKo
-:tv:https://www.youtube.com/watch?v=gidUa4lJd9Y
+:tv:https://www.youtube.com/watch?v=rHeTn9pHNKo  
+:tv:https://www.youtube.com/watch?v=gidUa4lJd9Y  
 
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/Introduction.html#ConsistencyModel
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/ListingKeysHierarchy.html
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-📒https://aws.amazon.com/s3/storage-classes/
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/Introduction.html#ConsistencyModel  
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html  
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/ListingKeysHierarchy.html  
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html  
+📒https://aws.amazon.com/s3/storage-classes/  
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html  
 
 100 (soft) and 1000 (hard) buckets limit for the account
 
@@ -1214,7 +1401,7 @@ Locking methods:
 - works only on new buckets
 
 ## Controlling Access to S3 Buckets
-https://docs.aws.amazon.com/AmazonS3/latest/dev/PresignedUrlUploadObject.html
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/PresignedUrlUploadObject.html  
 
 Bucket policies attached **only** to bucket (not an IAM user)
 Both buckets and **objects** can have ACLs - enables sharing of the object via URL
@@ -1234,10 +1421,10 @@ Objects are owned by creator by default
 🔸**SSE-KMS**: master keys are managed in KMS. Allows for role separation
 
 ## Optimizing S3 performance
-📒http://s3-accelerate-speedtest.s3-accelerate.amazonaws.com/en/accelerate-speed-comparsion.html
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/request-rate-perf-considerations.html  
-📒https://docs.aws.amazon.com/AmazonS3/latest/user-guide/enable-transfer-acceleration.html  
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/transfer-acceleration.html#transfer-acceleration-requirements
+📒http://s3-accelerate-speedtest.s3-accelerate.amazonaws.com/en/accelerate-speed-comparsion.html  
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/request-rate-perf-considerations.html    
+📒https://docs.aws.amazon.com/AmazonS3/latest/user-guide/enable-transfer-acceleration.html   
+📒https://docs.aws.amazon.com/AmazonS3/latest/dev/transfer-acceleration.html#transfer-acceleration-requirements  
 
 ### Multipart upload
 from 5GB is mandatory
@@ -1268,7 +1455,7 @@ Any jobs to download archives are asynchronous, and there are three speeds:
 - **Bulk**: for large amounts - 5-12h
 
 # Databases
-🔹[AWS Database Offering Cheatsheet](../databases/aws-data-services.pdf)
+🔹[AWS Database Offering Cheatsheet](../databases/aws-data-services.pdf)  
 
 ## EC2 Self-Managed Databases
 provides OS level root user access and full control over all OS and DB vendors & components
@@ -1282,8 +1469,8 @@ provides OS level root user access and full control over all OS and DB vendors &
   - Column Based DB
 
 ## RDS
-:tv:https://www.youtube.com/watch?v=HuvUD7-RyoU
-📒https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html#UsingWithRDS.IAMDBAuth.Availability  
+:tv:https://www.youtube.com/watch?v=HuvUD7-RyoU  
+📒https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html#UsingWithRDS.IAMDBAuth.Availability   
 📒https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Enabling.html  
 📒https://aws.amazon.com/premiumsupport/knowledge-center/users-connect-rds-iam/  
 
@@ -1296,8 +1483,8 @@ Encryption - underlying EBS volume encryption
 - Option Group
 
 ## Aurora
-:tv:https://www.youtube.com/watch?v=2WG01wJIGSQ
-:tv:https://www.youtube.com/watch?v=U42mC_iKSBg
+:tv:https://www.youtube.com/watch?v=2WG01wJIGSQ  
+:tv:https://www.youtube.com/watch?v=U42mC_iKSBg  
 
 Replica Autoscaling
 
@@ -1322,11 +1509,11 @@ Lag less than 1s
  ❗No multi-AZ architecture. Fail will result in failover to a new AZ (slower than Multi-AZ setup)
 
 ## DynamoDB
-:tv:https://www.youtube.com/watch?v=HaEPXoXVf2k
-:tv:https://www.youtube.com/watch?v=eTbBdXJq8ss
+:tv:https://www.youtube.com/watch?v=HaEPXoXVf2k  
+:tv:https://www.youtube.com/watch?v=eTbBdXJq8ss  
 
-📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-indexes-general.html
-📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html
+📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-indexes-general.html  
+📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html  
 
 Accessible via private VPC endpoints (VPC gateway) or using public endpoints
 
@@ -1515,7 +1702,7 @@ Transactions | No | **Yes** | **Yes**
 # Networking
 
 ## VPC
-:tv:https://www.youtube.com/watch?v=fnxXNZdf6ew
+:tv:https://www.youtube.com/watch?v=fnxXNZdf6ew  
 
 VPC tenancy modes - Default or Dedicated
 Can have only one DHCP Option set
@@ -1579,7 +1766,7 @@ SG cannot **explicitly** deny traffic
 SG can reference AWS logical resources
 
 ## Egress-Only Gateways
-[IPv6 Subnetting - Overview and Case Study](https://community.cisco.com/t5/networking-documents/ipv6-subnetting-overview-and-case-study/ta-p/3125702)
+[IPv6 Subnetting - Overview and Case Study](https://community.cisco.com/t5/networking-documents/ipv6-subnetting-overview-and-case-study/ta-p/3125702)  
 
 Allows **outbound** only public internet and AWS Public Zone routing
 
@@ -1656,7 +1843,7 @@ LOCATION 's3://your_log_bucket/prefix/AWSLogs/{account_id}/vpcflowlogs/{region_c
 TBLPROPERTIES ("skip.header.line.count"="1");
 ```
 
-https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-troubleshooting.html
+https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-troubleshooting.html  
 
 `LogDestinationNotFoundException` or `Access Denied for LogDestination` error
 - Ensure that you have specified the ARN for an existing S3 bucket, and that the ARN is in the correct format
@@ -1686,7 +1873,7 @@ Attach VPC endpoint policy
 You can create multiple endpoints in a single VPC, for example, to multiple services. You can also create multiple endpoints for a single service, and use different route tables to enforce different access policies from different subnets to the same service.
 
 #### Gateway endpoints
-Prefix list `pl-xxxxx` ([prefix list](https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html) is representation of CIDR) added to the **route table**
+Prefix list `pl-xxxxx` ([prefix list](https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html) is representation of CIDR) added to the **route table**  
 Highly Available
 **Not associated with SN or SG**
 
@@ -1768,8 +1955,8 @@ Connection over DX is **unencrypted**
 ❗You can use Direct Connect Gateway (DXGW) to connect CGW to multiple VGW in different VPC in different regions
 
 ### AWS Transit Gateway
-📒https://aws.amazon.com/about-aws/whats-new/2019/12/aws-transit-gateway-supports-inter-region-peering/
-📒https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html
+📒https://aws.amazon.com/about-aws/whats-new/2019/12/aws-transit-gateway-supports-inter-region-peering/  
+📒https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html  
 
 Transit Gateways have multiple route tables allowing complex routing hierarchies to be defined from true hub-and-spoke to edge consolidation and anywhere in between
 
@@ -1803,7 +1990,7 @@ Key rotation can be automatic (every 3y for AWS managed CMK or once per year for
 Role separation with Key Policies
 
 ## AWS CloudHSM
-📒https://docs.aws.amazon.com/cloudhsm/latest/userguide/initialize-cluster.html
+📒https://docs.aws.amazon.com/cloudhsm/latest/userguide/initialize-cluster.html  
 
 FIPS 140-3
 
@@ -1815,7 +2002,7 @@ Interaction via _industry standards_, **no normal AWS APIs**
 On-prem - if you **really need to control own physical hardware**
 
 ## AWS Certificate Manager
-📒https://docs.aws.amazon.com/acm/latest/userguide/acm-concepts.html  
+📒https://docs.aws.amazon.com/acm/latest/userguide/acm-concepts.html   
 
 managed service providing **X509 v4 SSL/TLS certificates**. The certificates are asymmetric. One half is private and stored on resources (Servers, Load Balancers) and the other half is public.
 
@@ -1832,14 +2019,14 @@ Group of products:
 - Amazon Cognito
 - Amazon Cloud Directory (Graph based store of information)
 
-![Directory Service](../media/directory-service.png)
+![Directory Service](../media/directory-service.png)  
 
 # Network Security
 
 ## AWS WAF and Shield
-📒https://docs.aws.amazon.com/waf/latest/developerguide/getting-started-ddos.html
-📒https://aws.amazon.com/shield/features/
-📒https://docs.aws.amazon.com/waf/latest/developerguide/aws-shield-use-case.html
+📒https://docs.aws.amazon.com/waf/latest/developerguide/getting-started-ddos.html  
+📒https://aws.amazon.com/shield/features/  
+📒https://docs.aws.amazon.com/waf/latest/developerguide/aws-shield-use-case.html  
 
 Ingress traffic > AWS Shield > AWS WAF > Resources (CloudFront, API GW, ELB)
 
@@ -1874,7 +2061,7 @@ conditions > rules > webACL
 - 24x7 access to DRT (DDoS Response Team)
 
 ## AWS GuardDuty
-📒https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html
+📒https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html  
 
 GuardDuty monitors event sources (VPC Flow  Logs, R53 DNS Query logs, Cloudtrail events)
 Publish events to Guard Duty console or CloudWatch events
@@ -1883,9 +2070,9 @@ Requires role permission
 
 
 # EFS
-📒https://docs.aws.amazon.com/efs/latest/ug/performance.html
-📒https://docs.aws.amazon.com/efs/latest/ug/performance.html
-📒https://docs.aws.amazon.com/efs/latest/ug/using-amazon-efs-utils.html
+📒https://docs.aws.amazon.com/efs/latest/ug/performance.html  
+📒https://docs.aws.amazon.com/efs/latest/ug/performance.html  
+📒https://docs.aws.amazon.com/efs/latest/ug/using-amazon-efs-utils.html  
 
 
 - resides inside VPC
@@ -1942,23 +2129,23 @@ Microsoft DFS Replication
 
 
 # EFS Monitoring
-📒https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html
+📒https://docs.aws.amazon.com/efs/latest/ug/monitoring-cloudwatch.html  
 
 - metric sent at 1m intervals and retained for 15months
 
 ## Transit Gateway
-:tv:https://www.youtube.com/watch?v=yQGxPEGt%5C_-w
-:tv:https://www.youtube.com/watch?v=ar6sLmJ45xs
+:tv:https://www.youtube.com/watch?v=yQGxPEGt%5C_-w  
+:tv:https://www.youtube.com/watch?v=ar6sLmJ45xs  
 
 ## VPN
-:tv:https://www.youtube.com/watch?v=qmKkbuS9gRs
+:tv:https://www.youtube.com/watch?v=qmKkbuS9gRs  
 
 ## DNS
-:tv:https://www.youtube.com/watch?v=D1n5kDTWidQ
+:tv:https://www.youtube.com/watch?v=D1n5kDTWidQ  
 
 
 # IoT Platform
-📒https://docs.aws.amazon.com/iot/latest/developerguide/iot-rules.html  
+📒https://docs.aws.amazon.com/iot/latest/developerguide/iot-rules.html   
 📒https://docs.aws.amazon.com/iot/latest/developerguide/iot-basic-ingest.html  
 
 uses MQTT
@@ -2110,7 +2297,7 @@ You can copy snapshots cross-region (automatically and manually)
 Can perform either a **full restore** or **table restore**  
 
 ## QuickSight
-https://docs.aws.amazon.com/quicksight/latest/user/editions.html
+https://docs.aws.amazon.com/quicksight/latest/user/editions.html  
 
 Enterpise Edition:
 - can select AD groups in directory services for access to Amazon QuickSight
@@ -2152,7 +2339,7 @@ Guidelines for instance type selection:
 - Total number of nodes you can have in a cluster - 20 (max number of EC2 instances you can run on a single AWS account)
 
 
-![EMR Plan Instances Guidelines](../media/emr-instances-guidelines.png)
+![EMR Plan Instances Guidelines](../media/emr-instances-guidelines.png)  
 
 The amount of HDFS storage available to your cluster depends on these factors:
 - The number of EC2 instances used for core nodes.

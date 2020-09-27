@@ -1007,7 +1007,7 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 
 ## ELB
 :tv:https://www.youtube.com/watch?v=VIgAT7vjol8  
-📒:question:https://aws.amazon.com/elasticloadbalancing/faqs/  
+:question:https://aws.amazon.com/elasticloadbalancing/faqs/  
 📒https://aws.amazon.com/elasticloadbalancing/features/#compare  
 📒https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html  
 📒https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html  

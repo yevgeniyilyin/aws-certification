@@ -559,7 +559,71 @@ Update behaviors of Stack Resources:
 - Replacement (new physical ID)
 
 ## Template Portability and Reuse
+Use default values for parameters (for automated deployment)
+Use SSM to retrieve region-dependend values (e.g. AMI id)
+Use **Pseudo Parameters**: pre-defined parameters in CloudFormation
+Use **Intrisic Functions**  
+Do not specify explicit resource names
 
+## Stack References and Nested Stacks
+
+cross-stack references: **re-use the existing stack**  
+  Stack A (provider of the reference) defines all exported resource references in `Outputs` section
+  Stack B (recipient of the reference) references an imported resource via `Fn::ImportValue`
+
+nested stacks: **re-use the template**  
+  For nested stacks use resource type `AWS:CloudFormation:Stack`
+  Refer to nested stack output via `!GetAtt <StackName>.Outputs.<LogicalResourceId>`
+
+## Stack roles
+IAM CloudFormation role - create resources on your behalf
+Allows for role separation
+
+## Stack Sets
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html  
+
+- You can use StackSets to create, update, or delete stacks across multiple accounts and regions
+- StackSets orchestrate the deployment of stacks in mulitple accounts
+- Using an administrator account, you define and manage an AWS CloudFormation template, and use the template as the basis for provisioning stacks into selected target accounts across specified regions.
+
+## Using CloudFormation for DR
+📗https://d1.awsstatic.com/asset-repository/products/CloudEndure/CloudEndure_Affordable%20Enterprise-Grade%20Disaster%20Recovery%20Using%20AWS%20082019.pdf
+
+### DR Scenarios
+🔸**Backup and Restore Method**  
+- Slowest restoration time after an event
+- Requires frequent snapshots of data
+- Storage Gateway enables snapshots of on-prem data to be copied to S3
+- Gateway VTL can replace magnetic tape backup
+- Used with other DR methods
+
+🔸**Pilot Light Method**
+- Quicker than backup and restore
+- slower than warm standby
+- _most critical core components_ are always running and kept up to date
+- typically includes DB servers (replication)
+- restoring other components include EBS snapshots and EC2 AMIs
+
+🔸**Warm Standby Method**
+- Scaled-down version of fully functional environment is always running
+- resize instances after failover
+- like pilot light uses DB replication
+
+🔸**Multi-Site Solution Method**
+- Fastest possible system restore
+- 1:1 copy of all Infrastructure in another AZ/region
+- **Active-Active**  
+- Can perform weighted DNS routing
+- uses ASG and instance resizing to increase capacity in a disaster scenario
+
+## Custom Resources
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html
+
+Use the `AWS::CloudFormation::CustomResource` or `Custom::<MyCustomResourceTypeName>` resource type to define custom resources in your templates.
+
+The template developer defines a custom resource in their template, which includes a service token and any input data parameters. Depending on the custom resource, the input data might be required; however, the service token is always required.
+
+The service token specifies where AWS CloudFormation sends requests to, such as to an Amazon SNS topic ARN or to an AWS Lambda function ARN.
 
 
 # EC2
@@ -1090,7 +1154,35 @@ Routing types:
 - Multivalue answer (same as simple, but with health checks)
 
 # Elastic Beanstalk
-:question:https://aws.amazon.com/elasticbeanstalk/faqs/
+:question:https://aws.amazon.com/elasticbeanstalk/faqs/  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.db.html  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/AWSHowTo.RDS.html  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/ebextensions.html (`.ebextensions`)  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html (`env.yaml`)  
+
+# OpsWorks
+[AWS OpsWorks for Puppet Enterprise](https://docs.aws.amazon.com/opsworks/latest/userguide/welcome_opspup.html)  
+[AWS OpsWorks for Chef Automate](https://docs.aws.amazon.com/opsworks/latest/userguide/welcome_opscm.html)  
+[Using Auto Healing to Replace Failed Instances](https://docs.aws.amazon.com/opsworks/latest/userguide/workinginstances-autohealing.html)  
+[Managing AWS OpsWorks Stacks User Permissions](https://docs.aws.amazon.com/opsworks/latest/userguide/opsworks-security-users.html  )
+[Recipes](https://docs.aws.amazon.com/opsworks/latest/userguide/workingcookbook-installingcustom-components-recipes.html)  
+[Stacks](https://docs.aws.amazon.com/opsworks/latest/userguide/workingstacks.html)  
+[Layers](https://docs.aws.amazon.com/opsworks/latest/userguide/workinglayers.html)  
+[Instances](https://docs.aws.amazon.com/opsworks/latest/userguide/workinginstances.html)  
+[Apps](https://docs.aws.amazon.com/opsworks/latest/userguide/workingapps.html)  
+
+# Data Pipeline
+📒https://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-how-pipeline-definition.html  
+📒https://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-concepts-datanodes.html  
+📒https://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-concepts-activities.html  
+
+Workflow-style data transformations or data pipelines
+
+Use EMR in background
+
+# AWS Snow
+
+
 
 # S3 & Glacier
 :tv:https://www.youtube.com/watch?v=rHeTn9pHNKo

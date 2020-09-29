@@ -8,6 +8,7 @@ Training course notes
 📘[AWS Securing Data at Rest with Encryption](https://d0.awsstatic.com/whitepapers/aws-securing-data-at-rest-with-encryption.pdf)  
 📘[AWS Web Hosting Best Practices](https://d0.awsstatic.com/whitepapers/aws-web-hosting-best-practices.pdf?refid=em_)  
 📘[AWS Migrate resources to a new Region](http://d0.awsstatic.com/whitepapers/aws-migrate-resources-to-new-region.pdf?refid=70138000001adyu)  
+📘[AWS Best Practices for DDoS Resiliency](https://d0.awsstatic.com/whitepapers/Security/DDoS_White_Paper.pdf)  
 
 # AWS Accounts
 Consist of three discrete domains:
@@ -105,6 +106,7 @@ Available in ALL requests
 - **`aws:username`**
 - **`ec2:SourceInstanceARN`**
 
+**Explicit deny** is better than explicit allow. Other policies may still allow access.
 
 ## IAM Roles and Temporary Security Credentials
 📒https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-instance-metadata.html  
@@ -181,11 +183,41 @@ To give full control to the bucket owner account, the following bucket policy sh
 }
 ```
 
+## Cognito
+📒https://docs.aws.amazon.com/cognito/latest/developerguide/identity-pools.html  
+📒https://docs.aws.amazon.com/cognito/latest/developerguide/authentication-flow.html  
+📒https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-user-groups.html  
+
+### User Pools
+A user pool is a user directory in Amazon Cognito
+
+User pools provide:
+
+- Sign-up and sign-in services.
+- A built-in, customizable web UI to sign in users.
+- Social sign-in with Facebook, Google, Login with Amazon, and Sign in with Apple, as well as sign-in with SAML identity providers from your user pool.
+- User directory management and user profiles.
+- Security features such as multi-factor authentication (MFA), checks for compromised credentials, account takeover protection, and phone and email verification.
+- Customized workflows and user migration through AWS Lambda triggers.
+
+### Identity Pools (Federated Identities)
+Amazon Cognito identity pools provide temporary AWS credentials for users who are guests (unauthenticated) and for users who have been authenticated and received a token. An identity pool is a store of user identity data specific to your account.
+
+#### Enhanced (Simplified) Authflow
+
+![cognito-enhanced-authflow](../media/cognito-enhanced-authflow.png)
+
+#### Basic (Classic) Authflow
+
+![cognito-classic-authflow](../media/cognito-classic-authflow.png)
+
+
 ## Advanced Identity in AWS
 
 ### Identity Federation
 📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_saml.html  
-📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_cognito.html  
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_cognito.html
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_saml.html  
 
 When to use STS:
 - Identity Federation:
@@ -252,6 +284,10 @@ explicit DENY -> explicit ALLOW -> implicit DENY
 ## AWS Accounts and AWS Organisations
 📒https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-discounts.html   
 
+https://docs.aws.amazon.com/organizations/latest/userguide/orgs_introduction.html  
+
+AWS Organisations is a global service physically hosted in us-east-1
+
 Only one single master account in any organisation
 **Master account** (root container):
 - A master account is the AWS account you use to create your organization
@@ -261,13 +297,59 @@ Only one single master account in any organisation
 - Pay all charges accrued by all accounts in organisation
 - **Never affected by SCP**  
 
+**Member account**:
+- can join only **one** Organisation even if it receives multiple invitations
+- if an invitation is not accepted or rejected for over 15d, the invitation will expire
+
+**Organisation Unit (OU)**:
+- can contain other OUs
+- an OU can have exactly one parent
+- each account can be a member of exactly one OU
+- before deleting an OU, you must firstly move all accounts out of the OU and any child OU. Child OUs need to be deleted as well
+- OU names must be unique within a parent OU or root
+- OU can be nested up to 5 levels deep
+- ❗You cannot move an OU to another place from the console or CLI. You has to create a new OU and move accounts to it
+
+Minimum permissions needed to create an OU
+  - `organizations:DescribeOrganization` (console only)
+  - `organizations:CreateOrganizationalUnit`
+
+Delete an OU:
+  - `organizations:DescribeOrganization` (console only)
+  - `organizations:DeleteOrganizationalUnit`
+
+Minimum permissions needed to move accounts among OUs:
+  - `organisations:DescribeOrganisation` (console only)
+  - `organisations:MoveAccount`
+
+IAM -> Organisation activity:
+  you can review access activity of the account within the organisation
+
 Applying policies at the root level propagates them to all OUs and accounts below
 
-Organisations operate in either **Consolidated Billing** or **All Features** mode (can be modified later)
+Organisations operate in either **Consolidated Billing** or **All Features** mode
+❗**All Features** cannot be switched back to **Consolidated Billing
+If you create an organization with consolidated billing features only, you can later enable all features.
 
-When you create a member account in your organization, AWS Organizations automatically creates an IAM role `OrganizationAccountAccessRole` in the member account that enables IAM users in the master account to exercise full administrative control over the member account. This role is subject to any service control policies (SCPs) that apply to the member account.
+AWS Organisations is a free service regardless of how many OUs in the Organisation
+
+When you **create** a member account in your organization, AWS Organizations automatically creates an IAM role `OrganizationAccountAccessRole` in the member account that enables IAM users in the master account to exercise full administrative control over the member account. This role is subject to any service control policies (SCPs) that apply to the member account.
+
+When an **invited** account joins your organization, you do not automatically have full administrator control over the account, unlike created accounts. If you want the master account to have full administrative control over an invited member account, you must create the `OrganizationAccountAccessRole` IAM role in the member account and grant permission to the master account to assume the role.
 
 AWS Organizations also automatically creates a service-linked role named `AWSServiceRoleForOrganizations` that enables integration with select AWS services. You must configure the other services to allow the integration.
+
+## Policy Types
+**Authorization policies**:  
+  - Service Control Policies (SCP)
+
+**Management policies**:  
+  - AI services opt-out policies
+  - Backup policies
+  - Tag policies
+
+![org-policies](../media/org-policies.png)
+
 
 ## Service Control Policies (SCP)
 similar to IAM permissions policies but SCP _don't grant any permissions_  
@@ -282,6 +364,9 @@ If multiple SCPs apply to an account - only the **overlap** of those SCPs is per
 - **Deny list strategy**: explicitly specify the access that is not allowed. All other access is allowed.
   This is the default behavior of AWS Organisations.
   You leave the default `FullAWSAccess` policy in place and attach additional policies that explicitly _deny_ access to unwanted services and actions
+
+## Adding accounts to AWS Organisation
+- One
 
 ## AWS Account Limits
 📒https://docs.aws.amazon.com/general/latest/gr/aws-general.pdf#aws-service-information  
@@ -721,6 +806,9 @@ Block-level storage:
     - max 250 IOPS
     - max 250 MB/s
 
+EBS volume type can be modified in flight without the volume being detached or the instance being restarted. However, there are [some limitations](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/modify-volume-requirements.html) that need to be noticed.
+❗Decreasing the size of an EBS volume is not supported
+
 ## EC2 Instance Profiles and Roles
 Instance profile allow a role to be assumed to a single EC2 instance, and for applications running on that instance to assume a role while being abstracted away from any AWS identity. Applications running on EC2 are not AWS Identities and so it's instance profile which bridges that gap.
 
@@ -878,6 +966,8 @@ Function configuration:
       `ec2::DeleteNetworkInterface`  
       `ec2::DescribeNetworkInterface`  
 
+    ❗If a function connected to a VPC it does not have access to internet unless the VPC provides access. The NAT GW can provide the internet access for the VPC
+
     - File System - connect to EFS  
     - Asynchronous invocation settings + DQL - SQS or SNS  
     - Concurrency, _provisioned concurrency_ (e.g. for weighted alias)  
@@ -922,6 +1012,8 @@ Lambda metrics:
 📒https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html  
 📒https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html  
 📒https://aws.amazon.com/appsync/  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/handle-errors-in-lambda-integration.html
+❗https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html  
 
 - Resource URL
 - Stage is added to default API endpoint
@@ -967,6 +1059,15 @@ Integration types:
     - _request parameter-based_: `REQUEST` autorizer: receives the caller's identity in a combination of headers, query string parameters, stageVariables and $context variables  
   - **Amazon Cognito user pools**: user pools are used to control who can invoke API methods.
     `autorizationType=COGNITO_USER_POOLS`  
+
+❗The maximum of integration timeout for API Gateway is 29s (minimal is 50ms)
+
+## Handling Lambda Errors in API Gateway
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/handle-errors-in-lambda-integration.html  
+
+For Lambda custom integrations, you **must map errors** returned by Lambda in the integration response to standard HTTP error responses for your clients. Otherwise, Lambda errors are returned as `200 OK` responses by default and the result is not intuitive for your API users.
+
+There are two types of errors that Lambda can return: **standard errors** and **custom errors**. In your API, you must handle these differently.
 
 # Scaling Architectures
 
@@ -1014,7 +1115,7 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 📒https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html  
 📒https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/introduction.html  
 
-❗Do **not** assign public IPs to load balancers - communication is based on CNAME
+❗Do **not** assign public IPs to application load balancers - communication is based on CNAME
 
 ### ALB
 - Layer 7 device
@@ -1033,6 +1134,7 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 - accepts TCP, UDP and TSL termination
 - NLB assigned a single IP address per AZ (EIP can be assigned as well) - easier firewall management
 - Preserve the client IP - its passthrough device
+- ❗any traffic that reaches the load balancer on a valid listener will be routed to your targets, not absorbed
 
 # CloudFront
 📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/high_availability_origin_failover.html  
@@ -1222,6 +1324,7 @@ Encrypted at rest
     - 20K in-flight messages
     - The name of FIFO queue must end with `.fifo`  
     - Supports message groups - allow multiple ordered message groups within a queue
+    - ❗you cannot convert an existing queue into FIFO queue
 
 - Message up to **256KB** (but can link S3 with [Amazon SQS Extended Client Library for Java](https://github.com/awslabs/amazon-sqs-java-extended-client-lib) and AWS SDK for Java)
 
@@ -1689,12 +1792,12 @@ Transactions | No | **Yes** | **Yes**
   - _Cached Volumes_:
     - mounted iSCSI devices, data stored on S3, cached on-prem
     - from 1GB to 32TB
-    - max 32 volumes for total max volume 1PB
+    - max 32 volumes for total max volume **1PB**
   - _Stored Volumes_:
     - store all data locally
     - takes snapshot periodically as incremental backup and store on S3
     - from 1GB to 16TB
-    - max 32 volumes for total max 512TB
+    - max 32 volumes for total max **512TB**
 **Tape Gateway**
 - Virtual tape library writes to Glacier
 - Can run as VM on-prem or EC2 instance
@@ -2003,6 +2106,7 @@ On-prem - if you **really need to control own physical hardware**
 
 ## AWS Certificate Manager
 📒https://docs.aws.amazon.com/acm/latest/userguide/acm-concepts.html   
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html  
 
 managed service providing **X509 v4 SSL/TLS certificates**. The certificates are asymmetric. One half is private and stored on resources (Servers, Load Balancers) and the other half is public.
 
@@ -2010,6 +2114,8 @@ ACM is **regional**
 KMS is used - certificates are **never** stored unencrypted
 
 Only supported on ELB, CloudFront, Elastic Beanstalk, API Gateway
+
+Certificates provided by ACM are free and automatically renew
 
 ## AWS Directory Service
 Group of products:
@@ -2022,6 +2128,7 @@ Group of products:
 ![Directory Service](../media/directory-service.png)  
 
 # Network Security
+📙https://aws.amazon.com/blogs/security/how-to-automatically-update-your-security-groups-for-amazon-cloudfront-and-aws-waf-by-using-aws-lambda/  
 
 ## AWS WAF and Shield
 📒https://docs.aws.amazon.com/waf/latest/developerguide/getting-started-ddos.html  
@@ -2039,11 +2146,21 @@ conditions > rules > webACL
 🔹webACLs contains rules each with their own action, and a default action for any traffic not explicitly matching a rule
 🔹webACLs are processed in order and processing stops when a rule is triggered in the ACL
 
+WebACLs can be associated with:
+  - CloudFront distributions
+  - Regional resources (ALB and API Gateways) - you need to specify a region
+
+**WAF Sandwich**: a WAF layer with EC2 instances are placed between two ELBs - one that faces the web, receives all the traffic, sends it to WAF layer to filter out the malicious requests, WAF layer sends the filtered non-malicious request to another ELB, which sends them to EC2 instances for processing
+
+![waf-Sandwich](../media/waf-sandwich.png)
+
+https://docs.aws.amazon.com/waf/latest/developerguide/waf-dg.pdf
+
 ### AWS Shield Standard
 - Always on
 - Network flow monitoring
 - Layer 3 and 4 DDOS attacks
-- CloudFront and R53 (automatic protection)
+- **CloudFront** and **R53** (automatic protection)
 - No cost protection
 
 ### AWS Shield Advanced
@@ -2055,10 +2172,12 @@ conditions > rules > webACL
 - Global Accelerator accelerators
 - ALB
 - ELB
-- EC2 Elastic IP
+- Can protect EIPs (e.g. useful for NLB or EC2)
 - WAF and Firewall Manager is included
 - Cost protection
 - 24x7 access to DRT (DDoS Response Team)
+
+Read the AWS whitepaper: https://d0.awsstatic.com/whitepapers/Security/DDoS_White_Paper.pdf
 
 ## AWS GuardDuty
 📒https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html  
@@ -2262,6 +2381,10 @@ Components:
  - In-application error stream :arrow_right: Kinesis Streams/Firehose
  - Reference tables
 
+### Kinesis Video Streams
+📒https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/what-is-kinesis-video.html
+
+
 ## Athena
 📒https://docs.aws.amazon.com/athena/latest/ug/querying-AWS-service-logs.html  
 📒https://gist.github.com/mojodna/292a825eb5b111f306615301c80a5782  
@@ -2346,3 +2469,101 @@ The amount of HDFS storage available to your cluster depends on these factors:
 - The capacity of the EC2 instance store for the instance type used. For more information on instance store volumes, see Amazon EC2 Instance Store in the Amazon EC2 User Guide for Linux Instances.
 - The number and size of EBS volumes attached to core nodes.
 - A replication factor, which accounts for how each data block is stored in HDFS for RAID-like redundancy. By default, the replication factor is three for a cluster of 10 or more core nodes, two for a cluster of 4-9 core nodes, and one for a cluster of three or fewer nodes.
+
+# Migration to AWS Cloud
+
+## AWS Migration Hub
+📒https://docs.aws.amazon.com/migrationhub/latest/ug/whatishub.html  
+
+supports migration status updates from:
+- Database Migration Service
+- Server Migration Service
+- CloudEndure Migration
+
+Discover > Access > Migrate
+
+## Application Discovery Service
+📒https://docs.aws.amazon.com/application-discovery/latest/userguide/what-is-appdiscovery.html  
+📒https://docs.aws.amazon.com/application-discovery/latest/userguide/discovery-connector.html  
+📒https://docs.aws.amazon.com/application-discovery/latest/userguide/discovery-agent.html  
+📒https://docs.aws.amazon.com/application-discovery/latest/userguide/discovery-import.html   
+
+![discovery-tools](../media/discovery-tools.png)  
+
+🔹**Agentless discovery**  
+    - Discovery Connector
+    - Installed as a VM in VMware vCenter using OVA file
+    - Supported OS: _any OS running in VMware vCenter_ (V5.5, V6, V6.5)
+    - Can collect static configuration and utilization data including CPU/RAM/Disk IO for each VM running in vCenter (but it cannot look inside each of the VM, e.g. cannot figure out processes are running on each VM)
+
+🔹**Agent-based discovery**  
+    - Discovery Agent
+    - Installed on your on-prem servers and VMs
+    - Supported OS: Amazon Linux, Linux 2, Ubuntu, Red Hat Enterprise Linux, CentOS, SUSE, Windows Server
+
+🔹**Migration Hub Import**  
+    For the situations that Discovery Connector and Discovery Agent cannot be used, users can upload data directly with import template (including server specifications and utilization data)
+
+![discovery-tool-comparision](../media/discovery-tool-comparision.png)
+
+
+## AWS Server Migration Service (SMS)
+📒https://docs.aws.amazon.com/server-migration-service/latest/userguide/server-migration.html  
+📒https://aws.amazon.com/blogs/apn/category/aws-server-migration-service/   
+📒https://docs.aws.amazon.com/server-migration-service/latest/userguide/application-migration.html   
+
+AWS Server Migration Service automates the migration of your on-premises **VMware vSphere**, **Microsoft Hyper-V/SCVMM**, and **Azure virtual machines** to the AWS Cloud. AWS SMS incrementally replicates your server VMs as cloud-hosted Amazon Machine Images (AMIs) ready for deployment on Amazon EC2.
+
+SMS is **agentless** service
+
+- Automates an incremental replication of live server volumes to AWS reducing server downtime at cutover.
+- Orchestrates large-scale server migrations in a cost effective manner.
+- Supports most widely used operating systems.
+- Manages and tracks the progress of your server migration through an easy to use UI.
+
+![sms-migration](../media/sms-migration.png)
+
+![sms-migration-process](../media/sms-migration-process.png)
+
+The final output of AWS SMS is an Amazon Machine Image (AMI); the migration process will produce an AMI for each replication run until the job is terminated (deleted by you or terminated automatically after 90 days).
+
+The migration stages are iterative with an adjusted replication frequency. The minimum time between each replication run is **12 hours**, and the maximum time is **24 hours**. The lifetime of this iterative cycle is 90 days, and after that, the replication job is terminated.
+
+You can select a group of VMs for migration. SMS supports up to 50 concurrent VM migrations per account.
+
+### Application Migration with SMS
+Where server migration is accomplished by replicating a single server as an Amazon Machine Image (AMI), application migration replicates all of the servers in an application as AMIs and generates an AWS **CloudFormation template** to launch them in a coordinated fashion.
+
+
+## AWS Database Migration Service
+https://docs.aws.amazon.com/dms/latest/userguide/Welcome.html  
+
+❗The only requirement to use AWS DMS is that one of your endpoints must be on an AWS service. You can't use AWS DMS to migrate from an on-premises database to another on-premises database.
+
+An AWS DMS migration consists of three components:
+- replication instance
+- source and target endpoints
+- replication task.
+You create an AWS DMS migration by creating the necessary replication instance, endpoints, and tasks in an AWS Region.
+
+Replication instance can be setup as Multi-AZ (active-standby)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---

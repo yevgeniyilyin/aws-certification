@@ -907,6 +907,27 @@ Block-level storage:
 EBS volume type can be modified in flight without the volume being detached or the instance being restarted. However, there are [some limitations](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/modify-volume-requirements.html) that need to be noticed.
 ❗Decreasing the size of an EBS volume is not supported
 
+## EC2 Hibernation
+📒https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html  
+
+You can hibernate an instance only if it's:
+- **enabled for hibernation**:
+  **only** when you launch it. You can't enable or disable hibernation for an instance after you launch it
+
+- meets **hibernation prerequisites**:
+  - Supported instance family, size and AMI
+  - RAM < 150 GB
+  - root volume is EBS (not instance-store) and only `gp2` or `io1/io2`
+  - EBS root volume size > RAM size
+  - EBS root volume must be **encrypted** (enforced at instance launch)
+  - only on-demand or RI
+  - instance **not** in ASG or used by ECS (ASG marks the stopped instance as unhealthy and may terminate it)
+  - max 60d of hibernation
+  
+
+
+❗If an instance or application takes a long time to bootstrap and build a memory footprint to become fully productive, you can use hibernation to pre-warm the instance.
+
 ## EC2 Instance Profiles and Roles
 Instance profile allow a role to be assumed to a single EC2 instance, and for applications running on that instance to assume a role while being abstracted away from any AWS identity. Applications running on EC2 are not AWS Identities and so it's instance profile which bridges that gap.
 
@@ -1338,7 +1359,7 @@ Top Referrers
 ## Using Amazon CloudFront for Video Streaming
 📗https://aws.amazon.com/blogs/aws/using-amazon-cloudfront-for-video-streaming/
 
-# Route 53 (R53
+# Route 53 (R53)
 📒https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html  
 📒https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/traffic-flow.html  
 📒https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/traffic-policies.html  
@@ -2767,7 +2788,7 @@ Cost & Usage Reports
 
 
 # Managed Blockchain
-📒https://docs.aws.amazon.com/managed-blockchain/latest/managementguide/what-is-managed-blockchain.html
+📒📒https://docs.aws.amazon.com/managed-blockchain/latest/managementguide/what-is-managed-blockchain.html
 
 Hyperleger Fabric framework and Ethereum are supported
 
@@ -2778,6 +2799,28 @@ RAID 1 - fault tolerance focus
 
 RAID 5 & 6 are not recommended by EBS because the parity operations consume some of the IOPS (20-30% fewer usable IOPS)
 
+# AWS Backup
+📒https://docs.aws.amazon.com/aws-backup/latest/devguide/whatisbackup.html  
+
+Managed backup service to centralize and automate the backup of data across AWS services
+Supported resources:
+- EFS
+- DynamoDB
+- EC2 instances (EBS-backed, **no support** for instance-store backed)
+- EBS volumes
+- RDS
+- Aurora
+- Storage Gateway Volumes
+
+Capabilities:
+- Centralized backup management
+- Cross-Region backup
+- Cross-account management
+- Policy-based backup solutions
+- Tag-based
+- backup activity monitoring
+- lifecycle management policies
+- backup access polcies
 
 
 

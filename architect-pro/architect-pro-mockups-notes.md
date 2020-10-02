@@ -8,11 +8,7 @@ Elastic Transcoder
 Auto Scaling AZRebalance event
 RDS on VMware migration
 
-12
-29
-37
-53
-54
+12,29,37,53,54
 
 EBS Snapshot Lifecycle policy (in DLM)
 EBS volume types use cases
@@ -24,6 +20,8 @@ RDS Copy Database
 AWS Batch components
 Re-using DX connection
 working with ENI
+AWS PrivateLink
+AWS Backup
 
 *******
 -------

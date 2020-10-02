@@ -1,4 +1,4 @@
-# Solutions Architect Professional
+ß# Solutions Architect Professional
 
 ![CSAP badge](../media/csap-badge.png)
 
@@ -111,7 +111,7 @@ Available in ALL requests
 ## IAM Roles and Temporary Security Credentials
 📒https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-instance-metadata.html  
 
-A role has tow components: a **trust** policy (which defines a principle and conditions under which the role can be assumed) and a **permission** policy which defines the AWS access rights granted during `AssumeRole`
+A role has two components: a **trust** policy (which defines a principle and conditions under which the role can be assumed) and a **permission** policy which defines the AWS access rights granted during `AssumeRole`
 
 A role has _no_ long-term credentials on its own. STS generates temporary credentials (min 15m to max 12h)
 
@@ -218,6 +218,7 @@ Amazon Cognito identity pools provide temporary AWS credentials for users who ar
 📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_saml.html  
 📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_cognito.html
 📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_saml.html  
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_common-scenarios_federated-users.html
 
 When to use STS:
 - Identity Federation:
@@ -237,12 +238,21 @@ STS API:
 When requested via STS API call, a credential object is returned containing:
 - Session Token
 - Access Key ID
-- Secret Acess Key
+- Secret Access Key
 - Expiration Timestamp
+
+❗You can use [External ID](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html) with `AssumeRole` when you need to give a third party access to your AWS resources (delegate access)
+Add trust to the IAM role trust policy:
+```json
+"Principal": {"AWS": "Example Corp's AWS Account ID"},
+"Condition": {"StringEquals": {"sts:ExternalId": "Unique ID Assigned by Example Corp"}}
+```
+Example Corp will call `sts:AssumeRole` with role ARN and ExternalId
+
 
 **`AssumeRoleWithWebIdentity`**  
 1. Log into Google, ID token returned
-2. Using ID tocken call STS API `AssumeRoleWithWebIdentity`  
+2. Using ID token to call STS API `AssumeRoleWithWebIdentity`  
 3. STS provides temporary credentials
 4. Use temp credentials to call AWS API
 
@@ -252,6 +262,15 @@ When requested via STS API call, a credential object is returned containing:
 ![SAML-Federation](../media/SAML-Federation.png)
 
 ![SAML-SSO](../media/SAML-SSO.png)
+
+#### Identity Federation Use Cases
+- Amazon Cognito
+- Developer Authenticated Identities (via Amazon Cognito)
+- OpenID Connect (OIDC)
+- SAML 2.0
+- Custom Identity Broker
+
+![identity-federation-custom-broker](../media/identity-federation-custom-broker.png)
 
 
 ### IAM Permission Boundaries
@@ -283,8 +302,7 @@ explicit DENY -> explicit ALLOW -> implicit DENY
 
 ## AWS Accounts and AWS Organisations
 📒https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-discounts.html   
-
-https://docs.aws.amazon.com/organizations/latest/userguide/orgs_introduction.html  
+📒https://docs.aws.amazon.com/organizations/latest/userguide/orgs_introduction.html  
 
 AWS Organisations is a global service physically hosted in us-east-1
 
@@ -339,7 +357,28 @@ When an **invited** account joins your organization, you do not automatically ha
 
 AWS Organizations also automatically creates a service-linked role named `AWSServiceRoleForOrganizations` that enables integration with select AWS services. You must configure the other services to allow the integration.
 
-## Policy Types
+### Adding accounts to AWS Organisation
+📒https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_invites.html
+
+
+### Remove member account
+📒https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html  
+
+- you can remove a member account only after you enable IAM user access to billing in the member account
+- you can remove an account from your organisation only if the account has the information required for it to operate as a standalone account
+
+Minimum permissions:
+- To remove a member account from your organisation, master account IAM user must have the following permissions:
+  `organizations:DescribeOrganization` (console only)  
+  `organizations:RemoveAccountFromOrganization`  
+- Member account can leave the organisation if member account IAM user has the following permissions:
+  `organizations:DescribeOrganization` (console only)  
+  `organizations:LeaveOrganization`   
+  ❗also the member account must have IAM user access to billing enabled
+
+❗To remove the **the master account** you must **delete the organization**  
+
+## AWS Organizations Policy Types
 **Authorization policies**:  
   - Service Control Policies (SCP)
 
@@ -365,8 +404,7 @@ If multiple SCPs apply to an account - only the **overlap** of those SCPs is per
   This is the default behavior of AWS Organisations.
   You leave the default `FullAWSAccess` policy in place and attach additional policies that explicitly _deny_ access to unwanted services and actions
 
-## Adding accounts to AWS Organisation
-- One
+
 
 ## AWS Account Limits
 📒https://docs.aws.amazon.com/general/latest/gr/aws-general.pdf#aws-service-information  
@@ -648,8 +686,56 @@ Update behaviors of Stack Resources:
 Use default values for parameters (for automated deployment)
 Use SSM to retrieve region-dependend values (e.g. AMI id)
 Use **Pseudo Parameters**: pre-defined parameters in CloudFormation
-Use **Intrisic Functions**  
+Use **Intrisic Functions**: can be used only in specific parts of a template:
+  - resource properties  
+  - outputs  
+  - metadata attributes  
+  - update policy attributes  
 Do not specify explicit resource names
+
+## Wait Conditions
+You can use a wait condition for situations like the following:
+- To coordinate stack resource creation with configuration actions that are external to the stack creation
+- To track the status of a configuration process
+
+For these situations, use a `CreationPolicy` attribute with the wait condition.
+
+Associate the `CreationPolicy` attribute with a resource to prevent its status from reaching create complete until AWS CloudFormation receives a specified number of success signals or the timeout period is exceeded
+
+```yaml
+CreationPolicy:
+  AutoScalingCreationPolicy:
+    MinSuccessfulInstancesPercent: Integer
+  ResourceSignal:    
+    Count: Integer
+    Timeout: String
+```
+## Deletion Policies
+📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html
+
+`DeletionPolicy` attribute
+
+if no `DeletionPolicy` attribute is specified, CloudFormation deletes the resource by default
+**Exception**: the default policy is `Snapshot` for RDS Cluster and DB Instances
+
+Values:
+- **`Delete`**: delete the resource and all its content if applicable during stack deletion
+  you can use this deletion policy with any resource
+  **for S3 buckets you must delete all objects in the bucket for deletion to succeed
+
+- **`Retain`**: keep a resource when its stack is deleted, can use for any resource
+  if you want to modify resource outside of CloudFormation, use a retain policy and then delete the stack
+
+- **`Snapshot`**: for resources that support snapshot CloudFormation create a snapshot and deletes the resource
+  Resources that support snapshots:
+  - `AWS::EC2::Volume`  
+  - `AWS::ElastiCache::CacheCluster`  
+  - `AWS::ElastiCache::ReplicationGroup`  
+  - `AWS::Neptune::DBCluster`  
+  - `AWS::RDS::DBCluster`  
+  - `AWS::RDS::DBInstance`  
+  - `AWS::Redshift::Cluster`  
+
 
 ## Stack References and Nested Stacks
 
@@ -674,6 +760,14 @@ Allows for role separation
 
 ## Using CloudFormation for DR
 📗https://d1.awsstatic.com/asset-repository/products/CloudEndure/CloudEndure_Affordable%20Enterprise-Grade%20Disaster%20Recovery%20Using%20AWS%20082019.pdf  
+
+## CloudFormation Security Best Practicies
+📗https://aws.amazon.com/blogs/devops/aws-cloudformation-security-best-practices/
+
+There are three CloudFormation-specific IAM conditions that you can add to your IAM policies:
+- `cloudformation:TemplateURL`  
+- `cloudformation:ResourceTypes`  
+- `cloudformation:StackPolicyURL`  
 
 ### DR Scenarios
 🔸**Backup and Restore Method**  
@@ -771,10 +865,14 @@ Block-level storage:
   - local physical storage attached to hosts
   - Temporary storage
   - High I/O and Throughput (**highest** I/O available in AWS)
-  - volumes mapped as `ephemmeral0` to `23` (max 24 volumes)
+  - volumes mapped as `ephemeral0` to `23` (max 24 volumes)
   - included in the instance cost
+  - if you create an **AMI** from an instance, the data on its instance store volume **isn't preserved and isn't presented** on the instance store volumes of the instances that you launch from the AMI
+  - you need to format and mount the instance store volumes before using them (the root volume of an instance store-backed instance is mounted automatically)
+  - you cannot make an instance store volume available after you launch the instance
+  - if you change the instance type, an instance store will not be attached to the new instance type.
 
-  ❗**no support for snapshots and not resilience**  
+  ❗**no support for snapshots and no resilience**  
 
 - **EBS**
  - network storage associated with one instance
@@ -1081,7 +1179,7 @@ There are two types of errors that Lambda can return: **standard errors** and **
 - VPC: regional service
 - NAT gateways operates in specific subnet (single AZ) - place NAT GW in each AZ
 - ASG: operates in VPC across subnets in AZs
-- VPN - provision 2 IPSEC endpoints (in different AZs)
+- VPN - provision 2 IPSec endpoints (in different AZs)
 
 ## Stateless Architectures
 
@@ -1133,8 +1231,12 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 - supports static IP and ultra low latency
 - accepts TCP, UDP and TSL termination
 - NLB assigned a single IP address per AZ (EIP can be assigned as well) - easier firewall management
-- Preserve the client IP - its passthrough device
+- **Preserve the client IP** - its passthrough device
 - ❗any traffic that reaches the load balancer on a valid listener will be routed to your targets, not absorbed
+- for data encryption in transit use TLS listener with X.509 server certificate:
+    - Certificate can come from **ACM** (preferred way) or **IAM** (own certificates or in the regions where ACM is not supported)
+
+📒https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-tls-listener.html
 
 # CloudFront
 📒https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/high_availability_origin_failover.html  
@@ -1144,6 +1246,8 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 - Origin Protocol
 
 Use Alias recordset for R53 for CloudFront
+
+you can have CloudFront sit in front of your on-prem web environment, via a custom origin. This would protect against unexpected bursts in traffic by letting CloudFront handle the traffic from the cache.
 
 ## Distributions
 Isolated configuration containers:
@@ -1230,6 +1334,9 @@ CloudFront Usage Reports
 Popular objects
 Usage
 Top Referrers
+
+## Using Amazon CloudFront for Video Streaming
+📗https://aws.amazon.com/blogs/aws/using-amazon-cloudfront-for-video-streaming/
 
 # Route 53 (R53
 📒https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html  
@@ -1503,6 +1610,9 @@ Locking methods:
 - legal holds: no expiration date
 - works only on new buckets
 
+Versioning:
+- Object stored in the bucket **before** you set the versioning state have a version ID of **null**  
+
 ## Controlling Access to S3 Buckets
 📒https://docs.aws.amazon.com/AmazonS3/latest/dev/PresignedUrlUploadObject.html  
 
@@ -1617,6 +1727,7 @@ Lag less than 1s
 
 📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-indexes-general.html  
 📒https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html  
+📒https://aws.amazon.com/blogs/database/design-patterns-for-high-volume-time-series-data-in-amazon-dynamodb/  
 
 Accessible via private VPC endpoints (VPC gateway) or using public endpoints
 
@@ -1828,6 +1939,12 @@ Default VPC
 - Default ACL allowing all traffic
 - Default DHCP option
 
+## IDS/IPS solution using VPC
+https://awsmedia.s3.amazonaws.com/SEC402.pdf
+
+Create a separate Security-VPC with only IDS/IPS instances, and route the incoming traffic via this VPC to the other VPC that contains the other EC2 resources
+
+
 ## AWS Resource Access Manager (RAM)
 📒https://docs.aws.amazon.com/ram/latest/userguide/what-is.html  
 📒https://console.aws.amazon.com/ram/home#Setting  
@@ -2015,30 +2132,54 @@ All VPC peering connections are fully encrypted
 🔹By default, DNS resolves the other VPC names to public IP. You can enable DNS resolution from accepter VPC and from requester VPC - in this case names will be resolved to private IP.
 
 ### AWS Site-to-Site VPN
-3 components:
-1. VGW (attached to a single VPC)
-2. CGW
-3. VPC connection(s)
+📒https://docs.aws.amazon.com/vpn/latest/s2svpn/VPC_VPN.html  
+
+Components:
+1. VPN connection(s) - each VPN connection includes **two** VPN tunnels which can be simultaneously used
+2. VPN tunnel - each tunnel using a unique VPG public IP address (2 IPs per VPG)
+3. VPG or Transit Gateway - only **one** is needed to server all VPN connections
+4. CGW - AWS logical resource which provides information to AWS about your customer gateway device
+5. CGW device - a physical device or software application on on-prem side
+
+![VPN](../media/vpn.png)
 
 
-VPN connections link the VGW and CGW. They provision tunnel endpoints(2 for HA in different AZ), set authentication and define dynamic BGP or static routing. Dynamic learn remote CIDRs - static VPN must have them set
+VPN connection link the VGW and CGW. They provision 2 tunnel endpoints(for HA in different AZ), set authentication and define dynamic BGP or static routing. Dynamic learn remote CIDRs - static VPN must have them set
 
 Virtual private gateways (VGW) are **logical** devices inside VPC - can be used as route targets
-Customer gateways (CGW) are **physical** customer routers AND a record inside AWS for there devices. IP address and optionally ASN are provided (Allowing BGP
+Customer gateways (CGW) are **physical** customer routers AND a record inside AWS for there devices. IP address and optionally ASN are provided (Allowing BGP)
+
+Limitations:
+- IPv6 traffic not supported for VPN connections on VPG
+- VPN connection does not support Path MTU Discovery
+
+
 
 Different architectures:
-(all have the single VGW object, HA by design)
+📒https://docs.aws.amazon.com/vpn/latest/s2svpn/site-site-architechtures.html  
+(all have the **single** VGW object, HA by design)
 
 #### No HA
-Single tunnel
+Single VPN tunnel
 Single CGW
 
 #### AWS HA
 2 tunnel endpoint (in different AZs) - dual endpoint design - you need to provision two IP addresses on the customer side
 Requires BGP (dynamic routing)
 
+Single Site-to-Site VPN connections:
+
+![vpn-single-connection](../media/vpn-single-connection.png)
+
+Multiple Site-to-Site VPN connections:
+
+![vpn-multiple-connections](../media/vpn-multiple-connections.png)
+
+
 #### Full HA
 2 VPN connections to different CGW (2), each with 2 tunnels in different AZs
+
+![vpn-redundant](../media/vpn-redundant.png)
 
 ### Direct Connect Architecture
 📒https://docs.aws.amazon.com/directconnect/latest/UserGuide/getting_started.html  
@@ -2056,6 +2197,17 @@ The network device on-prem must support BGP
 Connection over DX is **unencrypted**
 
 ❗You can use Direct Connect Gateway (DXGW) to connect CGW to multiple VGW in different VPC in different regions
+
+#### Link Aggregation Groups (LAGs)
+📒https://docs.aws.amazon.com/directconnect/latest/UserGuide/lags.html  
+
+You can use multiple connections for redundancy. A link aggregation group (LAG) is a logical interface that uses the Link Aggregation Control Protocol (LACP) to aggregate multiple dedicated connections at a single AWS Direct Connect endpoint, allowing you to treat them as a single, managed connection. LAGs streamline configuration because the LAG configuration applies to all connections in the group.
+
+The following rules apply:
+- All connections must be dedicated connections and have a port speed of 1Gbps or 10Gbps
+- All connections in the LAG must use the same bandwidth
+- You can have a maximum of four connections in a LAG. Each connection in the LAG counts towards your overall connection limit for the Region
+- All connections in the LAG must terminate at the same AWS Direct Connect endpoint
 
 ### AWS Transit Gateway
 📒https://aws.amazon.com/about-aws/whats-new/2019/12/aws-transit-gateway-supports-inter-region-peering/  
@@ -2117,9 +2269,17 @@ Only supported on ELB, CloudFront, Elastic Beanstalk, API Gateway
 
 Certificates provided by ACM are free and automatically renew
 
+❗Use IAM as a certificate manager in a Region that is not supported by ACM
+
+#### Certificate renewal and replacement:
+🔸Certificates **provided by ACM** and deployed on your load balancer can be renewed automatically
+🔸If you **imported a certificate into ACM**, you must monitor the expiration date of the certificate and renew it before it expires
+🔸If you **imported a certificate into IAM**, you must create a new certificate, import the new certificate to ACM or IAM, add the new certificate to your load balancer, and remove the expired certificate from your load balancer
+
+
 ## AWS Directory Service
 Group of products:
-- Simple AD
+- Simple AD (small - up to 500 users and large - up to 5000 users)
 - Microsoft Active Directory (AD)
 - AD Connector
 - Amazon Cognito
@@ -2190,12 +2350,13 @@ Requires role permission
 
 # EFS
 📒https://docs.aws.amazon.com/efs/latest/ug/performance.html  
-📒https://docs.aws.amazon.com/efs/latest/ug/performance.html  
 📒https://docs.aws.amazon.com/efs/latest/ug/using-amazon-efs-utils.html  
 
 
 - resides inside VPC
 - Multiple AZs
+- data encryption _at rest_ can be enabled when **creating** EFS
+- data encryption _in transit_ can be enabled when **mount** the file system
 - create mount targets in each availability zone
 - NFS v4/4.1
 - Storage classes (Lifecycle Management):
@@ -2212,7 +2373,7 @@ Requires role permission
 - 2 throughput modes (can be adjusted _after_ creation):
   - **Bursting**: scales as size grows
   - **Provisioned throughput**: independent of the amount of data
-  - < 1TB - burst to 100MB/s
+  - < 1TB - burst to 100MB/s independent of size
   - > 1TB - burst to 100MB/s per 1TB of data stored
 
 ❗EFS Mount Targets can be accessed **only on following systems**:
@@ -2228,6 +2389,11 @@ Supports POSIX permissions
 Can use:
 - AWS DataSync
 - AWS Backup
+
+Encrypting EFS data in transit with TLS:
+  - done by enabling TLS when you mount EFS using EFS mount helper:
+  `sudo mount -t efs  -o tls fs-12345678:/ /mnt/efs`  
+  - encryption of data in transit is configured on a per-connection basis
 
 ## FSx
 📒https://docs.aws.amazon.com/fsx/latest/WindowsGuide/using-file-shares.html  
@@ -2384,6 +2550,34 @@ Components:
 ### Kinesis Video Streams
 📒https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/what-is-kinesis-video.html
 
+Store and watch video streams in real time
+
+![kinesis-video-streams-overview](../media/kinesis-video-streams-overview.png)
+
+Producer API:
+  - `PutMedia` API - producer sends a stream or media fragment
+
+Consumer API:
+  - `GetMedia` - media data in the fragment is packed into MKV - for continious consumer
+  - `GetMediaFromFragmentList` - for batch processing consumer offline
+
+Video Playback:
+  - **GetMedia**:  
+    use `GetMedia` API to build your own aplication to process KVS.
+  - **HLS** (HTTP Live Streaming):  
+    industry-standard HTTP-based media streaming communication protocol
+    create streaming session: `GetHLSStreamingSessionURL` - you can open URL in a browser/media player
+    use of live or archived video
+    Latency is typically between 3 and 5 seconds, but it can be between 1 and 10 seconds
+  - **MPEG-DASH**:   
+    adaptive bitrate streaming protocol  
+    Latency is typically between 3 and 5 seconds, but it can be between 1 and 10 seconds
+    You can use a third-party player
+  - **GetClip**:  
+    use `GetClip` API to download a clip containing the archived, on-demand media from the specified video stream over the specified time range
+
+📒https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/examples.html
+
 
 ## Athena
 📒https://docs.aws.amazon.com/athena/latest/ug/querying-AWS-service-logs.html  
@@ -2471,6 +2665,7 @@ The amount of HDFS storage available to your cluster depends on these factors:
 - A replication factor, which accounts for how each data block is stored in HDFS for RAID-like redundancy. By default, the replication factor is three for a cluster of 10 or more core nodes, two for a cluster of 4-9 core nodes, and one for a cluster of three or fewer nodes.
 
 # Migration to AWS Cloud
+:tv: https://www.youtube.com/watch?v=UpeV4OqB6Us&list=PL_RVC-cMNyYTz8zlxq117O1bfji-knooI&index=23  
 
 ## AWS Migration Hub
 📒https://docs.aws.amazon.com/migrationhub/latest/ug/whatishub.html  
@@ -2534,9 +2729,21 @@ You can select a group of VMs for migration. SMS supports up to 50 concurrent VM
 ### Application Migration with SMS
 Where server migration is accomplished by replicating a single server as an Amazon Machine Image (AMI), application migration replicates all of the servers in an application as AMIs and generates an AWS **CloudFormation template** to launch them in a coordinated fashion.
 
+## VM Import/Export
+📒https://aws.amazon.com/ec2/vm-import/
+
+- You can import Windows and Linux VMs that use VMware ESX or Workstation, Microsoft Hyper-V, and Citrix Xen virtualization formats
+- To import your images, use the AWS CLI or other developer tools to import a virtual machine (VM) image from your VMware environment
+- As part of the import process, VM Import will convert your VM into an Amazon EC2 AMI, which you can use to run Amazon EC2 instances
+
+Common Uses for VM Import/Export
+- Migrate Your Existing Applications and Workloads to Amazon EC2
+- Copy Your VM Image Catalog to Amazon EC2
+- Create a Disaster Recovery Repository for your VM images
+
 
 ## AWS Database Migration Service
-https://docs.aws.amazon.com/dms/latest/userguide/Welcome.html  
+📒https://docs.aws.amazon.com/dms/latest/userguide/Welcome.html  
 
 ❗The only requirement to use AWS DMS is that one of your endpoints must be on an AWS service. You can't use AWS DMS to migrate from an on-premises database to another on-premises database.
 
@@ -2547,6 +2754,31 @@ An AWS DMS migration consists of three components:
 You create an AWS DMS migration by creating the necessary replication instance, endpoints, and tasks in an AWS Region.
 
 Replication instance can be setup as Multi-AZ (active-standby)
+
+Sophisticated migration tasks can be achieved by using:
+- Table Selection (you can specify selection criteria for migration)
+- Transformation using JSON
+
+📒https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Tasks.CustomizingTasks.TableMapping.html
+
+# Billing
+
+Cost & Usage Reports
+
+
+# Managed Blockchain
+📒https://docs.aws.amazon.com/managed-blockchain/latest/managementguide/what-is-managed-blockchain.html
+
+Hyperleger Fabric framework and Ethereum are supported
+
+# RAID Configuration Options
+
+RAID 0 - performance focus, IOPS is aggregated
+RAID 1 - fault tolerance focus
+
+RAID 5 & 6 are not recommended by EBS because the parity operations consume some of the IOPS (20-30% fewer usable IOPS)
+
+
 
 
 

@@ -1921,7 +1921,7 @@ Transactions | No | **Yes** | **Yes**
 **Volume Gateway**
   - block storage for on-prem applications using iSCSI
   - can take PiT copies of volumes which are stored in AWS as EBS snapshots
-  - can also take copies of volumes and manage their retention using AWS Backup
+  - can also take copies of volumes and manage their retention using [AWS Backup](./architect-pro-notes.md#aws-backup)
   - _Cached Volumes_:
     - mounted iSCSI devices, data stored on S3, cached on-prem
     - from 1GB to 32TB

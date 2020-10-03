@@ -923,7 +923,7 @@ You can hibernate an instance only if it's:
   - only on-demand or RI
   - instance **not** in ASG or used by ECS (ASG marks the stopped instance as unhealthy and may terminate it)
   - max 60d of hibernation
-  
+
 
 
 ❗If an instance or application takes a long time to bootstrap and build a memory footprint to become fully productive, you can use hibernation to pre-warm the instance.
@@ -1909,18 +1909,19 @@ Geospatial indexing | No | **Yes** | **Yes**
 Transactions | No | **Yes** | **Yes**
 
 
-
-
-
-
 # AWS Storage Gateway
+:question:https://aws.amazon.com/storagegateway/faqs/  
 📒https://docs.aws.amazon.com/storagegateway/latest/userguide/HardwareAppliance.html  
 📒https://docs.aws.amazon.com/storagegateway/latest/userguide/StorageGatewayConcepts.html  
 
 **File Gateway**: stores data on S3
 - NFS or SMB
 - 1:1 mapping between files and S3 objects
+- Objects written through File Gateway can be **directly** accessed in S3
 **Volume Gateway**
+  - block storage for on-prem applications using iSCSI
+  - can take PiT copies of volumes which are stored in AWS as EBS snapshots
+  - can also take copies of volumes and manage their retention using AWS Backup
   - _Cached Volumes_:
     - mounted iSCSI devices, data stored on S3, cached on-prem
     - from 1GB to 32TB

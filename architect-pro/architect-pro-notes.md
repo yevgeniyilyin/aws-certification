@@ -1,4 +1,4 @@
-ß# Solutions Architect Professional
+# Solutions Architect Professional
 
 ![CSAP badge](../media/csap-badge.png)
 

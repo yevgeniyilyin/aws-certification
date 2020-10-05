@@ -115,6 +115,9 @@ A role has two components: a **trust** policy (which defines a principle and con
 
 A role has _no_ long-term credentials on its own. STS generates temporary credentials (min 15m to max 12h)
 
+![iam-sts](../media/iam-sts.png)
+
+
 ### AWS API Access
 All interactions with AWS API signed with `AccessKeyId` and `SecretAccessKey` using Sig4
 `AccessKeyId` and `SecretAccessKey` map to users or roles in IAM
@@ -140,8 +143,8 @@ _Revoke session_ adds an additional `Deny` policy to the role with the condition
 You _cannot_ revoke the existing temporary credentials, but _Revoke session_ (with the condition policy) will invalidate (with explicit Deny) all sessions with token older than the specified `aws:TokenIssueTime`
 
 ### Cross-Account Access
-📒https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html#example-bucket-policies-use-case-8  
-📒https://aws.amazon.com/blogs/security/iam-policies-and-bucket-policies-and-acls-oh-my-controlling-access-to-s3-resources/  
+📒https://amz.run/3d3f
+📒https://amz.run/3d3c
 
 Cross-Account Access to S3 Buckets and Objects
 
@@ -587,6 +590,8 @@ Access methods:
 
 ❗SSM runs inside public zone and EC2 instance need either an Internet GW or VPC endpoint to access the SSM
 
+❗The Systems Manager Run Command requires **no inbound ports to be open** - it operates entirely over outbound HTTPS (which is open by default for security groups).
+
 Provisioning, Deployment, Management
 
 managed policy `AmazonEC2RoleforSSM` to attach to EC2 role to communicate with SSM
@@ -721,7 +726,7 @@ if no `DeletionPolicy` attribute is specified, CloudFormation deletes the resour
 Values:
 - **`Delete`**: delete the resource and all its content if applicable during stack deletion
   you can use this deletion policy with any resource
-  **for S3 buckets you must delete all objects in the bucket for deletion to succeed
+  **for S3 buckets you must delete all objects in the bucket for deletion to succeed**  
 
 - **`Retain`**: keep a resource when its stack is deleted, can use for any resource
   if you want to modify resource outside of CloudFormation, use a retain policy and then delete the stack
@@ -947,7 +952,8 @@ If using API or CLI or CloudFormation the two steps are distinct and must be don
 Not possible to modify placement group after creation
 
 ### Cluster Placement Groups
-- exist in a **single AZ**
+- only in a **single AZ**
+- can span peered VPCs in the same Region
 - High speed, low latency
 - reserve physical capacity keeping instances in physical vicinity
 - higher chance of capacity related failures
@@ -955,15 +961,18 @@ Not possible to modify placement group after creation
 - deploy in advance
 
 ### Partition Placement Groups
-- isolated blocks of infrastructure in isolated fault-domains
+- EC2 divides each group into logical segments called partitions - each partition has its own set of racks with own network and power source
+- isolated logical blocks of infrastructure in isolated fault-domains
+-  A partition placement group can have a maximum of **7 partitions per AZ**  
+- can be **single or multi-AZ**  
 - used when you need to ensure HA, but need physical location control
 - instances in one partition do not share the underlying hardware with groups of instances in different partitions
 - typically used by large distributed and replicated workloads like Hadoop, Cassandra, Kafka
 
 ### Spread Placement Groups
 - designed for a **small** number of critical components where you **need** to ensure separation
-- can be single- or multi-AZ
-- up to 7 instances per AZ per group
+- can be **single- or multi-AZ**  
+- up to **7 instances per AZ per group**  
 - highest level of availability
 - strictly places a small group of instances across distinct underlying hardware
 
@@ -1181,6 +1190,15 @@ Integration types:
 
 ❗The maximum of integration timeout for API Gateway is 29s (minimal is 50ms)
 
+## Handling Errors in Amazon API Gateway
+📒https://docs.aws.amazon.com/apigateway/api-reference/handling-errors/  
+
+- **Client Errors**: 4xx HTTP response code. Client errors indicate that Amazon API Gateway found a problem with the client request, such as an authentication failure or missing required parameters. Fix the issue in the client application before submitting the request again.
+- **Server Errors**: 5xx HTTP response code. Need to be resolved on the Server side.
+  - 502: Bad Gateway Exception, usually for an incompatible output returned from a Lambda proxy integration backend and occasionally for out-of-order invocations due to heavy loads.  
+  - 503: Service Unavailable Exception  
+  - 504: Endpoint Request Timed-out Exception
+
 ## Handling Lambda Errors in API Gateway
 📒https://docs.aws.amazon.com/apigateway/latest/developerguide/handle-errors-in-lambda-integration.html  
 
@@ -1234,10 +1252,12 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 📒https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html  
 📒https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/introduction.html  
 
-❗Do **not** assign public IPs to application load balancers - communication is based on CNAME
+❗Do **not** assign public IPs to application load balancers - communication is based on DNS name
+
+Use **A-type record alias** for R53 for all types of ELB
 
 ### ALB
-- Layer 7 device
+- **Layer 7** device  
   - **Host-based rules**  
   - **Path-based rules**
 - both IPv4 and IPv6
@@ -1248,11 +1268,11 @@ https://linuxacademy.com/cp/courses/lesson/course/2856/lesson/4/module/245
 - you can use the single ALB to serve multiple applications - via multiple DNS names and target groups
 
 ### Network Load Balancers
-- Layer 4
+- **Layer 4** device  
 - supports static IP and ultra low latency
 - accepts TCP, UDP and TSL termination
-- NLB assigned a single IP address per AZ (EIP can be assigned as well) - easier firewall management
-- **Preserve the client IP** - its passthrough device
+- NLB assigned a single static IP address per AZ (EIP can be assigned as well) - easier firewall management
+- **Preserve the client IP** - its passthrough device, even with TSL termination on NLB
 - ❗any traffic that reaches the load balancer on a valid listener will be routed to your targets, not absorbed
 - for data encryption in transit use TLS listener with X.509 server certificate:
     - Certificate can come from **ACM** (preferred way) or **IAM** (own certificates or in the regions where ACM is not supported)
@@ -1766,7 +1786,7 @@ Accessible via private VPC endpoints (VPC gateway) or using public endpoints
     `dynamodb:ReturnConsumedCapacity`  
 
 Read operations:
-    `GetItem`, `BatchGetItem` (up to 100 items and max 16MB)  
+    `GetItem`, `GetItem` (up to 100 items and max 16MB)  
     Use `ProjectionExpression` to return only selected attributes  
     **Query** - max 1MB per call  
         results are always sorted by Sort Key. Reverse by setting `ScanIndexForward`  
@@ -1914,25 +1934,47 @@ Transactions | No | **Yes** | **Yes**
 📒https://docs.aws.amazon.com/storagegateway/latest/userguide/HardwareAppliance.html  
 📒https://docs.aws.amazon.com/storagegateway/latest/userguide/StorageGatewayConcepts.html  
 
+Can run as VM on-prem or EC2 instance or physical appliance  
+You can manage backup and retention policies for cached and stored volume modes of Volume Gateway through AWS Backup
+
+Supports PrivateLink for all gateway types (File/Volume/Tape)  
+
 **File Gateway**: stores data on S3
-- NFS or SMB
-- 1:1 mapping between files and S3 objects
-- Objects written through File Gateway can be **directly** accessed in S3
-**Volume Gateway**
-  - block storage for on-prem applications using iSCSI
-  - can take PiT copies of volumes which are stored in AWS as EBS snapshots
-  - can also take copies of volumes and manage their retention using [AWS Backup](./architect-pro-notes.md#aws-backup)
-  - _Cached Volumes_:
+- NFS or SMB  
+- 1:1 mapping between files and S3 objects  
+- Objects written through File Gateway can be **directly** accessed in S3  
+- most recent data is cached on the gateway  
+- up to 10 file shares per gateway  
+- max size of the individual file is 5TB  
+- max size of the local cache is 64TB  
+
+**Volume Gateway**:  
+- block storage for on-prem applications using iSCSI
+- can take PiT copies of volumes which are stored in AWS as EBS snapshots
+- you can restore EBS snapshots to a **Volume Gateway** volume or an **EBS** volume  
+- you can create a snapshot schedule for each of your volumes (every 1,2,4,8,12 or 24 hours)
+- can also take copies of volumes and manage their retention using [AWS Backup](./architect-pro-notes.md#aws-backup)  
+- max 32 volumes  
+- compress data before transfer to AWS and while stored in AWS
+- you billed for only the amount of data stored on the volume, not the size of the volume your create  
+- you cannot directly access the volumes using S3 API
+- all data transferred is encrypted using SSL
+- by default all data stored in S3 encrypted SSE-S3 (supporting also SSE-KMS)
+
+  - _Cached Volumes_ mode:
     - mounted iSCSI devices, data stored on S3, cached on-prem
     - from 1GB to 32TB
-    - max 32 volumes for total max volume **1PB**
-  - _Stored Volumes_:
+    - max 32 volumes for total max volume **1PB**  
+
+  - _Stored Volumes_ mode:
     - store all data locally
-    - takes snapshot periodically as incremental backup and store on S3
+    - takes snapshot asynchronously as incremental backup and store on S3
     - from 1GB to 16TB
-    - max 32 volumes for total max **512TB**
-**Tape Gateway**
-- Virtual tape library writes to Glacier
+    - max 32 volumes for total max **512TB**  
+
+**Tape Gateway**:  
+- Virtual tapes are stored in S3 and can be archived to Glacier or Glacier Deep Archive
+- Supports S3 standard, Glacier and Glacier Deep Archive
 - Can run as VM on-prem or EC2 instance
 
 # Networking
@@ -1944,6 +1986,8 @@ VPC tenancy modes - Default or Dedicated
 Can have only one DHCP Option set
 
 Size from /16 to /28
+You can add up to 5 CIDR ranges to your VPC
+
 
 Reserved IP addresses (first 4 + last):
 - 10.0.0.0 - Network address
@@ -1982,6 +2026,7 @@ Every VPC comes with a VPC Router, virtual device - CORE network entity responsi
 The VPC router places an interface in the `Network+1` address of every subnet
 
 Every route table starts with one rule - local route (VPC CIDR as destination and Target `local`)
+❗Local  route cannot be deleted  
 
 - VPC endpoints use the VPC router
 - VPC peering connections use the VPC router
@@ -2104,7 +2149,7 @@ arn:aws:s3:::bucket_name/*
 
 ## Advanced and Hybrid VPC Networking
 
-### VPC Endpoints
+### VPC Endpoints - ProvisionedThroughputExceededException
 allow access to AWS public services in AWS Public Zone without giving resources public Internet access
 Two types of VPC endpoings:
 - 🔸**Gateway endpoints**
@@ -2124,7 +2169,9 @@ Highly Available
 
 #### Interface endpoints
 **Do not use route tables**  
-- Privatelinks
+- Privatelinks (represented inside VPC via VPCE and ENI)
+  - you can use PrivateLinks for Service providers in other VPC (like ELB, SaaS applications)
+  - you can use PrivateLinks to access many AWS Public services without crossing the Internet
 - use ENI created within a **subnet and AZ** - with **a SG associated**
 - (Optionally) Enable Private DNS for the endpoint to make it default for that service
 
@@ -2149,7 +2196,8 @@ Process to create:
 - update RTs for requesting and receiving VPC
 - update SGs/NACL if needed
 
-All VPC peering connections are fully encrypted
+All VPC peering connections are fully encrypted (with no single point of failure or bandwidth bottleneck)
+Traffic using Inter-region VPC Peering always stays on the global AWS backbone
 
 🔹By default, DNS resolves the other VPC names to public IP. You can enable DNS resolution from accepter VPC and from requester VPC - in this case names will be resolved to private IP.
 
@@ -2174,8 +2222,7 @@ Customer gateways (CGW) are **physical** customer routers AND a record inside AW
 Limitations:
 - IPv6 traffic not supported for VPN connections on VPG
 - VPN connection does not support Path MTU Discovery
-
-
+- **1.25 Gbps** per VPN connection, but with ECMP you can distribute traffic over multiple tunnels
 
 Different architectures:
 📒https://docs.aws.amazon.com/vpn/latest/s2svpn/site-site-architechtures.html  
@@ -2203,7 +2250,25 @@ Multiple Site-to-Site VPN connections:
 
 ![vpn-redundant](../media/vpn-redundant.png)
 
+### VPC Sharing
+📒https://amz.run/3d31
+
+Share VPC using AWS Resource Manager (**cross-account**)  
+No VPC Peering required
+Separation of duties
+
+VPC Owner:
+  - responsible for creating and managing all VPC level entities
+  - cannot modify or delete participant resources
+
+VPC Participant:
+  - responsible for creating managing their resources including EC2, RDS, ELBs
+  - cannot modify any VPC-level entities including RT, NACL or
+
+https://docs.aws.amazon.com/vpc/latest/userguide/vpc-sharing.html
+
 ### Direct Connect Architecture
+:tv:https://www.youtube.com/watch?v=Pj11NFXDbLY  
 📒https://docs.aws.amazon.com/directconnect/latest/UserGuide/getting_started.html  
 📒https://aws.amazon.com/answers/networking/aws-multiple-data-center-ha-network-connectivity  
 
@@ -2214,11 +2279,11 @@ The network device on-prem must support BGP
 2. Connect your customer router to port on DX location
 3. Create **Public** or **Private VIF** associated with VGW and
   - Public VIF allows only to contact the AWS public services **globally**
-  - Private VIF is associated with VPC via VGW - **same** region
+  - Private VIF is associated with VPC via VGW - can be **cross-region**
 
 Connection over DX is **unencrypted**
 
-❗You can use Direct Connect Gateway (DXGW) to connect CGW to multiple VGW in different VPC in different regions
+❗You can use Direct Connect Gateway (DXGW) to connect CGW to multiple VGW in **different VPC** in **different regions**  
 
 #### Link Aggregation Groups (LAGs)
 📒https://docs.aws.amazon.com/directconnect/latest/UserGuide/lags.html  
@@ -2231,13 +2296,15 @@ The following rules apply:
 - You can have a maximum of four connections in a LAG. Each connection in the LAG counts towards your overall connection limit for the Region
 - All connections in the LAG must terminate at the same AWS Direct Connect endpoint
 
-### AWS Transit Gateway
+### AWS Transit Gateway (TGW)
 📒https://aws.amazon.com/about-aws/whats-new/2019/12/aws-transit-gateway-supports-inter-region-peering/  
 📒https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html  
 
-Transit Gateways have multiple route tables allowing complex routing hierarchies to be defined from true hub-and-spoke to edge consolidation and anywhere in between
+Transit Gateways have multiple route tables allowing complex routing hierarchies to be defined from true **hub-and-spoke** to edge consolidation and anywhere in between
 
-Compatible with RAM (can be shared between accounts)
+Compatible with RAM (can be shared between accounts - TGW can work cross-accounts
+
+**50 Gbps** bandwidth per AZ
 
 # Account and Service Security
 
@@ -2600,6 +2667,10 @@ Video Playback:
 
 📒https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/examples.html
 
+## Live Streaming on AWS
+https://aws.amazon.com/solutions/implementations/live-streaming-on-aws/
+
+![live-streaming-medialive](../media/live-streaming-medialive)
 
 ## Athena
 📒https://docs.aws.amazon.com/athena/latest/ug/querying-AWS-service-logs.html  
@@ -2729,7 +2800,7 @@ Discover > Access > Migrate
 📒https://aws.amazon.com/blogs/apn/category/aws-server-migration-service/   
 📒https://docs.aws.amazon.com/server-migration-service/latest/userguide/application-migration.html   
 
-AWS Server Migration Service automates the migration of your on-premises **VMware vSphere**, **Microsoft Hyper-V/SCVMM**, and **Azure virtual machines** to the AWS Cloud. AWS SMS incrementally replicates your server VMs as cloud-hosted Amazon Machine Images (AMIs) ready for deployment on Amazon EC2.
+AWS Server Migration Service automates the migration of your on-premises **VMware vSphere**, **Microsoft Hyper-V/SCVMM**, and **Azure virtual machines** to the AWS Cloud. AWS SMS **incrementally** replicates your server VMs as cloud-hosted Amazon Machine Images (AMIs) ready for deployment on Amazon EC2. So SMS can upload the servers while the data center cluster is still running. The data center cluster must be shut down prior to the final incremental sync of all the VMs only.
 
 SMS is **agentless** service
 
@@ -2772,7 +2843,7 @@ Common Uses for VM Import/Export
 An AWS DMS migration consists of three components:
 - replication instance
 - source and target endpoints
-- replication task.
+- replication task
 You create an AWS DMS migration by creating the necessary replication instance, endpoints, and tasks in an AWS Region.
 
 Replication instance can be setup as Multi-AZ (active-standby)
@@ -2785,7 +2856,20 @@ Sophisticated migration tasks can be achieved by using:
 
 # Billing
 
-Cost & Usage Reports
+## Cost & Usage Reports (CUR)
+Can be delivered:
+- S3 (mandatory) as CSV-files
+
+Time granularity:
+- Hourly/Daily/Monthly
+
+Versioning:
+- Create new version of report/Overwrite existing report
+
+Data Integration for:
+- Athena
+- Redshift
+- QuickSight
 
 
 # Managed Blockchain

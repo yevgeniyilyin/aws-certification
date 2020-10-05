@@ -2768,7 +2768,7 @@ supports migration status updates from:
 - Server Migration Service
 - CloudEndure Migration
 
-Discover > Access > Migrate
+Discover > Asses > Migrate
 
 ## Application Discovery Service
 📒https://docs.aws.amazon.com/application-discovery/latest/userguide/what-is-appdiscovery.html  
@@ -2786,7 +2786,7 @@ Discover > Access > Migrate
 
 🔹**Agent-based discovery**  
     - Discovery Agent
-    - Installed on your on-prem servers and VMs
+    - Installed on your on-prem physical servers and VMs
     - Supported OS: Amazon Linux, Linux 2, Ubuntu, Red Hat Enterprise Linux, CentOS, SUSE, Windows Server
 
 🔹**Migration Hub Import**  
@@ -2843,7 +2843,8 @@ Common Uses for VM Import/Export
 An AWS DMS migration consists of three components:
 - replication instance
 - source and target endpoints
-- replication task
+- replication task  
+
 You create an AWS DMS migration by creating the necessary replication instance, endpoints, and tasks in an AWS Region.
 
 Replication instance can be setup as Multi-AZ (active-standby)

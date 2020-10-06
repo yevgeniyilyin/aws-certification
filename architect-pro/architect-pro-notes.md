@@ -1763,6 +1763,7 @@ Lag less than 1s
  ❗No multi-AZ architecture. Fail will result in failover to a new AZ (slower than Multi-AZ setup)
 
 ## DynamoDB
+:tv:https://www.youtube.com/watch?v=6yqfmXiZTlM
 :tv:https://www.youtube.com/watch?v=HaEPXoXVf2k  
 :tv:https://www.youtube.com/watch?v=eTbBdXJq8ss  
 
@@ -2208,8 +2209,8 @@ Components:
 1. VPN connection(s) - each VPN connection includes **two** VPN tunnels which can be simultaneously used
 2. VPN tunnel - each tunnel using a unique VPG public IP address (2 IPs per VPG)
 3. VPG or Transit Gateway - only **one** is needed to server all VPN connections
-4. CGW - AWS logical resource which provides information to AWS about your customer gateway device
-5. CGW device - a physical device or software application on on-prem side
+4. CGW - AWS **logical** resource which provides information to AWS about your customer gateway device
+5. CGW device - a **physical** device or software application on on-prem side
 
 ![VPN](../media/vpn.png)
 

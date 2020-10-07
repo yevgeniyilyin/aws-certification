@@ -1,4 +1,4 @@
-# Solutions Architect Professional
+# DevOps Engineer Professional
 
 ![CDOE badge](../media/cdoe-badge.png)
 
@@ -15,10 +15,89 @@ Training course notes
 📗https://d1.awsstatic.com/training-and-certification/docs-devops-pro/running-containerized-microservices-on-aws.pdf  
 📗https://d1.awsstatic.com/training-and-certification/docs-devops-pro/microservices-on-aws.pdf  
 📗https://d1.awsstatic.com/training-and-certification/docs-devops-pro/infrastructure-as-code.pdf  
+📗https://d0.awsstatic.com/whitepapers/DevOps/practicing-continuous-integration-continuous-delivery-on-AWS.pdf  
+📗https://d1.awsstatic.com/whitepapers/DevOps/import-windows-server-to-amazon-ec2.pdf  
+📗https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf  
+📗https://d1.awsstatic.com/whitepapers/AWS_DevOps.pdf  
+📗https://d1.awsstatic.com/whitepapers/aws-development-test-environments.pdf  
+
 
 # LinuxAcademy Courses
 📒https://linuxacademy.com/cp/modules/view/id/494  
 
+
+## Jenkins on AWS
+https://aws.amazon.com/blogs/devops/setting-up-a-ci-cd-pipeline-by-integrating-jenkins-with-aws-codebuild-and-aws-codedeploy/
+
+
+# Whiteboard Sessions (LinuxAcademy)
+https://linuxacademy.com/cp/modules/view/id/494
+
+## OpsWorks Scenarios
+
+Ops Stack with layers
+🔹Latest AMI deploy with minimal or no downtime:
+  - create a parallel new stack (blue/green deployment)
+
+🔹Variable traffic:
+  - Automatic scaling:
+    - Time based
+    - Load-based instances (CPU utilization) for unpredictable load
+  - 24/7 instances for base load
+
+# Elastic Beanstalk
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-configuration-methods-before.html  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.html  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.as.html  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.db.html  
+
+Manages everything required for less complex application
+Platform as a Service
+Automated provisioning, auto scaling, load balancing, software updates
+
+Application - logical container
+Environments inside application (environments are transitory). Environment has only one version running
+Application versions are deployed  to environments
+Two types of Beanstalk environments:
+  - _Web server environment_: serve web applications on the Internet
+  - _Worker environment_: use in background SQS processing for decoupling applications
+Environments are deployed via CloudFormation stack (behind the scenes)
+
+[Deployment options](https://blog.shikisoft.com/which_elastic_beanstalk_deployment_should_you_use/):   
+  **All at once**  
+  starts deployment on all instances. Downtimes are possible. Suitable for dev or test environments
+
+  **Rolling**  
+  deploy one by one. If deployment fails, only failed instance will be effected
+
+  **Rolling with additional batch**  
+  launch new instances (batch) and first deploy on them - maintains full capacity during deployments
+
+  **Immutable**  
+  launch a completely new set of instances, deploy the new version and terminate old instances.
+  The new set is launched in a separate temporary ASG first and then transferred to the original ASG and terminates the temporary ASG
+
+  **Traffic-splitting**  
+  canary testing as part of application deployment. Full set of new instances (like immutable deployment). Forward a specified percentage of client traffic to the new version.
+
+  **Blue/Green**  (not on Elastic Beanstalk deployment type list)  
+  replicates the current environment (including ELB and ASG) and redirect the traffic to the new environment
+  1. Clone current environment (or launch a new environment)
+  2. Deploy the new application version to the new environment
+  3. Test
+  4. In **Environment actions** choose **Swap environment URLs**  
+  Elastic Beanstalk swaps the CNAME records
+
+![Deployment options](../media/deployment-methods.jpg)  
+
+Elastic Beanstalk Supports two methods of saving configuration option settings:
+  - config files in YAML or JSON in `.ebextensions` folder
+  - saved configurations created from a running environment or JSON option file
+
+Elastic Beanstalk creates Auto Scaling Group to manage EC2 instances. You can modifiy the **launch configuration** to change the instance type, key pair, EBS, and other settings.  
+You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html) in the root of the application source bundle to configure the environment name, solution stack and [environment links](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-links.html) to use.  
+
+You can use Packer to create a custom platform  
 
 # AWS Landing Zone
 📒https://aws.amazon.com/solutions/implementations/aws-landing-zone/  
@@ -80,7 +159,7 @@ Components:
 # VPC Network Infrastructure
 
 ## VPC to VPC connectivity
-https://d1.awsstatic.com/whitepapers/building-a-scalable-and-secure-multi-vpc-aws-network-infrastructure.pdf  
+📗https://d1.awsstatic.com/whitepapers/building-a-scalable-and-secure-multi-vpc-aws-network-infrastructure.pdf  
 
 ### VPC Peering
 No transitive routing
@@ -125,7 +204,7 @@ _Layer 3 IP connectivity between VPCs_
 You can access AWS PrivateLink endpoints over VPC Peering, VPN, and AWS Direct Connect.
 
 ### Amazon VPC Sharing
-https://docs.aws.amazon.com/vpc/latest/userguide/vpc-sharing.html
+📒https://docs.aws.amazon.com/vpc/latest/userguide/vpc-sharing.html
 Sharing VPCs is useful when network isolation between teams does not need to be strictly managed by the VPC owner, but the account level users and permissions must be.
 With Shared VPC, multiple AWS accounts create their application resources (such as Amazon EC2 instances) in shared, centrally managed Amazon VPCs.
 

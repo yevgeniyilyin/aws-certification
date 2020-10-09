@@ -2907,7 +2907,7 @@ Capabilities:
 - Tag-based
 - backup activity monitoring
 - lifecycle management policies
-- backup access polcies
+- backup access policies
 
 
 

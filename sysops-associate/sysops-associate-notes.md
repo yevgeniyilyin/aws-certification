@@ -298,7 +298,7 @@ https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-requests.html#fixed-dur
 
 
 
-AWS Trusted Advisor
+# AWS Trusted Advisor
 
 # AWS Cost & Usage Report
 cost details for all resources in AWS
@@ -1072,7 +1072,7 @@ Requires an agent installed on EC2 instance
 An Amazon Inspector agent **is not required** to assess your EC2 instances with this rules package. However, an installed agent can provide information about the presence of any processes listening on the ports. Do not install an agent on an operating system that Amazon Inspector does not support. If an agent is present on an instance that runs an unsupported operating system, then the Network Reachability rules package will not work on that instance.
 
 ## AWS Certificate Manager (ACM
-Naitive integration with AWS Services
+Native integration with AWS Services
 No associated costs for certificates
 Certificates auto-renew
 

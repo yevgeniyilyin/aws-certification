@@ -181,17 +181,160 @@ Ops Stack with layers
     - Load-based instances (CPU utilization) for unpredictable load
   - 24/7 instances for base load
 
+## Kinesis
+📒https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html  
+📒https://docs.aws.amazon.com/firehose/latest/dev/encryption.html  
+📒https://docs.aws.amazon.com/streams/latest/dev/building-consumers.html  
+
+- `Data record`: sequence number, partition key, data blob (up to **1MB**)
+- Retention period **24h-168h** (`IncreaseStreamRetentionPeriod` and `DecreaseStreamRetentionPeriod`)
+- Supports ordering of the messages in an individual shard (`PutRecord` with `sequenceNumberForOrdering` parameter) - strictly increasing sequence number for puts from the same client and same partition key  
+
+- Consumers (Kinesis Data Stream Application):
+  - _shared fan-out consumers_: fixed total 2MB/s per shard **shared** between all consumers. 200ms message propagation delay if there is one consumer reading from the stream. 1000ms delay with 5 consumers
+  Pull mode over HTTP using `GetRecords`  
+
+  - _enhanced fan-out consumers_: 2 MB/s per consumer per shard. 70ms propagation delay
+  Push mode over HTTP/2 using `SubscribeToShard`  
+
+![Kinesis Consumers](../media/kinesis-consumers.jpg)  
+
+- **Shard**: sequence of data records in a stream, each record has a unique sequence number  
+  - **reads**: up to 5tps and up to 2MB/s - for each shard  
+  - **writes** up to 1000 record/s and up to 1MB/s - for each shard  
+
+  Kinesis Client Library (KCL) creates a record processor for each shard to read data from the shard and load balances the processors over existing consumers.  
+  With KCL generally you should ensure that **the number of instances does not exceed the number of shards**  
+  You **never** need multiple instances to handle the processing load of one shard  
+  However, one worker **can** process multiple shards  
+  CPU utilisation is what should drive the quantity of consumer instances you have, **not** the number of shards in your Kinesis stream  
+  Use ASG scaling based on CPU load  
+
+❗Data Encryption in Kinesis Firehose:  
+  Depends on the source of data:  
+    - Kinesis Data Stream as data source: Firehose reads encrypted data from the stream, buffers the data in memory and delivers to the destination _without_ storing unencrypted data at rest  
+    - If you send data to Firehose using `PutRecord` or `PutRecordBatch` - turn on SSE by using `StartDeliveryStreamEncryption`  
+
+Kinesis Producers:
+- put data into named stream, specify partition key (shard selected based on PK)
+
+Kinesis Consumers:
+- KCL
+- Lambda Functions set to invoke based on stream data records
+- Kinesis Firehose
+
+Components:
+ - Kinesis Data Streams
+ - Kinesis Firehose (stores data in Elasticsearch, S3, Redshift)
+ - Kinesis Data Analytics
+
+### Kinesis Firehose (Delivery Stream)
+🔹Sources:
+  - Kinesis Data Stream
+  - Direct Put from the source (`PutRecord` or `PutRecordBatch`)
+🔹Destinations:
+  - S3
+  - Redshift
+  - Elasticsearch
+  - HTTP Endpoint
+  - 3rd party providers (Datadog, MongoDB Cloud, New Relic, Splunk)
+🔹Optional S3 backup for all destinations
+🔹Allows for data tranformation using lambda functions and format conversion (e.g. to PARQUET)
+
+### Using Lambda with Kinesis
+📒https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html  
+
+You can map a Lambda function to:
+- a shared-throughput consumer (standard iterator)  
+- a dedicated-throughput consumer with **enhanced fan-out**  
+
+**Shared-throughput consumer**:
+For standard iterators, Lambda polls each shard in your Kinesis stream for records using HTTP protocol. The event source mapping shares read throughput with other consumers of the shard.
+
+**Enhanced fan-out**:  
+Stream consumers get a dedicated connection to each shard that doesn't impact other applications reading from the stream.
+
+Kinesis pushes records to Lambda over HTTP/2
+
+Lambda reads records from the data stream and invokes your function **synchronously** with an event that contains stream records. Lambda reads records in batches and invokes your function to process records from the batch.
+
+
+❗To avoid invoking the function with a small number of records, you can tell the event source to buffer records for up to five minutes by configuring a _batch window_. Before invoking the function, Lambda continues to read records from the stream until it has gathered a full batch, or until the batch window expires.
+
+You can also increase concurrency by processing multiple batches from each shard in parallel. Lambda can process up to 10 batches in each shard simultaneously. If you increase the number of concurrent batches per shard, Lambda still ensures in-order processing at the partition-key level.
+
+
+
+### Data Analytics in Kinesis
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/how-it-works-input.html  
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/continuous-queries-concepts.html  
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/windowed-sql.html  
+📒https://docs.aws.amazon.com/kinesisanalytics/latest/dev/examples.html  
+
+Runtime:
+- SQL
+- Apache Flink
+
+Queries:
+ - Continuous
+ - Windowed
+
+Components:
+ - Kinesis Streams/Firehose :arrow_right: In-application input stream
+ - In-application output stream :arrow_right: Kinesis Streams/Firehose
+ - In-application error stream :arrow_right: Kinesis Streams/Firehose
+ - Reference tables
+
+### Kinesis Video Streams
+📒https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/what-is-kinesis-video.html
+
+Store and watch video streams in real time
+
+![kinesis-video-streams-overview](../media/kinesis-video-streams-overview.png)
+
+Producer API:
+  - `PutMedia` API - producer sends a stream or media fragment
+
+Consumer API:
+  - `GetMedia` - media data in the fragment is packed into MKV - for continious consumer
+  - `GetMediaFromFragmentList` - for batch processing consumer offline
+
+Video Playback:
+  - **GetMedia**:  
+    use `GetMedia` API to build your own aplication to process KVS.
+  - **HLS** (HTTP Live Streaming):  
+    industry-standard HTTP-based media streaming communication protocol
+    create streaming session: `GetHLSStreamingSessionURL` - you can open URL in a browser/media player
+    use of live or archived video
+    Latency is typically between 3 and 5 seconds, but it can be between 1 and 10 seconds
+  - **MPEG-DASH**:   
+    adaptive bitrate streaming protocol  
+    Latency is typically between 3 and 5 seconds, but it can be between 1 and 10 seconds
+    You can use a third-party player
+  - **GetClip**:  
+    use `GetClip` API to download a clip containing the archived, on-demand media from the specified video stream over the specified time range
+
+📒https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/examples.html
+
+## Live Streaming on AWS
+https://aws.amazon.com/solutions/implementations/live-streaming-on-aws/
+
+![live-streaming-medialive](../media/live-streaming-medialive)
+
+
 # Elastic Beanstalk
 📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-configuration-methods-before.html  
 📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.html  
 📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.as.html  
 📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.db.html  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features-managing-env-tiers.html
+📜https://github.com/awsdocs/elastic-beanstalk-samples  
 
 Manages everything required for less complex application
 Platform as a Service
-Automated provisioning, auto scaling, load balancing, software updates
+Automated provisioning, auto scaling, load balancing, software updates, app health monitoring
 
-Application - logical container
+**Application** - logical container
 Environments inside application (environments are transitory). Environment has only one version running
 Application versions are deployed  to environments
 Two types of Beanstalk environments:
@@ -209,9 +352,9 @@ Environments are deployed via CloudFormation stack (behind the scenes)
   **Rolling with additional batch**  
   launch new instances (batch) and first deploy on them - maintains full capacity during deployments
 
-  **Immutable**  
+  [**Immutable**](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environmentmgmt-updates-immutable.html)  
   launch a completely new set of instances, deploy the new version and terminate old instances.
-  The new set is launched in a separate temporary ASG first and then transferred to the original ASG and terminates the temporary ASG
+  The new set is launched in a separate temporary ASG one-by-one first and then, when all new instances pass health checks, transferred to the original ASG and terminates the temporary ASG
 
   **Traffic-splitting**  
   canary testing as part of application deployment. Full set of new instances (like immutable deployment). Forward a specified percentage of client traffic to the new version.
@@ -230,10 +373,176 @@ Elastic Beanstalk Supports two methods of saving configuration option settings:
   - config files in YAML or JSON in `.ebextensions` folder
   - saved configurations created from a running environment or JSON option file
 
-Elastic Beanstalk creates Auto Scaling Group to manage EC2 instances. You can modifiy the **launch configuration** to change the instance type, key pair, EBS, and other settings.  
+Elastic Beanstalk creates Auto Scaling Group to manage EC2 instances. You can modify the **launch configuration** to change the instance type, key pair, EBS, and other settings.  
 You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html) in the root of the application source bundle to configure the environment name, solution stack and [environment links](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-links.html) to use.  
 
 You can use Packer to create a custom platform  
+
+## Elastic Beanstalk ebextensions
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/ebextensions.html
+
+allows advanced environment customization with configuration files
+YAML or JSON documents with `.config` extension in `.ebextensions` folder  
+allows developers to configure the systems being deployed automatically
+
+Sections in the file:
+**`option_settings`**: configuration options of the environment
+
+e.g. use [custom CloudWatch metrics](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/customize-containers-cw.html)
+
+**`Resources`**: customize environment resources
+
+## Elastic Beanstalk Worker Environments
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features-managing-env-tiers.html
+
+If your AWS Elastic Beanstalk application performs operations or workflows that take a long time to complete, you can offload those tasks to a dedicated worker environment.
+
+A long-running task is anything that substantially increases the time it takes to complete a request, such as processing images or videos, sending email, or generating a ZIP archive
+
+Elastic Beanstalk worker environments simplify this process by managing the Amazon SQS queue and running a daemon process on each instance that reads from the queue for you. When the daemon pulls an item from the queue, it sends an HTTP POST request locally to http://localhost/ on port 80 with the contents of the queue message in the body. All that your application needs to do is perform the long-running task in response to the POST.
+
+![eb-worker environment](../media/eb-worker.png)
+
+
+With periodic tasks, you can also configure the worker daemon to queue messages based on a cron schedule. Each periodic task can POST to a different path. Enable periodic tasks by including a YAML file in your source code that defines the schedule and path for each task.
+
+# Lambda
+https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html  
+https://docs.aws.amazon.com/lambda/latest/dg/runtimes-context.html  
+https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-database.html?icmpid=docs_lambda_help  
+https://docs.aws.amazon.com/lambda/latest/dg/lambda-environment-variables.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html  
+https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html  
+https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html  
+https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics.html  
+https://aws.amazon.com/premiumsupport/knowledge-center/lambda-iterator-age/  
+https://aws.amazon.com/lambda/faqs  
+https://docs.aws.amazon.com/lambda/latest/dg/API_PublishVersion.html  
+https://docs.aws.amazon.com/lambda/latest/dg/services-rds-tutorial.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html  
+https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html
+
+- max timeout 15m
+- priced per # of requests and duration
+- can be used cross-region
+
+Soft Limits:
+  - default **1000** concurrent execution across all functions per region per account (`TooManyRequestsException` if exceeded)
+  - 75GB function and layer storage
+  - 250 ENI per VPC  
+
+Hard Limits:
+  - 6MB sync and 256KB async Invocation payload (request and response)  
+  - Deployment package size: 50MB (zipped, direct upload), 250MB (unzipped, including layers), 3MB (console editor)  
+  - 512MB /tmp directory storage
+  - 1024 file descriptors
+  - 1024 execution processes/threads
+
+Version Control:
+  Each Lambda version has a unique ARN  
+  After publishing, the version is immutable (you can edit only `$LATEST`)  
+  `$LATEST` - maintains the latest code  
+    _Qualified ARN_ - function ARN + version suffix  
+    _Unqualified ARN_ - only function ARN, use `$LATEST`  
+  Aliases: use to point specific ARN (application use alias incl. `$LATEST`)  
+    aliases have static ARN but can point to any version of the same function  
+    you can use weighted alias to shift traffic between versions  
+    rollback as easy as updating the version in the alias  
+
+Invocation can be synchronous/asynchronous
+
+Function configuration:
+- Basic settings: Runtime, Handler (filename.functionname), Memory, Timeout  
+- Monitoring (CloudWatch, X-Ray)  
+- Permissions  
+- Enviroment Variables: max 4KB, by default encrypted at rest using KMS, can be encrypted in transit  
+- VPC - function can access VPC resources in specified VPC (e.g RDS)  
+    - Also provide Subnet ID and Security Group ID  
+    - Lambda sets up ENIs using an available IP address from your private subnet  
+    - in CLI: `--vpc-config SubnetIds=subnet-XXXX, SecurityGroupIds=sg-YYYYYY`  
+    - Lambda execution role should have the following EC2 permissions:  
+      `ec2::CreateNetworkInterface`  
+      `ec2::DeleteNetworkInterface`  
+      `ec2::DescribeNetworkInterface`  
+
+    - File System - connect to EFS  
+    - Asynchronous invocation settings + DQL - SQS or SNS  
+    - Concurrency, _provisioned concurrency_ (e.g. for weighted alias)  
+    - Database proxies (manages pool of connections)  
+
+Lambda API Actions:  
+    `AddPermission`: add permission to the resource policy to invoke Lambda   
+    `CreateFunction`:  
+    `Invoke`: synchronous  
+    `InvokeAsync`   
+    `CreateEventSourceMapping`: identifies a stream as an event source for Lambda
+      can be DynamoDB stream or Kinesis
+
+Lambda metrics:  
+    Invocation, Performace, Concurrency
+
+Lambda Layers:  
+  - ZIP archive that contains libraries, custom runtime or other dependencies
+  - You can use libraries in your function without needing to include them in your deployment package
+  - Up to 5 layers per function
+  - `update-function-configuration` to add layers to the function, include all layers every time  
+  - Layers are versioned  
+  - Layers are extracted to the `/opt` directory in the function execution environment  
+  - You can move runtime dependencies out of your function code by placing them in a layer  
+
+# SAM Templates
+- `sam init`, `sam build`   
+- `sam package`: packages your application and uploads to S3  
+- `sam deploy`: deploys your application using CloudFormation  
+- place the function code at the root level of the working directory with YAML file
+- use cloudformation package command to package the deployment
+
+# Step Functions
+📒https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html  
+📒https://docs.aws.amazon.com/step-functions/latest/dg/tutorial-handling-error-conditions.html  
+
+Based on the concepts of tasks and state machines
+
+Two types of state machines:  
+  - Standard  
+  - Express: for high-volume event processing workloads  
+
+- Components: Tasks, State Machines (defined using **JSON** Amazon States Language)
+- Activity can be:
+  - Program code interacting with Step Function API actions
+  - Lambda function
+- State Types:
+  - Task: do some work
+  - Choice:
+  - Fail/Succeed
+  - Pass: Pass inputs to outputs, do some transformation
+  - Wait
+  - Parallel
+- Transitions
+- API Actions:
+  - `CreateStateMachine`  
+  - `StartExecution`  
+  - `ListExecution` - list executions is eventually consistent (use `nextToken`)  
+  - `StopExecution`  
+
+# OpsWorks
+Three services:
+
+🔹[AWS OpsWorks for Puppet Enterprise](https://docs.aws.amazon.com/opsworks/latest/userguide/welcome_opspup.html)  
+🔹[AWS OpsWorks for Chef Automate](https://docs.aws.amazon.com/opsworks/latest/userguide/welcome_opscm.html)    
+🔹[AWS OpsWorks Stacks](https://docs.aws.amazon.com/opsworks/latest/userguide/welcome_classic.html)  
+
+![opsworks-stacks](../media/opsworks-stacks.png)
+
+
+[Using Auto Healing to Replace Failed Instances](https://docs.aws.amazon.com/opsworks/latest/userguide/workinginstances-autohealing.html)  
+[Managing AWS OpsWorks Stacks User Permissions](https://docs.aws.amazon.com/opsworks/latest/userguide/opsworks-security-users.html  )
+[Recipes](https://docs.aws.amazon.com/opsworks/latest/userguide/workingcookbook-installingcustom-components-recipes.html)  
+[Stacks](https://docs.aws.amazon.com/opsworks/latest/userguide/workingstacks.html)  
+[Layers](https://docs.aws.amazon.com/opsworks/latest/userguide/workinglayers.html)  
+[Instances](https://docs.aws.amazon.com/opsworks/latest/userguide/workinginstances.html)  
+[Apps](https://docs.aws.amazon.com/opsworks/latest/userguide/workingapps.html)  
 
 # Monitoring
 
@@ -260,7 +569,23 @@ CloudWatch Events:
 - consists of three parts:
   - **Event Source**  
   - **Rule**  
-  - **Target**: can be more than one  
+  - **Target**: can be more than one
+  - Possible targets:
+    - Batch job
+    - CloudWatch log
+    - CodeBuild
+    - CodePipeline
+    - EC2 API call (Reboot, Stop, Terminate, Create Snapshot)
+    - ECS task
+    - Event bus in another account
+    - Kinesis stream, Kinesis Firehose
+    - Inspector assessment template
+    - Lambda function
+    - SNS
+    - SQS
+    - SSM (RunCommand, Automation, OpsItem)
+    - Step Function
+
 
 - Retention:
   - <1m metric - 3h (high resolution)
@@ -405,7 +730,6 @@ evaluated based on input parameters you declare when you create/update a
 - `Fn:Or`  
 
 ### Stack Updates and UpdatePolicy attribute
-https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html  
 You can create new resources, update or delete existing
 
 Update behaviors of Stack Resources:
@@ -418,6 +742,14 @@ Stack policies:
 - The absense of a stack policy allows all updates
 - Once a stack policy is applied, it can't be deleted
 - Once a policy is applied, by default **all** objects are protected and `Update:*` is **denied**
+
+❗https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html  
+Use the `UpdatePolicy` attribute to specify how AWS CloudFormation handles updates to the resources:
+- `AWS::AutoScaling::AutoScalingGroup`  
+- `AWS::ElastiCache::ReplicationGroup`  
+- `AWS::Elasticsearch::Domain`  
+- `AWS::Lambda::Alias`  
+
 
 ### Template Portability and Reuse
 Use default values for parameters (for automated deployment)
@@ -528,9 +860,12 @@ Allows for role separation
 ### Stack Sets
 📒https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html  
 
-- You can use StackSets to create, update, or delete stacks across multiple accounts and regions
-- StackSets orchestrate the deployment of stacks in mulitple accounts
+- You can use StackSets to create, update, or delete stacks **across multiple accounts and regions**  
+- StackSets orchestrate the deployment of stacks in multiple accounts
 - Using an administrator account, you define and manage an AWS CloudFormation template, and use the template as the basis for provisioning stacks into selected target accounts across specified regions.
+
+![stacksets](../media/stacksets.png)
+
 
 ### Change Sets
 - preview how your changes will impact your stack and resources
@@ -587,6 +922,139 @@ The template developer defines a custom resource in their template, which includ
 
 The service token specifies where AWS CloudFormation sends requests to, such as to an Amazon SNS topic ARN or to an AWS Lambda function ARN.
 
+
+# AWS Config
+📒https://aws.amazon.com/blogs/aws/aws-config-rules-dynamic-compliance-checking-for-cloud-resources  
+📒https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config-rules.html  
+
+- AWS resource inventory, configuration history and configuration change notification
+- Region-based
+- Stores all in S3 Bucket
+- Snapshot of current configuration of your account
+- Can stream configuration changes to SNS
+- Can trigger Lambda on Events
+- Can enable rule compliance by continuous monitoring and triggering SNS notification
+- Compliance checks - periodic or triggered
+- Managed Rules available (AWS Config Rules)
+- You can see the timeline of changes and retrieve past configurations
+
+AWS Config **requires IAM role** with permissions:
+ - Read-only to recorded resources
+ - Write to S3 logging bucket
+ - Publish access to SNS
+
+AWS Config rules can, e.g:
+- Ensure that EC2 instances launched in a particular VPC are properly tagged.
+- Make sure that every instance is associated with at least one security group.
+- Check to make sure that port 22 is not open in any production security group.
+
+# ECS
+📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html  
+
+- Use cases:
+  Microservices and docker applications
+  Batch and ETL Jobs
+  CI/CD
+- Container Registry - ECR (AWS) or 3rd party
+- Fargate - "serverless", manages EC2 instances
+- For EC2 container instances (ECS instance) - must be running ECS container agent
+
+Container Def->Task Def->Service->Cluster (Fargate)
+
+**Task Definition**: JSON, blueprint for application:  
+    Task Role and Task Execution IAM Role  
+    Network Mode (`awsvpc`: multiple containers sharing the single ENI)  
+    Task Memory/CPU  
+    Volumes  
+    Port that should be open on the instance
+    **Containers**:    
+            - Container Definition: packaged as readonly templates called docker images  
+            - Name, image link (repository link)  
+            - Port mappings  
+            - Volume mappings  
+            - Memory/CPU  
+            - Healthcheck  
+            - Environment  
+            - Storage and Logging  
+            - Network settings  
+            - Resouce Limits  
+**Task** - instance of Task Definition  
+ECS Agent: run on each EC2 node in ECS cluster, reports on running task & resource utilisation
+      start/stop  
+**Service**:    
+    - Launch type (EC2, Fargate)  
+    - # of tasks (desired) ELB (optional)  
+    - Deployment type (rolling update or Blue/Green development)  
+    - Placement type (AZ balanced spread, AZ balanced binpack, BinPack, One task per host, custom)  
+    - Network (VPC), Subnets, Security Groups, PublicIP  
+    - Auto Scaling (min-desired-max)  
+    - Auto Scaling Policy: Target tracking or Step scaling  
+**Cluster**:    
+    - Templates: Networking only, EC2 Linux + Networking, EC2 Windows + Networking  
+
+Dockers:
+    - EC2 Cluster-*EC2 instances-*Task-*Container  
+
+IAM Roles for ECS Tasks
+
+
+
+# SDLC Automation
+
+## CodeCommit
+- Integrated with other AWS Services
+- Uses git workflows
+
+## CodeBuild
+- Compile, run unit tests, produce deployment artifacts (stored in S3)
+- Can use Managed Image or Custom Docker Image
+- Build Project: defines build, sources:
+  - S3, CodeCommit, GitHub, Bitbucket, GitHub Enterprise
+- Build Environment: OS, runtime, tools
+- Build Spec: YAML file
+- AWS CLI: run the build:
+  `aws codebuilt start-build --project-name`, with `buildspecOverride` can specify a new inline or buildspec file  
+
+## CodeDeploy
+- Automated deployments to EC2, Lambda, on-prem  
+- Uses YAML or JSON aplication specification file **AppSpec** for ECS, Lambda or EC2 compute platforms  
+- Blue/Green Deployment: automatically creates blue/green environment  
+- Blue/Green with Lambda:  
+  - _Canary_: % of traffic shifted to the new version. Wait for specified time and shift the rest  
+  - _Linear_: Traffic is shifted in equal increments with equal periods  
+  - _All at once_: Traffic is immediately shifted  
+- Lifecycle event hooks:  
+  - BeforeInstall, AfterInstall, ApplicationStart, ApplicationStop, ValidateService  
+- Sequence of the event hooks:  
+  `ApplicationStop`->(DownloadBundle)->`BeforeInstall`->(install)->`AfterInstall`->`ApplicationStart`->`ValidateService`  
+
+## CodePipeline
+- Automate release process  
+- Stages, Actions, Transitions  
+- Stages contain at least one action  
+- Actions have a deployment artifact as input/output or both  
+- Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code  
+- Can add workflows (e.g. approvals via SNS)  
+- Enable cross-account access (e.g. pipeline in one account, resources in another):  
+  - Create CMK in KMS  
+  - Add a cross-account role  
+
+## CodeStar
+- Project templates for various projects and programming languages  
+- IDEs integration  
+- Visualisation (Application activity, JIRA)  
+
+## Deployment Strategies
+
+### Blue/Green Development
+📗https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf  
+
+- Almost zero-downtime and rollback capabilities  
+- Blue: current application  
+- Green: new version  
+- Provides isolation between blue and green environments  
+- AWS Services to help automate deployments:  
+  > Route53, ELB, Auto Scaling, Elastic Beanstalk, OpsWorks, CloudFormation, CloudWatch  
 
 
 # Polices and Standards Automation

@@ -406,7 +406,7 @@ Lambda Layers:
 ---
 # SAM Templates
 - `sam init`, `sam build`   
-- `sam package`: packages your application and uploaods to S3  
+- `sam package`: packages your application and uploads to S3  
 - `sam deploy`: deploys your application using CloudFormation  
 - place the function code at the root level of the working directory with YAML file
 - use cloudformation package command to package the deployment

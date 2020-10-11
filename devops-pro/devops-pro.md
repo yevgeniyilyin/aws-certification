@@ -491,6 +491,31 @@ Lambda Layers:
   - Layers are extracted to the `/opt` directory in the function execution environment  
   - You can move runtime dependencies out of your function code by placing them in a layer  
 
+## Canary Deployments of Lambda functions
+https://aws.amazon.com/blogs/compute/implementing-canary-deployments-of-aws-lambda-functions-with-alias-traffic-shifting/
+Traffic shifting with Lambda aliases  
+
+```shell
+# Update $LATEST version of function
+aws lambda update-function-code --function-name myfunction ….
+
+# Publish new version of function
+aws lambda publish-version --function-name myfunction
+
+# Point alias to new version, weighted at 5% (original version at 95% of traffic)
+aws lambda update-alias --function-name myfunction --name myalias --routing-config '{"AdditionalVersionWeights" : {"2" : 0.05} }'
+
+# Verify that the new version is healthy
+…
+# Set the primary version on the alias to the new version and reset the additional versions (100% weighted)
+aws lambda update-alias --function-name myfunction --name myalias --function-version 2 --routing-config '{}'
+```
+You can use for automation:
+- Lambda function
+- Step Functions workflow
+- [SAM and CodeDeploy functionality](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html) (declared in SAM and CodeDeploy manages the function rollout)
+
+
 # SAM Templates
 - `sam init`, `sam build`   
 - `sam package`: packages your application and uploads to S3  
@@ -525,6 +550,87 @@ Two types of state machines:
   - `StartExecution`  
   - `ListExecution` - list executions is eventually consistent (use `nextToken`)  
   - `StopExecution`  
+
+# API Gateway
+:tv:https://www.youtube.com/watch?v=tIfqpM3o55s  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-http-integrations.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-aws-proxy.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html    
+📒https://aws.amazon.com/about-aws/whats-new/2017/11/amazon-api-gateway-supports-canary-release-deployments/  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html  
+📒https://aws.amazon.com/blogs/aws/new-usage-plans-for-amazon-api-gateway/  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html  
+📒https://aws.amazon.com/appsync/  
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/handle-errors-in-lambda-integration.html
+❗https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html  
+
+- Resource URL
+- Stage is added to default API endpoint
+- Respond to request: Lambda, HTTP Endpoints, other AWS services
+- Deployments -> snapshot of API's resources and methods
+- Stages -> dev, prod, beta.
+  Specific settings: caching, request throttling, logging, stage variables
+- Caching -> set capacity, encryption, TTL, per-key invalidation
+- Dashboard -> API calls, Latency, Integration Latency, 4xx and 5xx Errors
+- Can import API from Swagger 2.0
+- Throttling -> by default limits the steady-state request rate to 10000 rps
+    Max 5000 concurrent requests accross all APIs within AWS account
+    429 Too Many Requests error
+- Can configure SOAP Webservice Passthrough (doesn't convert XML!)
+- Canary releases - create/promote canary
+- Stage variables:
+  - name-value pairs you can define as configuration attributes associated with a deployment stage
+  - use as environment variables in API setup and mapping templates (`${stageVariables.Name}`)
+- To support CORS, API resource needs to implement an OPTIONS method that can respond to the OPTIONS request with following header:
+  `Access-Control-Allow-Headers`
+  `Access-Control-Allow-Origin`
+  `Access-Control-Allow-Methods`  
+
+Integration types:
+  - `AWS`: AWS Service actions (integration with AWS services)  
+      you must configure both integration request and response  
+  - `AWS_PROXY`: Lambda proxy integration, API Gateway passes the incoming request direct to Lambda  
+      you do not set integration request or response  
+  - `HTTP`: HTTP endpoints in the backend  
+      you must configure both integration request and response  
+  - `HTTP_PROXY`: access to HTTP backend with a streamlined integration setup on single API method  
+      you do not set integration request or response   
+  - `MOCK`: API Gateway return a response without sending the request to the backend  
+
+[Access Control](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-control-access-to-api.html) - supported mechanisms:
+  - **Resource policies**: resource-based policies to allow or deny access to APIs and methods from specified source IP or VPC endpoints (e.g. AWS accounts whitelist, IP range blacklist, Source VPC whitelist). These resource policies are attached to resources
+  - **Standard IAM roles and policies**: can be applied to entire API or individual methods (e.g. who can create, managed and invoke APIs).  
+    `authorizationType=AWS_IAM`  
+  - **IAM tags**: can be used together with IAM policies to control access - using `aws:ResourceTag` in IAM policies  
+  - **Endpoint policies for interface VPC endpoints**: allow you to attach IAM resource policies to interface VPC endpoints to improve the security of private APIs.  
+  - **Lambda authorizers**: _Lambda functions_ that control access to API methods using bearer token authentication (OAuth or SAML)- as well as information described by headers, paths, query strings, stage variables, or context variables request parameters to determine the caller's identity.  
+    - _token-based_: `TOKEN` authorizer: based on JWT or OAuth token (not supported for WebSocket APIs)  
+    - _request parameter-based_: `REQUEST` autorizer: receives the caller's identity in a combination of headers, query string parameters, stageVariables and $context variables  
+  - **Amazon Cognito user pools**: user pools are used to control who can invoke API methods.
+    `autorizationType=COGNITO_USER_POOLS`  
+
+❗The maximum of integration timeout for API Gateway is 29s (minimal is 50ms)
+
+## Handling Errors in Amazon API Gateway
+📒https://docs.aws.amazon.com/apigateway/api-reference/handling-errors/  
+
+- **Client Errors**: 4xx HTTP response code. Client errors indicate that Amazon API Gateway found a problem with the client request, such as an authentication failure or missing required parameters. Fix the issue in the client application before submitting the request again.
+- **Server Errors**: 5xx HTTP response code. Need to be resolved on the Server side.
+  - 502: Bad Gateway Exception, usually for an incompatible output returned from a Lambda proxy integration backend and occasionally for out-of-order invocations due to heavy loads.  
+  - 503: Service Unavailable Exception  
+  - 504: Endpoint Request Timed-out Exception
+
+## Handling Lambda Errors in API Gateway
+📒https://docs.aws.amazon.com/apigateway/latest/developerguide/handle-errors-in-lambda-integration.html  
+
+For Lambda custom integrations, you **must map errors** returned by Lambda in the integration response to standard HTTP error responses for your clients. Otherwise, Lambda errors are returned as `200 OK` responses by default and the result is not intuitive for your API users.
+
+There are two types of errors that Lambda can return: **standard errors** and **custom errors**. In your API, you must handle these differently.
+
 
 # OpsWorks
 Three services:
@@ -749,6 +855,40 @@ Use the `UpdatePolicy` attribute to specify how AWS CloudFormation handles updat
 - `AWS::ElastiCache::ReplicationGroup`  
 - `AWS::Elasticsearch::Domain`  
 - `AWS::Lambda::Alias`  
+
+`UpdatePolicy` for **ASG**:  
+https://aws.amazon.com/premiumsupport/knowledge-center/auto-scaling-group-rolling-updates/  
+
+Three possible update policies:
+
+🔸**`AutoScalingRollingUpdate`**: keeps the same Auto Scaling Group and replaces the old instances on the parameters that you set:
+
+```json
+"UpdatePolicy": {
+  "AutoScalingRollingUpdate": {
+    "MaxBatchSize": "Integer",
+    "MinInstancesInService": "Integer",
+    "MinSuccessfulInstancesPercent": "Integer",
+    "PauseTime": "String",
+    "SuspendProcesses": "[ List of processes ]",
+    "WaitOnResourceSignals": "Boolean"
+  }
+}
+```
+
+🔸**`AutoScalingReplacingUpdate`**: This policy enables you to specify whether AWS CloudFormation replaces an Auto Scaling group with a new one or replaces only the instances in the Auto Scaling group   
+🔸**`AutoScalingScheduledAction`**: applies when you update a stack that includes an Auto Scaling group with an associated scheduled action  
+
+`UpdatePolicy` for **Lambda**:  
+- `CodeDeployLambdaAliasUpdate`  
+```yaml
+UpdatePolicy:
+  CodeDeployLambdaAliasUpdate:
+    AfterAllowTrafficHook: String
+    ApplicationName: String
+    BeforeAllowTrafficHook: String
+    DeploymentGroupName: String
+```
 
 
 ### Template Portability and Reuse
@@ -1006,19 +1146,44 @@ IAM Roles for ECS Tasks
 - Uses git workflows
 
 ## CodeBuild
+https://docs.aws.amazon.com/codebuild/latest/userguide/troubleshooting.html  
+
 - Compile, run unit tests, produce deployment artifacts (stored in S3)
 - Can use Managed Image or Custom Docker Image
 - Build Project: defines build, sources:
   - S3, CodeCommit, GitHub, Bitbucket, GitHub Enterprise
 - Build Environment: OS, runtime, tools
-- Build Spec: YAML file
+- Build Spec: YAML file `buildspec`  
 - AWS CLI: run the build:
   `aws codebuilt start-build --project-name`, with `buildspecOverride` can specify a new inline or buildspec file  
 
+- `buildspec` file:
+https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html    
+  - YAML
+  - is a collection of build commands and related settings
+  - If you include a `buildspec` as part of the source code, by default, the `buildspec` file must be named `buildspec.yml` and placed in the root of your source directory
+
+Compute resources for the build:
+  - `BUILD_GENERAL1_SMALL`: 3Gb/2vCPU  
+  - `BUILD_GENERAL1_MEDIUM`: 7Gb/4vCPU  
+  - `BUILD_GENERAL1_LARGE`: 16Gb/8vCPU  
+  - `BUILD_GENERAL1_2XLARGE`: 145Gb/72vCPU  
+
 ## CodeDeploy
+https://docs.aws.amazon.com/codedeploy/latest/userguide/application-specification-files.html  
+https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html  
+
 - Automated deployments to EC2, Lambda, on-prem  
-- Uses YAML or JSON aplication specification file **AppSpec** for ECS, Lambda or EC2 compute platforms  
-- Blue/Green Deployment: automatically creates blue/green environment  
+- Uses YAML or JSON application specification file **`AppSpec`** for ECS, Lambda or EC2 compute platforms  
+- **Blue/Green** Deployment: automatically creates blue/green environment  
+  - https://aws.amazon.com/blogs/devops/performing-bluegreen-deployments-with-aws-codedeploy-and-auto-scaling-groups/  
+
+  AWS CodeDeploy offers two ways to perform blue/green deployments:
+
+  1. AWS CodeDeploy makes a copy of an Auto Scaling group. It, in turn, provisions new Amazon EC2 instances, deploys the application to these new instances, and then redirects traffic to the newly deployed code.
+  2. You use instance tags or an Auto Scaling group to select the instances that will be used for the green environment. AWS CodeDeploy then deploys the code to the tagged instances.
+
+
 - Blue/Green with Lambda:  
   - _Canary_: % of traffic shifted to the new version. Wait for specified time and shift the rest  
   - _Linear_: Traffic is shifted in equal increments with equal periods  
@@ -1028,13 +1193,66 @@ IAM Roles for ECS Tasks
 - Sequence of the event hooks:  
   `ApplicationStop`->(DownloadBundle)->`BeforeInstall`->(install)->`AfterInstall`->`ApplicationStart`->`ValidateService`  
 
+- `AppSpec` file:
+  - JSON or YAML
+  - is used to manage each deployment as a series of lifecycle event hooks, which are defined in the file
+  - used for ECS, Lambda, EC2/on-prem
+
+  **ECS**:
+  - structure:
+    - version
+    - resources
+    - hooks
+  - The name of the Amazon ECS service and the container name and port used to direct traffic to the new task set
+  - The functions to be used as validation tests
+  - You can run validation Lambda functions after deployment lifecycle events
+
+  ![appspec-hooks-ecs](../media/appspec-hooks-ecs.png)
+
+  **Lambda**:
+  - structure:
+    - version
+    - resources
+    - hooks
+  - The AWS Lambda function version to deploy
+  - The functions to be used as validation tests
+  - You can run validation Lambda functions after deployment lifecycle events
+
+  ![appspec-hooks-lambda](../media/appspec-hooks-lambda.png)
+
+
+  **EC2/on-premises**:
+  - structure:
+    - version
+    - os
+    - files
+    - permissions
+    - hooks
+  - YAML only
+  - Map the source files in your application revision to their destinations on the instance
+  - Specify custom permissions for deployed files
+  - Specify scripts to be run on each instance at various stages of the deployment process
+  - You can run scripts on an instance after many of the individual deployment lifecycle events
+
+  ![appspec-hooks-ec2](../media/appspec-hooks-ec2.png)
+
+  In-place deployments:
+  ![appspec-hook-ec2-2](../media/appspec-hook-ec2-2.png)
+
+  Blue-green deployments:
+  ![apphook-ec2-blue-green](../media/apphook-ec2-blue-green.png)
+
+
+  During deployment, the CodeDeploy agent looks up the name of the current event in the hooks section of the AppSpec file. If the event is not found, the CodeDeploy agent moves on to the next step. If the event is found, the CodeDeploy agent retrieves the list of scripts to execute. The scripts are run sequentially, in the order in which they appear in the file. The status of each script is logged in the CodeDeploy agent log file on the instance
+
+
 ## CodePipeline
 - Automate release process  
-- Stages, Actions, Transitions  
+- Stages (source, build, deploy), Actions, Transitions  
 - Stages contain at least one action  
 - Actions have a deployment artifact as input/output or both  
 - Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code  
-- Can add workflows (e.g. approvals via SNS)  
+- Can add workflows (e.g. approvals via SNS and manual approvals)  
 - Enable cross-account access (e.g. pipeline in one account, resources in another):  
   - Create CMK in KMS  
   - Add a cross-account role  
@@ -1046,8 +1264,17 @@ IAM Roles for ECS Tasks
 
 ## Deployment Strategies
 
+### Single Target Deployment
+
+### All-at-Once Deployment
+
+### Minimum in-service Deployment
+
+### Rolling Deployment
+
 ### Blue/Green Development
 📗https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf  
+📗https://aws.amazon.com/blogs/devops/performing-bluegreen-deployments-with-aws-codedeploy-and-auto-scaling-groups/  
 
 - Almost zero-downtime and rollback capabilities  
 - Blue: current application  
@@ -1055,6 +1282,10 @@ IAM Roles for ECS Tasks
 - Provides isolation between blue and green environments  
 - AWS Services to help automate deployments:  
   > Route53, ELB, Auto Scaling, Elastic Beanstalk, OpsWorks, CloudFormation, CloudWatch  
+
+### Canary Deployment
+
+
 
 
 # Polices and Standards Automation
@@ -1099,6 +1330,7 @@ End Users:
 ## AWS Systems Manager
 :question:https://aws.amazon.com/systems-manager/faq/  
 📒https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-managedinstances.html  
+📗https://docs.amazonaws.cn/en_us/systems-manager/latest/userguide/systems-manager-ug.pdf  
 
 Access methods:
 - Console
@@ -1135,6 +1367,12 @@ Step 3: Install a TLS certificate on on-premises servers and VMs
 Step 4: Create a **managed-instance activation** for a hybrid environment
 Step 5: Install SSM Agent for a hybrid environment (Linux or Windows)
 Step 6: (Optional) Enable Advanced-Instances Tier for **more than 1000 servers per account per region**  
+
+SSM documents recommended for patching instances:
+- AWS-ConfigureWindowsUpdate
+- AWS-InstallWindowsUpdates
+- AWS-RunPatchBaseline
+- AWS-RunPatchBaselineAssociation
 
 ### SSM State Manager
 📒https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-ssm-docs.html  
@@ -1706,6 +1944,11 @@ Capabilities:
 - backup activity monitoring
 - lifecycle management policies
 - backup access policies
+
+# Disaster Recovery
+https://aws.amazon.com/blogs/database/implementing-a-disaster-recovery-strategy-with-amazon-rds/
+
+
 
 # Billing
 

@@ -687,6 +687,10 @@ CloudWatch Events:
     - SSM (RunCommand, Automation, OpsItem)
     - Step Function
 
+**Event Buses**:  
+Permission can be granted only to:
+- AWS Account (specific or all accounts)
+- AWS Organisation
 
 - Retention:
   - <1m metric - 3h (high resolution)
@@ -707,6 +711,12 @@ Create EC2 custom metric [LAB](labs/custom-cloudwatch-metric/script.sh):
  - create a EC2 role with CloudWatch access policy (or use an appropriate AWS managed policy)
  - send a custom metric to CloudWatch from EC2  
     helper scripts: `curl https://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.2.zip -O`
+
+## CloudWatch log streaming
+- To Lambda
+- To Elasticsearch
+
+
 
 ## X-Ray
 https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html
@@ -1024,6 +1034,16 @@ Values:
   - `AWS::RDS::DBInstance`  
   - `AWS::Redshift::Cluster`  
 
+❗If a DB instance is deleted or replaced during an update, AWS CloudFormation deletes all automated snapshots. However, it retains manual DB snapshots.
+
+Updating DB instance procedure:
+1. Deactivate any applications that are using the DB instance so that there's no activity on the DB instance  
+2. Create a snapshot of the DB instance  
+3. If you want to restore your instance using a DB snapshot, modify the updated template with your DB instance changes and add the `DBSnapshotIdentifier` property with the ID of the DB snapshot that you want to use  
+
+❗After you restore a DB instance with a `DBSnapshotIdentifier` property, you must specify the **same** `DBSnapshotIdentifier` property for any future updates to the DB instance. When you specify this property for an update, the DB instance is not restored from the DB snapshot again, and the data in the database is not changed. However, if you don't specify the `DBSnapshotIdentifier` property, an empty DB instance is created, and the original DB instance is deleted. If you specify a property that is different from the previous snapshot restore property, a new DB instance is restored from the specified `DBSnapshotIdentifier` property, and the original DB instance is deleted  
+4. Update the stack
+
 
 ### Stack References and Nested Stacks
 
@@ -1103,7 +1123,7 @@ Use the `AWS::CloudFormation::CustomResource` or `Custom::<MyCustomResourceTypeN
 
 The template developer defines a custom resource in their template, which includes a service token and any input data parameters. Depending on the custom resource, the input data might be required; however, the service token is always required.
 
-The service token specifies where AWS CloudFormation sends requests to, such as to an Amazon SNS topic ARN or to an AWS Lambda function ARN.
+The service token specifies where AWS CloudFormation sends requests to, such as to an **Amazon SNS topic ARN** or to an **AWS Lambda function ARN**.  
 
 
 # AWS Config
@@ -1251,6 +1271,7 @@ phases:
 https://docs.aws.amazon.com/codedeploy/latest/userguide/application-specification-files.html  
 https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html  
 
+- Public AWS Service
 - Automated deployments to EC2, Lambda, on-prem  
 - Uses YAML or JSON application specification file **`AppSpec`** for ECS, Lambda or EC2 compute platforms  
 - **Blue/Green** Deployment: automatically creates blue/green environment  
@@ -1263,10 +1284,15 @@ CodeDeploy deployment steps:
 - Specify an `AppSpec` file
 - Deploy
 
-  AWS CodeDeploy offers two ways to perform blue/green deployments:
+When creating Deployment Group in CodeDeploy, user can select targets via Tags and Lists. The target can be any combination of:
+- EC2 Auto Scaling Group
+- EC2 Instances
+- On-premises Instances
 
-  1. AWS CodeDeploy makes a copy of an Auto Scaling group. It, in turn, provisions new Amazon EC2 instances, deploys the application to these new instances, and then redirects traffic to the newly deployed code.
-  2. You use instance tags or an Auto Scaling group to select the instances that will be used for the green environment. AWS CodeDeploy then deploys the code to the tagged instances.
+AWS CodeDeploy offers two ways to perform blue/green deployments:
+
+1. AWS CodeDeploy makes a copy of an Auto Scaling group. It, in turn, provisions new Amazon EC2 instances, deploys the application to these new instances, and then redirects traffic to the newly deployed code.
+2. You use instance tags or an Auto Scaling group to select the instances that will be used for the green environment. AWS CodeDeploy then deploys the code to the tagged instances.
 
 
 - Blue/Green with Lambda:  
@@ -1439,6 +1465,8 @@ End Users:
 - Security
 - Fault Tolerance
 - Service Limits
+
+_Business_ support plan has access to **all** Trusted Advidor checks
 
 ❗us-east-1 region must be selected in order for Trusted Advisor to be configured in CloudWatch Event rule
 
@@ -1630,7 +1658,8 @@ Automatic rotation:
 
 
 ## Amazon Macie
-📒https://aws.amazon.com/macie/  
+📒https://aws.amazon.com/macie/
+📒https://docs.aws.amazon.com/macie/latest/userguide/macie-concepts.html  
 
 - Can recognize any PII
 - Provides a dashboard
@@ -1640,6 +1669,10 @@ Can store sensitive data discovery results in a separate S3 bucket
 Can create (daily, weekly, monthly) jobs to scan selected S3 buckets
 
 Supports AWS Organisations (can scan other accounts)
+
+Data Sources for Macie:
+- CloudTrail logs (including S3 object-level API activity)
+- S3
 
 ## AWS Certificate Manager
 📒https://docs.aws.amazon.com/acm/latest/userguide/acm-concepts.html   
@@ -2168,6 +2201,18 @@ Pending:Wait
   Waits until you tell it to continue or the timeout ends (default 1h)
 Pending:Proceed
 InService
+
+## Auto Scaling Notifications
+Event types:
+- Launch
+- Terminate
+- Fail to launch
+- Fail to terminate
+
+![asg-notification](../media/asg-notification.png)
+
+## EC2 Instance Purchase Options and Instance Types
+
 
 # ELB
 

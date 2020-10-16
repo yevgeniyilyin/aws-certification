@@ -39,31 +39,6 @@ Highly Available/Fault tolerant
 ## CloudFront
 [arhitect pro CloudFront](../architect-pro/architect-pro-notes.md#CloudFront)
 
-## AutoScaling and Lifecycle hooks
-
-![auto-scaling-lifecycle](../media/auto-scaling-lifecycle.png)  
-
-- Can be created on `Instance launch` or `Instance terminate` (instance state `Pending:Wait` or `Terminating:Wait`)  
-- Can set the default result to `CONTINUE` or `ABANDON`
-- Can set heartbeat timeout (1h default) - amount of time for the instance to remain in **wait** state (30 to 7200s)  
-- Can call the `record-lifecycle-action-heartbeat` to add  more time to the timeout (max 48h)
-- Can send notification metadata
-
-- Setup CloudWatch rule (EventBridge) for notifications and define notification target
-- EventBridge rule must match the lifecycle action:
-```json
-{
-  "source": [ "aws.autoscaling" ],
-  "detail-type": [ "EC2 Instance-launch Lifecycle Action" ]
-}
-```
-
-ScaleOut
-Pending:Wait
-  Auto Scaling sends a message to the notification target defined for the hook
-  Waits until you tell it to continue or the timeout ends (default 1h)
-Pending:Proceed
-InService
 
 ## Route53
 
@@ -329,6 +304,7 @@ https://aws.amazon.com/solutions/implementations/live-streaming-on-aws/
 📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.db.html  
 📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features-managing-env-tiers.html
 📜https://github.com/awsdocs/elastic-beanstalk-samples  
+📒https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/AWSHowTo.RDS.html  
 
 Manages everything required for less complex application
 Platform as a Service
@@ -366,6 +342,7 @@ Environments are deployed via CloudFormation stack (behind the scenes)
   3. Test
   4. In **Environment actions** choose **Swap environment URLs**  
   Elastic Beanstalk swaps the CNAME records
+  ❗Do not terminate the old environment until the DNS changes have been propagated (consider TTL settings)
 
 ![Deployment options](../media/deployment-methods.jpg)  
 
@@ -377,6 +354,8 @@ Elastic Beanstalk creates Auto Scaling Group to manage EC2 instances. You can mo
 You can include a YAML [environment manifest](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-manifest.html) in the root of the application source bundle to configure the environment name, solution stack and [environment links](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-cfg-links.html) to use.  
 
 You can use Packer to create a custom platform  
+
+Use `dockerrun.aws.json` v2 file for multidocker environments: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html  
 
 ## Elastic Beanstalk ebextensions
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/ebextensions.html
@@ -392,6 +371,9 @@ e.g. use [custom CloudWatch metrics](https://docs.aws.amazon.com/elasticbeanstal
 
 **`Resources`**: customize environment resources
 
+for saved configuration, you can use `eb create -cfg savedconfig` to override existing settings in the `.ebextensions` folder.
+only settings that are applied directly to the environment can override a saved configuration
+
 ## Elastic Beanstalk Worker Environments
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features-managing-env-tiers.html
 
@@ -405,6 +387,17 @@ Elastic Beanstalk worker environments simplify this process by managing the Amaz
 
 
 With periodic tasks, you can also configure the worker daemon to queue messages based on a cron schedule. Each periodic task can POST to a different path. Enable periodic tasks by including a YAML file in your source code that defines the schedule and path for each task.
+
+## RDS with Beanstalk
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/AWSHowTo.RDS.html  
+
+Developement and Test environments - add RDS directly to the Beanstalk environment
+For prod environment it is recommended to separate RDS and Beanstalk
+
+After launching your database instance and configuring security groups, you can pass the connection information (endpoint, password, etc.) to your application by using environment properties. This is the same mechanism that Elastic Beanstalk uses when you run a database instance in your environment.
+
+For additional security, you can store your connection information in Amazon S3, and configure Elastic Beanstalk to retrieve it during deployment. With configuration files (.ebextensions), you can configure the instances in your environment to securely retrieve files from Amazon S3 when you deploy your application.
+
 
 # Lambda
 https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html  
@@ -513,7 +506,7 @@ aws lambda update-alias --function-name myfunction --name myalias --function-ver
 You can use for automation:
 - Lambda function
 - Step Functions workflow
-- [SAM and CodeDeploy functionality](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html) (declared in SAM and CodeDeploy manages the function rollout)
+- [SAM and CodeDeploy functionality](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html) (declared in SAM template and CodeDeploy manages the function rollout)
 
 
 # SAM Templates
@@ -633,6 +626,8 @@ There are two types of errors that Lambda can return: **standard errors** and **
 
 
 # OpsWorks
+https://docs.aws.amazon.com/opsworks/latest/userguide/best-practices-autoscale.html  
+
 Three services:
 
 🔹[AWS OpsWorks for Puppet Enterprise](https://docs.aws.amazon.com/opsworks/latest/userguide/welcome_opspup.html)  
@@ -666,7 +661,7 @@ Free metrics:
     Auto scaling action (ASG or ECS)  
     EC2 action (recover, stop, terminate, reboot) - _Per-instance_ metric is required  
 - **Rule** can trigger:  
-    SNS, SQS, EC2, ECS Task, Lambda, CodeBuild, CodePipeline, Step Function, SSM, Eventbus in other account, Kinesis Data Streams and Firehose  
+    SNS, SQS, EC2, ECS Task, Lambda, CodeBuild, CodePipeline, Step Function, SSM, Event bus in other account, Kinesis Data Streams and Firehose  
     Event Source for the rule can be almost any AWS Service (Event type: CloudTrail API Call)
 
 CloudWatch agents on Windows use `StatsD` protocol and `collectd` on Linux
@@ -844,10 +839,51 @@ Update behaviors of Stack Resources:
 - **Replacement** (new physical ID), e.g. change of AZ of EC2 instance
 - **Delete**: the resource is deleted
 
-Stack policies:
-- The absense of a stack policy allows all updates
-- Once a stack policy is applied, it can't be deleted
-- Once a policy is applied, by default **all** objects are protected and `Update:*` is **denied**
+[Stack policies]https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html:  
+
+```json
+{
+  "Statement" : [
+    {
+      "Effect" : "Deny_or_Allow",
+      "Action" : "update_actions",
+      "Principal" : "*",
+      "Resource" : "LogicalResourceId/resource_logical_ID",
+      "Condition" : {
+        "StringEquals_or_StringLike" : {
+          "ResourceType" : [resource_type, ...]
+        }
+      }
+    }  
+  ]
+}
+```
+
+- The absence of a stack policy allows all updates on all resources (anyone with stack permissions can update all of the resources in the stack)  
+- Once a stack policy is applied, it can't be deleted (you can define only one policy per stack), but can it can be modified via AWS CLI  
+- Once a policy is applied, by default **all** objects are protected and `Update:*` is **denied**. To allow updates on specific resources you specify an explicit `Allow` statement for those resources in the stack policy  
+- A stack policy applies to all users who attempt to update the stack. You cannot associate different stack policies with different users  
+- A stack policy applies **only during stack udpates**. It doesn't provide access controls  
+
+Example stack policy:
+```json
+{
+  "Statement" : [
+    {
+      "Effect" : "Allow",
+      "Action" : "Update:*",
+      "Principal": "*",
+      "Resource" : "*"
+    },
+    {
+      "Effect" : "Deny",
+      "Action" : "Update:*",
+      "Principal": "*",
+      "Resource" : "LogicalResourceId/ProductionDatabase"
+    }
+  ]
+}
+```
 
 ❗https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html  
 Use the `UpdatePolicy` attribute to specify how AWS CloudFormation handles updates to the resources:
@@ -876,7 +912,14 @@ Three possible update policies:
 }
 ```
 
-🔸**`AutoScalingReplacingUpdate`**: This policy enables you to specify whether AWS CloudFormation replaces an Auto Scaling group with a new one or replaces only the instances in the Auto Scaling group   
+🔸**`AutoScalingReplacingUpdate`**: This policy enables you to specify whether AWS CloudFormation replaces an Auto Scaling group with a new one or replaces only the instances in the Auto Scaling group:  
+```yaml
+UpdatePolicy:
+  AutoScalingReplacingUpdate:
+    WillReplace: Boolean
+```
+`WillReplace` specifies whether an Auto Scaling group and the instances it contains are replaced during an update  
+
 🔸**`AutoScalingScheduledAction`**: applies when you update a stack that includes an Auto Scaling group with an associated scheduled action  
 
 `UpdatePolicy` for **Lambda**:  
@@ -1089,7 +1132,12 @@ AWS Config rules can, e.g:
 - Check to make sure that port 22 is not open in any production security group.
 
 # ECS
-📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html  
+📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html
+📒https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_agent.html  
+
+ECS Container Agent:
+The Amazon ECS container agent allows container instances to connect to your cluster. The Amazon ECS container agent is included in the Amazon ECS-optimized AMIs, but you can also install it on any Amazon EC2 instance that supports the Amazon ECS specification.
+**The Amazon ECS container agent is only supported on Amazon EC2 instances**  
 
 - Use cases:
   Microservices and docker applications
@@ -1144,6 +1192,7 @@ IAM Roles for ECS Tasks
 ## CodeCommit
 - Integrated with other AWS Services
 - Uses git workflows
+- Data is encrypted in transit and at rest (CodeCommit creates an AWS-managed key in the same region - `aws/codecommit`)
 
 ## CodeBuild
 https://docs.aws.amazon.com/codebuild/latest/userguide/troubleshooting.html  
@@ -1153,9 +1202,15 @@ https://docs.aws.amazon.com/codebuild/latest/userguide/troubleshooting.html
 - Build Project: defines build, sources:
   - S3, CodeCommit, GitHub, Bitbucket, GitHub Enterprise
 - Build Environment: OS, runtime, tools
+- Build environments for Java, Python, Node.js, Ruby, Go, Android, .NET Core for Linux, Docker
 - Build Spec: YAML file `buildspec`  
 - AWS CLI: run the build:
   `aws codebuilt start-build --project-name`, with `buildspecOverride` can specify a new inline or buildspec file  
+- Supported Build Providers:
+  - CodeBuild
+  - Jenkins
+  - Solano CI
+
 
 - `buildspec` file:
 https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html    
@@ -1169,6 +1224,29 @@ Compute resources for the build:
   - `BUILD_GENERAL1_LARGE`: 16Gb/8vCPU  
   - `BUILD_GENERAL1_2XLARGE`: 145Gb/72vCPU  
 
+CodeBuild for [Docker image and ECR](https://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html):  
+`buildspec.yml`:
+```
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - docker login -u AWS -p $(aws ecr get-login-password --region $AWS_DEFAULT_REGION)
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...          
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG      
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+```
+
 ## CodeDeploy
 https://docs.aws.amazon.com/codedeploy/latest/userguide/application-specification-files.html  
 https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html  
@@ -1177,6 +1255,13 @@ https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.h
 - Uses YAML or JSON application specification file **`AppSpec`** for ECS, Lambda or EC2 compute platforms  
 - **Blue/Green** Deployment: automatically creates blue/green environment  
   - https://aws.amazon.com/blogs/devops/performing-bluegreen-deployments-with-aws-codedeploy-and-auto-scaling-groups/  
+
+CodeDeploy deployment steps:
+- Create application
+- Specify deployment group
+- Specify deployment configuration
+- Specify an `AppSpec` file
+- Deploy
 
   AWS CodeDeploy offers two ways to perform blue/green deployments:
 
@@ -1239,6 +1324,9 @@ https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.h
   In-place deployments:
   ![appspec-hook-ec2-2](../media/appspec-hook-ec2-2.png)
 
+  ELB is used for in-place deployments to prevent traffic from being routed to an instance while it's being deployed and then ELB makes the instance available for traffic again.
+  For in-place deployments you can specify CLB, ALB or NLB
+
   Blue-green deployments:
   ![apphook-ec2-blue-green](../media/apphook-ec2-blue-green.png)
 
@@ -1257,10 +1345,35 @@ https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.h
   - Create CMK in KMS  
   - Add a cross-account role  
 
+Stages:
+- **Source**:
+  - CodeCommit
+  - ECR
+  - S3
+  - BitBucket
+  - GitHub
+- **Build**:
+  - CodeBuild
+  - Jenkins
+- **Deploy**:
+
+
 ## CodeStar
 - Project templates for various projects and programming languages  
 - IDEs integration  
 - Visualisation (Application activity, JIRA)  
+
+- you do not have to manuallly configure permissions in IAM for your team members
+- you can [add team members](https://docs.aws.amazon.com/codestar/latest/userguide/how-to-add-team-member.html) (IAM users) directly in CodeStar project  (you should have the owner role or have the `AWSCodeStarFullAccess` policy assigned to your IAM user)
+- Project-level roles: Owner, Contributor, Viewer
+- if an IAM user does not exist for the person you want to add to the project, you can choose **Create new IAM user**  
+- if the AWS CodeStar project stores its source code in CodeCommit, the user must also be a member of CodeStar project team with the **owner** or **contributor** role  
+
+CodeStar dashboard shows:
+- Commit history from CodeCommit
+- The CodePipeline status including the stages of source, build and deploy
+- The application activity status provided by CloudWatch
+
 
 ## Deployment Strategies
 
@@ -1326,6 +1439,8 @@ End Users:
 - Security
 - Fault Tolerance
 - Service Limits
+
+❗us-east-1 region must be selected in order for Trusted Advisor to be configured in CloudWatch Event rule
 
 ## AWS Systems Manager
 :question:https://aws.amazon.com/systems-manager/faq/  
@@ -1937,17 +2052,165 @@ Supported resources:
 
 Capabilities:
 - Centralized backup management
-- Cross-Region backup
+- **Cross-Region** backup (except for DynamoDB)
 - Cross-account management
 - Policy-based backup solutions
 - Tag-based
 - backup activity monitoring
-- lifecycle management policies
+- lifecycle management policies (**EFS** can be lifecycled to Cold Storage)
 - backup access policies
+- backup retention policies
+- Backup plans
+- Nofifications to SNS (and logging via CloudTrail)
+
+Backups are encrypted (KMS integrated)
+No addtional costs (only S3 costs)
+
 
 # Disaster Recovery
 https://aws.amazon.com/blogs/database/implementing-a-disaster-recovery-strategy-with-amazon-rds/
 
+# AWS Storage Gateway
+:question:https://aws.amazon.com/storagegateway/faqs/  
+📒https://docs.aws.amazon.com/storagegateway/latest/userguide/HardwareAppliance.html  
+📒https://docs.aws.amazon.com/storagegateway/latest/userguide/StorageGatewayConcepts.html  
+
+Can run as VM on-prem or EC2 instance or physical appliance  
+You can manage backup and retention policies for cached and stored volume modes of Volume Gateway through AWS Backup
+
+Supports PrivateLink for all gateway types (File/Volume/Tape)  
+
+**File Gateway**: stores data on S3
+- NFS or SMB  
+- 1:1 mapping between files and S3 objects  
+- Objects written through File Gateway can be **directly** accessed in S3  
+- most recent data is cached on the gateway  
+- up to 10 file shares per gateway  
+- max size of the individual file is 5TB  
+- max size of the local cache is 64TB  
+
+**Volume Gateway**:  
+- block storage for on-prem applications using iSCSI
+- can take PiT copies of volumes which are stored in AWS as EBS snapshots
+- you can restore EBS snapshots to a **Volume Gateway** volume or an **EBS** volume  
+- you can create a snapshot schedule for each of your volumes (every 1,2,4,8,12 or 24 hours)
+- can also take copies of volumes and manage their retention using [AWS Backup](./architect-pro-notes.md#aws-backup)  
+- max 32 volumes  
+- compress data before transfer to AWS and while stored in AWS
+- you billed for only the amount of data stored on the volume, not the size of the volume your create  
+- you cannot directly access the volumes using S3 API
+- all data transferred is encrypted using SSL
+- by default all data stored in S3 encrypted SSE-S3 (supporting also SSE-KMS)
+
+  - _Cached Volumes_ mode:
+    - mounted iSCSI devices, data stored on S3, cached on-prem
+    - from 1GB to 32TB
+    - max 32 volumes for total max volume **1PB**  
+
+  - _Stored Volumes_ mode:
+    - store all data locally
+    - takes snapshot asynchronously as incremental backup and store on S3
+    - from 1GB to 16TB
+    - max 32 volumes for total max **512TB**  
+
+**Tape Gateway**:  
+- Virtual tapes are stored in S3 and can be archived to Glacier or Glacier Deep Archive
+- Supports S3 standard, Glacier and Glacier Deep Archive
+- Can run as VM on-prem or EC2 instance
+
+# Auto Scaling
+
+## Health checks
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/healthcheck.html
+
+comes from (one or more):
+- EC2 : **default** check (instance unhealthy if EC2 state anything other than `running`)  
+- ELB : **disabled** by default
+- Custom health check
+
+When an instance launches, Auto Scaling uses the value of the `HealthCheckGracePeriod` for the Auto Scaling group to determine how long to wait before checking the health status of the instance
+
+## Auto Scaling instance termination:
+https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-instance-termination.html
+
+There are following termination policies:
+`Default`  
+`AllocationStrategy`  
+`OldestLaunchTemplate`
+`OldestLaunchConfiguration`
+`ClosestToNextInstanceHour`
+`NewestInstance`
+`OldestInstance`
+
+
+## Auto Scaling and Lifecycle hooks
+
+![auto-scaling-lifecycle](../media/auto-scaling-lifecycle.png)  
+
+- Can be created on `Instance launch` or `Instance terminate` (instance state `Pending:Wait` or `Terminating:Wait`)  
+- Can set the default result to `CONTINUE` or `ABANDON`
+- Can set heartbeat timeout (1h default) - amount of time for the instance to remain in **wait** state (30 to 7200s)  
+- Can call the `record-lifecycle-action-heartbeat` to add  more time to the timeout (max 48h)
+- Can send notification metadata
+
+- Setup CloudWatch rule (EventBridge) for notifications and define notification target
+- EventBridge rule must match the lifecycle action:
+```json
+{
+  "source": [ "aws.autoscaling" ],
+  "detail-type": [ "EC2 Instance-launch Lifecycle Action" ]
+}
+```
+
+ScaleOut
+Pending:Wait
+  Auto Scaling sends a message to the notification target defined for the hook
+  Waits until you tell it to continue or the timeout ends (default 1h)
+Pending:Proceed
+InService
+
+# ELB
+
+**CloudWatch**: metrics to monitor:
+  - `ActiveConnectionCount`  
+  - `HealthyHostCount`  
+  - `HTTP code totals`  
+
+**Access logs**: disabled by default, can store data where EC2 instance has been deleted. Detailed information for every request (including requests that never made it to the target, e.g. mailformed requests) received by ELB (logs are stored in S3):
+ - client IP:port
+ - target IP:port
+ - latencies (request processing time, target processing time, response processing time)
+ - request paths
+ - server responses
+ - send/received bytes
+ - SSL details (cipher, protocol)
+
+ Each log is automatically encrypted using SSE-S3
+ No additional charge (only S3 costs)
+
+
+
+## ALB components
+- Load Balancer
+- Listeners
+ read the request from the clients
+ compare the request to rules and forwards to a target group
+- Target Group
+ Targets can be:
+ - Instance
+ - IP (including outside of VPC, e.g. on-prem), supports dynamic port mapping (for microservices)
+ - Lambda
+ Health checks are configured per target group
+ Targets can be in multiple target
+ALB content-based routing:
+- **Path-based**: forwards based on URL in the request
+- **Host-based**: forwards based on the host field of HTTP header
+
+## NLB
+- Each AZ assigned gets a node created in it with static IP (or EIP) - reduces latency
+- register targets by:
+ - InstanceID: source addresses of clients are preserved
+ - IP Address: source addresses of clients are the private IP of NLB node (NLB will re-write the headers)
 
 
 # Billing

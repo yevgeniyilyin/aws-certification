@@ -214,7 +214,7 @@ Components:
   - HTTP Endpoint
   - 3rd party providers (Datadog, MongoDB Cloud, New Relic, Splunk)
 🔹Optional S3 backup for all destinations
-🔹Allows for data tranformation using lambda functions and format conversion (e.g. to PARQUET)
+🔹Allows for data transformation using lambda functions and format conversion (e.g. to PARQUET)
 
 ### Using Lambda with Kinesis
 📒https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html  
@@ -357,6 +357,10 @@ You can use Packer to create a custom platform
 
 Use `dockerrun.aws.json` v2 file for multidocker environments: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html  
 
+The priorities of configuration are:
+"settings applied directly to the environment" > "saved configuration" > "configuration in .ebextensions" > "default value"
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options.html#configuration-options-recommendedvalues  
+
 ## Elastic Beanstalk ebextensions
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/ebextensions.html
 
@@ -373,6 +377,9 @@ e.g. use [custom CloudWatch metrics](https://docs.aws.amazon.com/elasticbeanstal
 
 for saved configuration, you can use `eb create -cfg savedconfig` to override existing settings in the `.ebextensions` folder.
 only settings that are applied directly to the environment can override a saved configuration
+
+other sections:
+`packages`,`sources`, `files`, `users`, `groups`, `commands`, `container_commands`, and `services`
 
 ## Elastic Beanstalk Worker Environments
 https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features-managing-env-tiers.html
@@ -645,6 +652,13 @@ Three services:
 [Instances](https://docs.aws.amazon.com/opsworks/latest/userguide/workinginstances.html)  
 [Apps](https://docs.aws.amazon.com/opsworks/latest/userguide/workingapps.html)  
 
+
+# Data Pipeline
+📒https://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-how-pipeline-definition.html  
+📒https://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-concepts-datanodes.html  
+📒https://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-concepts-activities.html  
+
+
 # Monitoring
 
 ## CloudWatch
@@ -716,7 +730,12 @@ Create EC2 custom metric [LAB](labs/custom-cloudwatch-metric/script.sh):
 - To Lambda
 - To Elasticsearch
 
+## CloudWatch Dashboard
+https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_xaxr_dashboard.html
 
+All dashboards are global, not Region-specific, widget added on the region basis
+`PutDashboard` and `PutMetricData` permissions are needed
+To create a custom dashboard with metric data from different regions, **Detailed Monitoring** is required to be enabled
 
 ## X-Ray
 https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html
@@ -840,15 +859,7 @@ evaluated based on input parameters you declare when you create/update a
 - `Fn:If`  
 - `Fn:Or`  
 
-### Stack Updates and UpdatePolicy attribute
-You can create new resources, update or delete existing
-
-Update behaviors of Stack Resources:
-- Update with **No Interruption** (no changing physical ID), e.g. change ProvisionedThroughput for DDB
-- Updates with **Some Interruption** (no changing physical ID), e.g. change Instance type
-- **Replacement** (new physical ID), e.g. change of AZ of EC2 instance
-- **Delete**: the resource is deleted
-
+### Stack Policy
 [Stack policies]https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html:  
 
 ```json
@@ -895,6 +906,15 @@ Example stack policy:
 }
 ```
 
+### Stack Updates and UpdatePolicy attribute
+You can create new resources, update or delete existing
+
+Update behaviors of Stack Resources:
+- Update with **No Interruption** (no changing physical ID), e.g. change ProvisionedThroughput for DDB
+- Updates with **Some Interruption** (no changing physical ID), e.g. change Instance type
+- **Replacement** (new physical ID), e.g. change of AZ of EC2 instance
+- **Delete**: the resource is deleted
+
 ❗https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html  
 Use the `UpdatePolicy` attribute to specify how AWS CloudFormation handles updates to the resources:
 - `AWS::AutoScaling::AutoScalingGroup`  
@@ -921,6 +941,13 @@ Three possible update policies:
   }
 }
 ```
+
+Processes to suspend:
+- HealthCheck
+- ReplaceUnhealthy
+- AZRebalance
+- AlarmNotification
+- ScheduleActions
 
 🔸**`AutoScalingReplacingUpdate`**: This policy enables you to specify whether AWS CloudFormation replaces an Auto Scaling group with a new one or replaces only the instances in the Auto Scaling group:  
 ```yaml
@@ -1231,6 +1258,18 @@ https://docs.aws.amazon.com/codebuild/latest/userguide/troubleshooting.html
   - Jenkins
   - Solano CI
 
+**CodeBuild Environment**:  
+- Managed image:
+  - Amazon Linux 2
+  - Ubuntu
+  - Windows Server
+  - Windows Server 2019
+Custom image:
+  - ARM
+  - Linux
+  - Linux GPU
+  - Windows
+  - Windows 2019
 
 - `buildspec` file:
 https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html    
@@ -1365,23 +1404,43 @@ AWS CodeDeploy offers two ways to perform blue/green deployments:
 - Stages (source, build, deploy), Actions, Transitions  
 - Stages contain at least one action  
 - Actions have a deployment artifact as input/output or both  
-- Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Code  
+- Tooling integration for: S3, CodeCommit, GitHub, CodeBuild, Jenkins, TeamCity, Solano CI, Code  
 - Can add workflows (e.g. approvals via SNS and manual approvals)  
 - Enable cross-account access (e.g. pipeline in one account, resources in another):  
   - Create CMK in KMS  
   - Add a cross-account role  
 
-Stages:
+Stages/Actions:
 - **Source**:
   - CodeCommit
   - ECR
   - S3
   - BitBucket
   - GitHub
+  - GitHub Enterprise Server
 - **Build**:
   - CodeBuild
   - Jenkins
 - **Deploy**:
+  - AppConfig
+  - CloudFormation
+  - CodeDeploy
+  - Elastic Beanstalk
+  - Service Catalog
+  - Alexa Skills Kit
+  - ECS/ECS Blue/Green
+  - S3
+- **Invoke**:
+  - Lambda
+  - Step Functions
+- **Test**:
+  - CodeBuild
+  - DeviceFarm
+  - Jenkins
+  - BlazeMeter
+  - Ghost Inspector UI Testing
+  - Micro Focus StormRunner Load
+  - Runscope API Monitoring
 
 
 ## CodeStar
@@ -1400,21 +1459,44 @@ CodeStar dashboard shows:
 - The CodePipeline status including the stages of source, build and deploy
 - The application activity status provided by CloudWatch
 
+## Lambda integration with CodeStar and CodePipeline
+https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-invoke-lambda-function.html  
+
+**Lambda functions** can be used in CI/CD pipelines to do the following tasks:
+- Roll out changes to your environment by applying or updating an AWS CloudFormation template
+- Create resources on demand in one stage of a pipeline using AWS CloudFormation and delete them in another stage
+- Deploy application versions with zero downtime in AWS Elastic Beanstalk with a Lambda function that swaps CNAME values
+- Deploy to Amazon EC2 Container Service (ECS) Docker instances
+- Back up resources before building or deploying by creating an AMI snapshot
+- Add integration with third-party products to your pipeline, such as posting messages to an IRC client/Slack
+
 
 ## Deployment Strategies
+![deployment-strategies](../media/deployment-strategies.png)
+
 
 ### Single Target Deployment
 
-### All-at-Once Deployment
+### All-at-Once (In-Place) Deployment
+All at once or in-place deployment is a method you can use to roll out new application code to an existing fleet of servers. This method replaces all the code in one deployment action. It requires downtime because all servers in the fleet are updated at once. There is no need to update existing DNS records. In case of a failed deployment, the only way to restore operations is to redeploy the code on all servers again
 
 ### Minimum in-service Deployment
 
 ### Rolling Deployment
+With rolling deployment, the fleet is divided into portions so that all of the fleet isn’t upgraded at once. During the deployment process two software versions, new and old, are running on the same fleet. This method allows a zerodowntime update. If the deployment fails, only the updated portion of the fleet will be affected.
 
-### Blue/Green Development
+Variations:
+- Canary release
+- Rolling with additional batch (Elastic Beanstalk): allows the application to first scale up before taking servers out of service, preserving full capability during the deployment
+
+### Immutable Deployment
+The immutable pattern specifies a deployment of application code by starting an entirely new set of servers with a new configuration or version of application code. This pattern leverages the cloud capability that new server resources are created with simple API calls.
+
+### Blue/Green Deployment
 📗https://d1.awsstatic.com/whitepapers/AWS_Blue_Green_Deployments.pdf  
 📗https://aws.amazon.com/blogs/devops/performing-bluegreen-deployments-with-aws-codedeploy-and-auto-scaling-groups/  
 
+- Type of **immutable** deployment  
 - Almost zero-downtime and rollback capabilities  
 - Blue: current application  
 - Green: new version  
@@ -1751,7 +1833,10 @@ Components:
 # Amazon GuardDuty
 📒https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html  
 
-GuardDuty monitors event sources (VPC Flow  Logs, R53 DNS Query logs, Cloudtrail events)
+GuardDuty monitors event sources (VPC Flow  Logs, R53 DNS Query logs, Cloudtrail S3 data event logs, DNS logs)
+
+It uses threat intelligence feeds, such as lists of malicious IP addresses and domains, and machine learning to identify unexpected and potentially unauthorized and malicious activity within your AWS environment. This can include issues like escalations of privileges, uses of exposed credentials, or communication with malicious IP addresses, or domains. For example, GuardDuty can detect compromised EC2 instances serving malware or mining bitcoin. It also monitors AWS account access behavior for signs of compromise, such as unauthorized infrastructure deployments, like instances deployed in a Region that has never been used, or unusual API calls, like a password policy change to reduce password strength.
+
 Publish events to Guard Duty console or CloudWatch events
 Multiple AWS accounts (via AWS Organisation) can be added to Guard Duty
 Requires role permission
@@ -1774,12 +1859,18 @@ Requires an agent installed on EC2 instance
 
 API-driven (can be implemented in existing DevOps environment), generates JSON reports
 
-**Network Assessments** (agent is not required):  
-  Network configuration analysis to checks for ports reachable from outside the VPC  
+**Assessment Templates**:  
+- Network Reachability
+- Security Best Practicies
+- Common Vulnerabilities and Exposures (CVE)
+- CIS Operating System Security Configuration Benchmarks
 
-**Host Assessments** (agent is required):  
-  Vulnerable software (CVE), host hardening (CIS benchmarks), and security best practices  
-  Can automatically install the agent for instances that allow SSM **run command**  (or can be manually installed)
+  **Network Assessments** (agent is not required):  
+    Network configuration analysis to checks for ports reachable from outside the VPC  
+
+  **Host Assessments** (agent is required):  
+    Vulnerable software (CVE), host hardening (CIS benchmarks), and security best practices  
+    Can automatically install the agent for instances that allow SSM **run command**  (or can be manually installed)
 
 ### Network Reachability
 An Amazon Inspector agent **is not required** to assess your EC2 instances with this rules package. However, an installed agent can provide information about the presence of any processes listening on the ports. Do not install an agent on an operating system that Amazon Inspector does not support. If an agent is present on an instance that runs an unsupported operating system, then the Network Reachability rules package will not work on that instance.
@@ -1994,7 +2085,14 @@ Discover > Asses > Migrate
 🔹**Agent-based discovery**  
     - Discovery Agent
     - Installed on your on-prem physical servers and VMs
-    - Supported OS: Amazon Linux, Linux 2, Ubuntu, Red Hat Enterprise Linux, CentOS, SUSE, Windows Server
+    - Supported OS:
+      - Amazon Linux
+      - Linux 2
+      - Ubuntu
+      - Red Hat Enterprise Linux
+      - CentOS
+      - SUSE
+      - Windows Server
 
 🔹**Migration Hub Import**  
     For the situations that Discovery Connector and Discovery Agent cannot be used, users can upload data directly with import template (including server specifications and utilization data)
@@ -2274,3 +2372,62 @@ Data Integration for:
 - Athena
 - Redshift
 - QuickSight
+
+
+# Identity Federation
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_saml.html  
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_cognito.html
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_saml.html  
+📒https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_common-scenarios_federated-users.html
+
+When to use STS:
+- Identity Federation:
+  - Enterprise identity federation, STS supports SAML (allows use of Microsoft AD)
+  - Web identity federation (Facebook, Google, Amazon) supporting OIDC (OpenID Connect)
+- Roles for cross-account access
+- Roles for Amazon EC2 and other AWS services
+  - grant access to application running on EC2 to access other AWS services without having to imbed credentials
+
+For mobile applications [**Cognito use is recommended**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_cognito.html)  
+
+STS API:
+- `AssumeRole`  
+- `AssumeRoleWithWebIdentity`  
+- `AssumeRoleWithSAML`  
+
+When requested via STS API call, a credential object is returned containing:
+- Session Token
+- Access Key ID
+- Secret Access Key
+- Expiration Timestamp
+
+❗You can use [External ID](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html) with `AssumeRole` when you need to give a third party access to your AWS resources (delegate access)
+Add trust to the IAM role trust policy:
+```json
+"Principal": {"AWS": "Example Corp's AWS Account ID"},
+"Condition": {"StringEquals": {"sts:ExternalId": "Unique ID Assigned by Example Corp"}}
+```
+Example Corp will call `sts:AssumeRole` with role ARN and ExternalId
+
+
+**`AssumeRoleWithWebIdentity`**  
+1. Log into Google, ID token returned
+2. Using ID token to call STS API `AssumeRoleWithWebIdentity`  
+3. STS provides temporary credentials
+4. Use temp credentials to call AWS API
+
+**`AssumeRoleWithSAML`**  
+❗Possible to have [access to AWS Console](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-saml.html) - SSO - (not possible with WebIdentity)  
+
+![SAML-Federation](../media/SAML-Federation.png)
+
+![SAML-SSO](../media/SAML-SSO.png)
+
+#### Identity Federation Use Cases
+- Amazon Cognito
+- Developer Authenticated Identities (via Amazon Cognito)
+- OpenID Connect (OIDC)
+- SAML 2.0
+- Custom Identity Broker
+
+![identity-federation-custom-broker](../media/identity-federation-custom-broker.png)

@@ -1,6 +1,268 @@
 # Machine Learning Speciality
 
-LA course by **Mike Chambers**
+# Resources
+- [AWS Certified Machine Learning - Speciality](https://aws.amazon.com/certification/certified-machine-learning-specialty/)
+- [AI/ML Learning Journey](https://w.amazon.com/bin/view/Acannin/ml-journey/)
+- [AWS ML Specialty FabG GitHub repo](https://github.com/FabG/ml-aws-specialty-lab)
+
+## Probability
+- [Probability Distributions and their Mass/Density Functions](https://tinyheero.github.io/2016/03/17/prob-distr.html)
+- [PROBABILISTIC APPROACHES: SCENARIO ANALYSIS, DECISION TREES AND SIMULATIONS](http://people.stern.nyu.edu/adamodar/pdfiles/papers/probabilistic.pdf)
+- [Doing Bayesian Data Analysis - A Tutorial with R, JAGS, and Stan](https://sites.google.com/site/doingbayesiandataanalysis/)
+- [Probability Distribution Table - Intro with tossing a coin 3 times](https://www.youtube.com/watch?v=5lpqiGixDd0)
+- [What is a Probability Distribution?](http://stattrek.com/probability-distributions/probability-distribution.aspx)
+- [Continuous Probability Distribution](http://stattrek.com/statistics/dictionary.aspx?definition=Continuous%20probability%20distribution)
+- [Khan Academy - Probability density function](https://www.youtube.com/watch?v=Fvi9A_tEmXQ)
+- [PennState STAT 414/415 - Probability Density Functions](https://onlinecourses.science.psu.edu/stat414/node/97)
+- [What is the relationship between the probability mass, density, and cumulative distribution functions?](https://www.quora.com/What-is-the-relationship-between-the-probability-mass-density-and-cumulative-distribution-functions)
+
+
+https://quip-amazon.com/Zh52ATqZ1dbI/AWS-Certification-Prep-Machine-Learning-Specialty-MLS-C01
+
+https://arxiv.org/pdf/1609.04836.pdf
+https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html
+https://academic.oup.com/bib/article/14/1/13/304457
+https://www.omicsonline.org/open-access/a-comparison-of-six-methods-for-missing-data-imputation-2155-6180-1000224.php?aid=54590
+
+https://docs.aws.amazon.com/sagemaker/latest/dg/object2vec.html
+https://aws.amazon.com/blogs/machine-learning/introduction-to-amazon-sagemaker-object2vec/
+https://www.jair.org/index.php/jair/article/view/10302
+
+- [Coursera - Practical Data Science Specialization](https://www.coursera.org/specializations/practical-data-science/?action=enroll)
+- [Hands-on Machine Learning with Scikit-Learn, Keras, and TensorFlow: GitHub repository](https://github.com/ageron/handson-ml2)
+
+
+I’m happy to report that I passed my AWS ML Specialty Certification test yesterday. A few points to share for those still on the journey:
+
+- aCloudGuru and LinuxAcademy training should be considered a baseline only. You’ll need to dive a good deal deeper on your own.
+- Whizlabs practice tests (which have been instrumental in earning my other certs) aren’t that well aligned with the actual test, they’re much more verbose and there aren’t enough of them (two full tests, 5 short subject-area tests), so if you use these to diagnose your weaknesses you won’t have fresh tests by which to confirm you’re on good ground.
+- Groking the SageMaker Algorithm descriptions is critical, but requires a fair baseline in ML techniques. The above program's didn't give me enough, but by the time I finished with those below, and a fair bit of Internet reading on terms/techniques I didn't quite get, I started to get them.  https://machinelearningmastery.com is a great resource.
+- I found the Andrew NG Coursera program good for firming up my understanding of what’s happening under the covers. I didn’t go past the neural network classes.
+- I also did the Google ML Crash course. Their playgrounds are great for getting intuition about tuning.
+- I’d say that each of these courses built upon the others.
+- Glue and the Kinesis suite are important to know, as is some EMR.
+- I didn’t get any questions where I needed to have memorized the exact names of hyperparameters (like in a lot of Whizlab questions), but be sure you know how learning rate, batchsize, epochs, dropout, the regularization params address, common training problems.
+- Process of elimination is your friend, but often require good ML fundamentals to recognize the “obvious” wrong choices.  
+
+[#aws-certified-machine-learning-speciality-exam slack channel](https://amzn-aws.slack.com/archives/C01D55G3PQA/p1634008133008100)
+
+# Udemy course
+- [AWS Certified Machine Learning Speciality 2022 - Hands On!](https://www.udemy.com/course/aws-machine-learning/learn/lecture/16368832?start=15#overview)
+- [Course materials](https://sundog-education.com/aws-certified-machine-learning-course-materials/)
+
+## Data engineering
+
+### S3
+Encryption:
+- **SSE-S3**: keys handled and managed by AWS
+- **SSE-KMS**: keys handled and managed by AWS KMS, audit trail for key usage, usage of CMKs
+- **SSE-C**: customer manages own keys
+- **Client Side Encryption**
+
+Security:
+- User based:
+  - IAM policies
+- Resource based:
+  - bucket policies
+  - ACL
+
+new way of enforce encryption - use _S3 default encryption_
+
+use VPC Endpoints to access S3 buckets
+
+Logging & Audit:
+- S3 access logs (stored in other S3 bucket)
+- API calls logged in AWS CloudTrail
+
+Tagged based security (combined with IAM policies and bucket policies)
+
+### Kinesis
+- data is replicated to 3 AZ
+
+Services:
+- Kinesis Streams
+- Kinesis Analytics
+- Kinesis Firehose
+- Kinesis Video Streams
+
+#### Kinesis Data Streams (KDS)
+- streams divided into Shards (Partitions)
+- Shards have to be provisioned in advance (capacity planning)
+- Data retention 24h default, up to 365d
+- Record up to 1MB
+- Data cannot be deleted
+
+Capacity:
+- Producer:
+  - **1MB/s or 1000 msg/s at write per shard**
+  - `ProvisionedThroughputException` otherwise
+
+- Consumer classic:
+  - 2MB/s at read per shard
+  - 5 API calls/s per shard across all consumers
+
+#### Kinesis Data Firehose (KDF)
+Data transformation through Lambda function
+All or failed data can be saved to S3 backup bucket
+Automatic scaling
+Data conversion (CSV/JSON -> Parquet/ORC), only for S3
+Supports compression for S3 (GZIP, ZIP, and SNAPPY)
+60s minimum latency, 900s max buffer interval
+1MB to 100MB buffer size
+pay per data amount
+delivery retry every 5s for 24h period
+24h max retention
+can encrypt data at destination
+
+Producers/data sources:
+- Kinesis Data Streams
+- CloudWatch, EventBridge
+- AWS IoT
+- AWS Pinpoint
+- Kinesis Data Firehose API, Kinesis Agent
+- Fluentbit
+
+Destinations (batch writes):
+- Amazon S3
+- Amazon Redshift (copy through S3)
+- Amazon OpenSearch
+- HTTP endpoint
+- 3rd party destinations (e.g. Splunk, Datadog, NewRelic, Dynatrace, Sumologic, MongoDB)
+
+
+#### KDF vs. KDS
+KDS:
+- need to write custom code (producer/consumer) - KDS API
+- real time, 200ms latency for classic, 70ms latency for enhanced fan-out
+- need to manage scaling (shard splitting/merging)
+- data storage 1 - 365d, replay capability, multi-consumers
+
+KDF:
+- Near real time (60s is lowest buffer time)
+- Data transformation via Lambda
+- Auto scaling
+- no data storage, only delivery retry, 24h max retention
+
+#### Kinesis Data Analytics (KDA)
+![](img/kda.png)
+
+Use cases:
+- Streaming ETL
+- Continuos metric generation
+- Responsive analytics
+- ML inference
+
+SQL to Flink to write the computation
+Schema discovery
+
+ML on KDA:
+- **Random cut forest** (`RANDOM_CUT_FOREST` SQL function) for anomaly detection
+- `HOTSPOTS` for detecting dense regions in the data
+
+#### Kinesis Video Streams (KVS)
+Data retention 1h - 10y
+
+Producers:
+- cameras, AWS DeepLens, radar data etc
+- Producer SDK
+- one producer per video stream
+
+Consumers:
+- AWS SageMaker
+- Amazon Rekognition Video
+- custom (MXNet, Tensorflow)
+
+Use cases:
+- consume video real-time + inference
+
+### Glue
+Transformations:
+- FindMatches ML: de-duplication
+
+### AWS Data Stores
+
+### AWS Data Pipeline
+Glue vs. Data Pipeline
+Glue:
+- Run Apache Spark code, Scala or Python, focus on ETL
+- Managed serverless
+- Data catalog
+
+Data Pipeline:
+- Orchestration service
+- More control over the environment, compute resources that run code & code
+- Allow access to EC2 or EMR instances
+
+### AWS Batch
+Run batch jobs as Docker images, can run any computing job with provided Docker image  
+Dynamic provisioning of the instances (EC2 & spot)  
+Optimal quantity and type based on volume and requirements  
+Fully serverless  
+Pay for underlying EC2 instances  
+Schedule batch jobs using CWE  
+Orchestrate using Step Functions  
+
+### AWS DMS
+
+### AWS Step Functions
+Max execution time 1y
+
+## EDA
+
+### Types of data
+- Numerical
+- Categorical
+- Ordinal
+
+### Data distributions
+![](img/distributional-choices.png)
+
+Is data _discrete_ or _continuous_?
+- **probability density function (p.d.f.)** ->  used to describe continuous probability distributions
+- **probability mass function (p.m.f)** -> used to describe discrete probability distributions
+
+E.g. continuous distribution:
+- normal
+
+E.g. discrete distribution:
+- Poisson
+- Binominal
+- Bernoulli
+
+### Time Series
+- Trends
+- Seasonality
+- Both
+- Noise
+
+Additive model:
+- seasonality + trends + noise
+  seasonal variation is constant
+
+Multiplicative model:
+- seasonality*trends*noise
+  seasonal variation increases as the trend increases
+
+### Amazon Athena
+
+### Amazon QuickSight
+ML Features:
+- Anomaly detection (RCF)
+- Forecasting
+- Auto-narratives
+
+### EMR & Hadoop
+
+
+
+## Modeling
+
+## ML implementation and operations
+
+## Wrapping up
+
+
+# LinuxAcademy course by **Mike Chambers**
 https://linuxacademy.com/cp/modules/view/id/340
 
 - Training Data
@@ -373,6 +635,39 @@ F1 Score takes more into account and can be a better measure for models if we ha
 
 User/Browser <-> Jupyter Notebook Server <-> Kernel
 Notebook files
+
+SageMaker
+- fully-managed notebook instances
+- Multiple kernel options
+- used by AWS to demo SageMaker algorithms
+
+## ML and DL Frameworks
+set of APIs, libraries, compilers etc
+implementation of algorithms
+
+- TensorFlow (google)
+- Keras (goes together with TensorFlow)
+
+- mxnet (AWS)
+- Gluon
+
+- PyTorch
+- Scikit learn (great place for experimenting)
+
+Languages:
+- Python
+- R
+- Go
+
+### TensorFlow
+
+### PyTorch
+
+### MXNet
+
+### Scikit-learn
+
+
 
 
 

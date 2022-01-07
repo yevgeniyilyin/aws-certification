@@ -2047,7 +2047,7 @@ Use NACL to limit traffic to services/resources which do not support Security Gr
 
 ## Security Groups
 Attached to network interfaces
-Multiple SG can be associated with an interface and a single SG cna be associated with many interfaces
+Multiple SG can be associated with an interface and a single SG can be associated with many interfaces
 **All** rules are evaluated at once, no order
 There is a **default implicit DENY**
 SG cannot **explicitly** deny traffic
@@ -2169,7 +2169,7 @@ Highly Available
 - DynamoDB
 
 #### Interface endpoints
-**Do not use route tables**  
+**Interface endpoints do not use route tables**  
 - Privatelinks (represented inside VPC via VPCE and ENI)
   - you can use PrivateLinks for Service providers in other VPC (like ELB, SaaS applications)
   - you can use PrivateLinks to access many AWS Public services without crossing the Internet

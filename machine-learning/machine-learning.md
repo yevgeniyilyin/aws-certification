@@ -1,9 +1,30 @@
 # Machine Learning Speciality
 
+# Learning plan
+
+## Courses
+1. [Udemy AWS Certified Machine Learning Speciality 2022 - Hands On!](https://www.udemy.com/course/aws-machine-learning/learn/lecture/16368832?start=15#overview)
+1. [Coursera Machine Learning Andrew Ng](https://www.coursera.org/learn/machine-learning/lecture/RKFpn/welcome)
+
+## Hands on
+1. [DataScience on AWS](https://github.com/data-science-on-aws/oreilly_book)
+1. [Hands-on Machine Learning with Scikit-Learn, Keras, and TensorFlow: GitHub repository](https://github.com/ageron/handson-ml2)
+1. [Dive into Deep Learning (d2l) book](http://d2l.ai/index.html)
+
 # Resources
+
+## Certification
 - [AWS Certified Machine Learning - Speciality](https://aws.amazon.com/certification/certified-machine-learning-specialty/)
 - [AI/ML Learning Journey](https://w.amazon.com/bin/view/Acannin/ml-journey/)
 - [AWS ML Specialty FabG GitHub repo](https://github.com/FabG/ml-aws-specialty-lab)
+
+## ML topics
+- [Bias-variation explanation](https://mla.corp.amazon.com/explain/bias-variance)
+- [12 Types of Neural Network Activation Functions: How to Choose?](https://www.v7labs.com/blog/neural-networks-activation-functions)
+
+### Imputation
+- [DataWig - Imputation for Tables](https://github.com/awslabs/datawig)
+
 
 ## Probability
 - [Probability Distributions and their Mass/Density Functions](https://tinyheero.github.io/2016/03/17/prob-distr.html)
@@ -211,8 +232,8 @@ Max execution time 1y
 
 ### Types of data
 - Numerical
-- Categorical
-- Ordinal
+- Categorical -> ordinal (ordered, e.g. size or rating), nominal (unordered, e.g. color)
+- Text 
 
 ### Data distributions
 ![](img/distributional-choices.png)
@@ -252,10 +273,468 @@ ML Features:
 - Auto-narratives
 
 ### EMR & Hadoop
+Managed Hadoop framework on EC2 instances  
+Spark, HBase, Presto, Hive, etc  
+EMR notebooks  
+
+Main node  
+Core node(s), can be scaled up and down  
+Task node(s), good use of spot instances  
+
+Can use AWS Data Pipeline to schedule and start/stop your cluster
+
+EMR Storage:
+- HDFS
+- EMRFS
+- EBS for HDFS
+- Local file system
+
+### Apache Spark on EMR
+Hadoop: MapReduce, YARN, HDFS
+Apache Spark: MapReduce, Spark, YARN, HDFS
+
+Spark MLLib:
+- classification, regression, DT, recommendation engine (ALS), clustering (K-Means), LDA (topic modeling), SVD, PCA, statistics, ML workflow utilities
+
+EMR: choose instance types:
+- Main node:  
+  `m4.large` for < 50 nodes, `m4.xlarge` > 50 nodes
+- Core/Task nodes:  
+  `m4.large` is baseline, `m4.xlarge` for improved performance
+  `t2.medium` if a cluster waits a lot for external dependencies
+
+### Feature engineering
+- Feature _construction_: multiplication, squaring, etc.  
+- Feature _extraction_: encoding, vectorization, etc.
+- Feature _selection_: dimensionality reduction
+
+### Imputing missing data
+**mean** values   
+**median** is better when outliers are present  
+**mode**  
+**placeholder** - impute a constant value
+**most frequent** - works for categorical data
+
+Limitations:  
+- only works on column level, misses correlations between features
+- can't use mean/median/mode on categorical features (imputing with the most frequent value can work)
+- not very accurate
+
+**dropping** rows with missing data
+- never going to be the right answer for "best" approach
+- almost anything is better
+- can lead to overfitting/underfitting
+
+**ML-based** imputing:
+- KNN: find K "nearest" (most similar) rows and average their values - works on _numerical_ data
+
+Better for _categorical_ data:
+- Deep learning
+- Regression: find linear or non-linear relationship between the missing feature and other features  
+  most advanced: **MICE** - multiple imputation by chained equations
+
+Better than imputing data - getting more real data!
+Try harder or collect more data
+
+### Addressing class imbalance
+- **down-sampling**: reduce the size of the dominant class(es)
+- **up-sampling**: increase the size of rare/small class(es), duplicate samples from the rare class(es)
+- **data generation**: create new records, similar but not identical
+- **sample weights**: for a model that uses a cost function, assign higher weights to rare classes
+
+**SMOTE**
+Synthetic Minority Over-sampling Technique  
+- generates new samples of the rare class using KNN 
+- undersamples majority class
+- better than just oversampling
+
+**Adjust thresholds**
+- increasing threshold will reduce false positive, but can result in more false negatives
+
+### Handling outliers
+metrics are:
+- **variance**: average of the squared differences from the mean
+- **stdev**: sqrt(variance)
+
+data points further than 1 stdev can be considered outliers
+
+Dealing with outliers:
+- remove
+- use RCF (Random Cut Forest) for outlier detection
+
+### Encoding
+categorical:  
+- Ordinal encoding
+- One hot encoding
+- Target (mean) encoding: average the target value for each category, replace the categorical values with the average target value.
+
+Numerical:
+- binning
+
+Define a hierarchy structure
+
+### Binning
+- Bucket observations together based on range of values
+- Quantile binning ensures even sizes of bins (equal number of samples in each bin)
+- Transforms numeric data to ordinal data
+- Useful when there is uncertainty in the measurements
+
+### Transforming
+- Apply some function to a feature to make it better suited for training
+- e.g. `log()` or `sqrt()` etc
+
+### Scaling/Normalizing
+- most models require feature data to at least be scaled to comparable values
+
+### Shuffling
+
+### SageMaker Ground Truth
+GT creates its own model as images are labeled by people. As model learns, only images the model isn't sure about are sent to human labelers.
+
+### TF-IDF
+_Term Frequency - Inverse Document Frequency_  
+Measure of how important and unique this word is for a specific document  
+
+**Term Frequency (TF)**: how often a word occurs in a document
+**Document Frequency (DF)**: how often a word occurs in an entire set of documents
+
+`TF-IDF = TF/DF = TF*1/DF = TF*IDF`
+
+Practically the `log(IDF)` is used -> better weighting of a word's overall popularity
+
+compute relevancy for `n-grams` as well
+
+Compute TF-IDF for unigrams and bigrams for 2 documents:
+![](img/tf-idf-sample.png)
+
+### Metrics
+**Accuracy**  
+ratio of cases classified _correctly_
+
+`accuracy = (TP+TN)/(TP+TN+FP+FN)`
+
+**Precision**  
+accuracy of predicted positive, ignores TN (!)
+AKA correct positives
+
+`precision = TP/(TP+FP)`
+
+**Recall**  
+ability to predict a positive outcome  
+AKA sensitivity, true positive rate, completeness
+
+`recall = TP/(TP+FN)`
+
+**Specificity**  
+True negative rate
+
+`specificity = TN/(TN+FP)`
+
+**F1 Score**  
+Harmonic mean of precision and sensitivity
+
+`F1 = 2TP/(2TP+FP+FN)`
+
+**RMSE**  
+Root mean square error
+only cares about right/wrong answers
+
+**AUC**
+ROC AUC 0.5 is useless, 1.0 is perfect
+
+
+## Modeling: Deep Learning
+![](img/nn.png)
+
+**Input layer**:  
+The input layer takes raw input from the domain. No computation is performed at this layer. Nodes here just pass on the information (features) to the hidden layer.
+
+**Hidden layer**:  
+The hidden layer performs all kinds of computation on the features entered through the input layer and transfers the result to the output layer.
+
+**Output Layer**:  
+It’s the final layer of the network that brings the information learned through the hidden layer and delivers the final value as a result.
+
+**Note**: All hidden layers usually use the same activation function. However, the output layer will typically use a different activation function from the hidden layers. The choice depends on the goal or type of prediction made by the model.
+
+Each neuron is characterized by its **weight**, **bias**, and **activation function**:
+
+![](img/neuron.png)
+
+**Feedforward Propagation** - the flow of information occurs in the forward direction. The input is used to calculate some intermediate function in the hidden layer, which is then used to calculate an output. 
+
+**Backpropagation** - the weights of the network connections are repeatedly adjusted to minimize the difference between the actual output vector of the net and the desired output vector.
+
+Backpropagation aims to minimize the cost function by adjusting the network’s weights and biases. The cost function gradients determine the level of adjustment with respect to parameters like activation function, weights, bias, etc.
+
+DL frameworks:
+- Tensorflow/Keras
+- MXNet
+
+Types of neural networks:
+- Feedforward Neural Network
+- Convolutional NN (CNN), e.g. for image classification
+- Recurrent NN (RNN), e.g. for predicting sequences in time such as stock prices, translation, words in sentence  
+  - LSTM, GRU
+
+### Activation functions
+- Define the output of a node/neuron given its input signal
+- Help the neural network to use important information while suppressing irrelevant data points
+- without an activation function, every neuron will only be performing a linear transformation on the inputs using the weights and biases. All layers will behave in the same way because the composition of two linear functions is a linear function itself. Although the neural network becomes simpler, learning any complex task is impossible, and our model would be just a linear regression model.
+- A neural network will almost always have the same activation function in all hidden layers. This activation function should be differentiable so that the parameters of the network are learned in backpropagation
+- ReLU is the most commonly used activation function for hidden layers
+- While selecting an activation function, you must consider the problems it might face: vanishing and exploding gradients
+- Regarding the output layer, we must always consider the expected value range of the predictions. If it can be any numeric value (as in case of the regression problem) you can use the linear activation function or ReLU
+- Use Softmax or Sigmoid function for the classification problems
+
+**2 linear NN activation functions:**
+- _Linear_: not possible to use backpropagation as the derivative is constant (no relation to x), all layers degenerate to a single layer (all linear functions). Is simply a linear regression model
+- _Binary step_: cannot be used for multi-class classification problems, the gradient = 0, causes a hindrance in the backpropagation process
+
+Non-linear activation functions:
+- can create **complex mappings** (non-linear) between inputs and outputs
+- allow **backpropagation** (because they have a useful derivative)
+- allow for **multiple layers** (linear functions degenerate to a single layer)
+
+**10 non-linear NN activation functions**:
+- _Sigmoid (Logistic)_ -> scales (0,1)  
+  - commonly used for models where we have to predict the probability as an output
+  - differentiable and provides a smooth gradient
+  - limitation: gradient values are only significant for range (-3,3) (vanishing gradient problem)
+- _TanH (Hyperbolic Tangent)_ -> scales (-1, 1)
+  - output is zero-centered, output values can be easily mapped as strongly negative, neutral, or strongly positive
+  - usually used in hidden layers of a neutral network - mean for the hidden layer comes out to be 0 or very close to; makes learning for the next layer much easier
+  - also faces the vanishing gradient problem
+  - 💡 Tanh generally preferred over sigmoid
+  - Compute expensive
+- _Rectified Linear Unit (ReLU)_ `f(x) = max(0,x)`
+  - has a derivative and allows for backpropagation
+  - main characteristic is that ReLU doesn't activate all the neurons at the same time
+  - computationally efficient compared to sigmoid and tanh
+  - accelerates the convergence of gradient descent towards the global minimum of the loss function
+  - has "**Dying ReLU problem**": All the negative input values become zero immediately, which decreases the model’s ability to fit or train from the data properly.
+- _Leaky ReLU_ `f(x) = max(0.1*x,x)`: improved version to solve the Dying ReLU problem (has a small positive slope in the negative area)
+   - enables backpropagation even for negative input values
+   - limitation: the gradient for negative values is a small value that makes the learning of model parameters time-consuming
+   - limitation: the predictions may not be consistent for negative input values
+- _Parametric ReLU_ `f(x) = max(a*x,x)`
+- _Exponential Linear Unit (ELU)_: variant of ReLU that modifies the slope of the negative part of the function
+  - strong alternative for ReLU
+  - becomes smooth slowly until its output equal to -α whereas RELU sharply smoothes
+  - avoids dead ReLU problem by introducing log curve for negative values of input
+  - computationally expensive
+  - no learning of α
+  - exploding gradient problem
+- _Softmax_
+  - used for the final output layer, converts outputs to probabilities of each classification
+  - it calculates the relative probabilities. Similar to the sigmoid/logistic activation function, the SoftMax function returns the probability of each class
+  - most commonly used as an activation function for the last layer of the neural network in the case of multi-class classification
+- _Swish_ `f(x) = x*sigmoid(x)`
+  - consistently matches or outperforms ReLU activation function on deep networks for image classification, machine translation etc
+  - smooth function that means that it does not abruptly change direction like ReLU does near x = 0
+  - Small negative values were zeroed out in ReLU activation function. However, those negative values may still be relevant for capturing patterns underlying the data. Large negative values are zeroed out for reasons of sparsity making it a win-win situation
+  - being non-monotonous enhances the expression of input data and weight to be learnt
+- _Gaussian Error Linear Unit (GELU)_
+  - This activation function is motivated by combining properties from dropout, zoneout, and ReLUs
+  - GELU nonlinearity is better than ReLU and ELU activations and finds performance improvements across all tasks in domains of computer vision, natural language processing, and speech recognition
+- _Maxout_
+
+
+![](img/activation-functions.png)
+
+### How to choose the right activation function
+You need to match your activation function for your output layer based on the type of prediction problem that you are solving—specifically, the type of predicted variable.
+
+- For multi-class, use softmax on the output layer
+- RNN's do well with Tanh
+- For everything else:
+  - start with ReLU
+  - ReLU should only be used in the hidden layers
+  - if you need to do better, try Leaky ReLU/Parametric ReLU
+  - last resort: PReLU, Maxout
+  - Swish for really deep (> 40 layers) networks
+  - Sigmoid if you need more than one classification for same thing
+  - Sigmoid/Logistic and Tanh functions should not be used in hidden layers as they make the model more susceptible to problems during training (due to vanishing gradients)
+
+Based on type of prediction problem, use for **output** layer:
+- **Regression** - Linear Activation Function
+- **Binary Classification** - Sigmoid/Logistic Activation Function
+- **Multiclass Classification** - Softmax
+- **Multilabel Classification** - Sigmoid
+
+Based on the type of NN architecture, use for **hidden** layers:
+- **Convolutional Neural Network (CNN)**: ReLU activation function
+- **Recurrent Neural Network (RNN)**: Tanh and/or Sigmoid activation function
+  
+### CNN
+- "feature-location invariant"
+- can find features that aren't in a specific spot
+- images, translation, sentence classification, sentiment analysis
+
+Typical usage:  
+Conv2D > MaxPooling2D > Dropout > Flatten > Dense > Dropout > Softmax
+
+Specialized CNN architectures:
+- Define specific arrangement of layers, padding, and hyperparameters
+E.g.:
+- LeNet-5
+- AlexNet
+- GoogLeNet
+- ResNet
+
+### RNN
+- Time-series data:
+  - web logs, sensor logs, stock trades
+  - self-driving based on past trajectories
+- Data that consists of sequences of arbitrary length:
+  - machine translation
+  - image captions
+  - machine-generated music
+
+Concept: a recurrent neuron > a "memory cell", maintain memory about previous behavior, layer of recurrent neurons
+
+#### RNN topologies
+- Sequence to sequence: e.g. predict stock prices
+- Sequence to vector: e.g. words in a sentence to sentiment
+- Vector to sequence: e.g. create a caption from an image
+- Encoder to decoder: e.g. sequence > vector > sequence, machine translation
+
+Training:
+- backpropagation through time
+
+**LSTM Cell**:
+- Long Short-Term Memory Cell
+- maintains separate short-term and long-term states
+
+**GRU Cell**:
+- Gated Recurrent Unit
+- Simplified LSTM Cell that performs about as well
+
+### Deep learning on EC2/EMR
+- EMR supports MXNet and GPU instance types
+
+Appropriate instance types:
+- P3: up to 8 Tesla V100 GPUs
+- P2: up to 16 K80 GPUs
+- G3: up to 4 M60 GPUs
+- Deep learning AMI
+
+### Tuning neural networks
+Learning rate:
+- NN are trained by gradient descent (or similar means)
+- minimize some cost function over many _epochs_
+- _learning rate_: how far apart these samples
+
+_Learning rate_ is a **hyperparameter**    
+- Too high -> you might overshoot the optimal solution
+- Too small -> it might take too long to find the optimal solution
+
+_Batch size_: how many training samples are used withing each epoch  
+- Smaller batch sizes can work their way out of local minima more easily
+- Too large batch sizes can get stuck in the wrong solution
+- Random shuffling at each epoch can make this look like very inconsistent results from run to run with large batch size
+
+**Important:**
+- Small batch sizes tend to not get stuck in local minima
+- Large batch sizes can converge on the wrong solution at random (large batch sizes tend to get stuck, at random, inside "local minima" instead of the correct solution)
+- Large learning rates can overshoot the correct solution
+- Small learning rates can increase training time
+
+### Regularization techniques for NN
+- Prevents _overfitting_
+- Used to balance model complexity and model fit, with the ultimate goal of ensuring the model generalize beyond the training dataset
+- Compromise between fit and complexity (drop features, reduce weights)
+
+Too many layers or too many neurons  
+
+Regularization:
+- use simpler model, less layers, less neurons  
+- drop features, reduce weights
+- **Dropout** - remove some neurons
+- **Early stopping**
+- Tune model complexity by adding a _penalty_ for complexity to the cost function `C(x)`:
+```
+Creg(w) = C(w) + α*penalty(w)
+```
+α - a _regularizer_ parameter
+
+#### L1 and L2 regularization
+Prevents overfitting in ML in general  
+A regularization term is added as weights are learned  
+- **L1** (LASSO): penalizes the model by sum of the abs(weights) 
+  - **performs feature selection** - entire features go to 0
+  - essential if dimensionality is high due to feature engineering
+  - computationally inefficient
+  - sparse output, can make up for computational inefficiency
+  - feature selection can reduce dimensionality, out of 100 features, maybe only 10 end up with non-zero coefficients!
+
+- **L2** (Ridge): penalizes the model by minimizing the sum of the squared weights
+  - all features remain considered, just weighted
+  - will try to make all weights smaller, but not necessarily driving them to 0
+  - computationally efficient
+  - dense output
+  - better choice than L1 if all features are important
+
+- **ElasticNet**: both L1 and L2
+
+! Need to scale the features first !
+
+### Vanishing gradient problem
+Like the sigmoid function, certain activation functions squish an ample input space into a small output space between 0 and 1. 
+
+Therefore, a large change in the input of the sigmoid function will cause a small change in the output. Hence, the derivative becomes small. For shallow networks with only a few layers that use these activations, this isn’t a big problem. 
+
+However, when more layers are used, it can cause the gradient to be too small for training to work effectively. 
+
+- when the slope of the learning curve approaches zero, things can get stuck
+- becomes a problem with deeper networks and RNN's as these "vanishing gradients" propagate to deeper layers
+
+Handling the vanishing gradient problem:
+- Multi-level hierarchy, break up levels into their own sub-networks trained individually
+- Long short-term memory (LSTM)
+- Residual networks (e.g. ResNet)
+- Ensemble of shorter networks
+- Better choice of activation function, ReLU is a good choice
+
+### Exploding gradient problem
+Exploding gradients are problems where significant error gradients accumulate and result in very large updates to neural network model weights during training. 
+
+An unstable network can result when there are exploding gradients, and the learning cannot be completed. 
+
+The values of the weights can also become so large as to overflow and result in something called NaN values. 
+
+### Ensemble learning
+Common example: random forest (RF)
+- make lots of decision trees and let them all vote on the result - RF
+
+**Bagging**:  
+- generate N new training sets by random sampling with replacement, each resampled model can be trained in parallel.
+
+**Boosting**:
+- observations are weighted
+- some will take part in new training sets more often
+- training is sequential, each classifier takes into account the previous one's success
+
+Depending on your goals:
+- **Boosting** generally yields better accuracy
+- **Bagging** avoids overfitting
+- Bagging is easier to parallelize
+
+## Modeling: Amazon SageMaker
 
 
 
-## Modeling
+
+
+
+
+
+
+
+
+
+
+## Modeling: High-level ML services
 
 ## ML implementation and operations
 

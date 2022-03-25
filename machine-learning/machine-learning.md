@@ -5,6 +5,7 @@
 ## Courses
 1. [Udemy AWS Certified Machine Learning Speciality 2022 - Hands On!](https://www.udemy.com/course/aws-machine-learning/learn/lecture/16368832?start=15#overview)
 1. [Coursera Machine Learning Andrew Ng](https://www.coursera.org/learn/machine-learning/lecture/RKFpn/welcome)
+1. [Python for Data Visualization](https://www.linkedin.com/learning/python-for-data-visualization)
 
 ## Books and hands-on
 1. [DataScience on AWS](https://github.com/data-science-on-aws/oreilly_book)
@@ -28,10 +29,16 @@
 - [Bias-variation explanation](https://mla.corp.amazon.com/explain/bias-variance)
 - [12 Types of Neural Network Activation Functions: How to Choose?](https://www.v7labs.com/blog/neural-networks-activation-functions)
 - [Parametric and Nonparametric Machine Learning Algorithms](https://machinelearningmastery.com/parametric-and-nonparametric-machine-learning-algorithms/)
+- [Neural Network Activation Function Types](https://medium.com/fintechexplained/neural-network-activation-function-types-a85963035196)
 
-### Imputation
+## Feature engineering
+- https://towardsdatascience.com/feature-engineering-for-machine-learning-3a5e293a5114
+- https://machinelearningmastery.com/robust-scaler-transforms-for-machine-learning/
+- [6 Powerful Feature Engineering Techniques For Time Series Data (using Python)](https://www.analyticsvidhya.com/blog/2019/12/6-powerful-feature-engineering-techniques-time-series/)
+- [Three Approaches to Encoding Time Information as Features for ML Models](https://developer.nvidia.com/blog/three-approaches-to-encoding-time-information-as-features-for-ml-models/)
+
+## Imputation
 - [DataWig - Imputation for Tables](https://github.com/awslabs/datawig)
-
 
 ## Probability
 - [Probability Distributions and their Mass/Density Functions](https://tinyheero.github.io/2016/03/17/prob-distr.html)
@@ -62,7 +69,7 @@ https://www.jair.org/index.php/jair/article/view/10302
 
 I’m happy to report that I passed my AWS ML Specialty Certification test yesterday. A few points to share for those still on the journey:
 
-- aCloudGuru and LinuxAcademy training should be considered a baseline only. You’ll need to dive a good deal deeper on your own.
+- a CloudGuru and LinuxAcademy training should be considered a baseline only. You’ll need to dive a good deal deeper on your own.
 - Whizlabs practice tests (which have been instrumental in earning my other certs) aren’t that well aligned with the actual test, they’re much more verbose and there aren’t enough of them (two full tests, 5 short subject-area tests), so if you use these to diagnose your weaknesses you won’t have fresh tests by which to confirm you’re on good ground.
 - Groking the SageMaker Algorithm descriptions is critical, but requires a fair baseline in ML techniques. The above program's didn't give me enough, but by the time I finished with those below, and a fair bit of Internet reading on terms/techniques I didn't quite get, I started to get them.  https://machinelearningmastery.com is a great resource.
 - I found the Andrew NG Coursera program good for firming up my understanding of what’s happening under the covers. I didn’t go past the neural network classes.
@@ -129,6 +136,9 @@ Capacity:
   - 2MB/s at read per shard
   - 5 API calls/s per shard across all consumers
 
+`number of shards = max(inbound_write_bandwidth_in_MB, outbound_read_bandwidth_in_MB/2)`  
+inbound_write_bandwidth_in_MB and outbound_read_bandwidth_in_MB - across all producers/consumers
+
 #### Kinesis Data Firehose (KDF)
 Data transformation through Lambda function
 All or failed data can be saved to S3 backup bucket
@@ -141,6 +151,11 @@ pay per data amount
 delivery retry every 5s for 24h period
 24h max retention
 can encrypt data at destination
+
+each delivery stream:
+- 2000 tps
+- 5000 records per sec
+- 5 MB per sec
 
 Producers/data sources:
 - Kinesis Data Streams
@@ -183,6 +198,19 @@ Use cases:
 SQL to Flink to write the computation
 Schema discovery
 
+Inputs/streaming sources;
+- Kinesis data stream
+- Kinesis data firehose stream
+
+If the data in your stream needs format conversion, transformation, enrichment, or filtering, you can preprocess the data using an AWS Lambda function. You can do this before your application SQL code executes or before your application creates a schema from your data stream.
+
+Using a Lambda function for preprocessing records is useful in the following scenarios:
+- Transforming records from other formats (such as `KPL` or `GZIP`) into formats that Kinesis Data Analytics can analyze. Kinesis Data Analytics currently supports JSON or CSV data formats.
+- Expanding data into a format that is more accessible for operations such as aggregation or anomaly detection. For instance, if several data values are stored together in a string, you can expand the data into separate columns.
+- Data enrichment with other Amazon services, such as extrapolation or error correction.
+- Applying complex string transformation to record fields.
+- Data filtering for cleaning up the data.
+
 ML on KDA:
 - **Random cut forest** (`RANDOM_CUT_FOREST` SQL function) for anomaly detection
 - `HOTSPOTS` for detecting dense regions in the data
@@ -207,6 +235,8 @@ Use cases:
 Transformations:
 - FindMatches ML: de-duplication
 
+[Glue ETL source connectors](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-connect.html)
+
 ### AWS Data Stores
 
 ### AWS Data Pipeline
@@ -222,13 +252,14 @@ Data Pipeline:
 - Allow access to EC2 or EMR instances
 
 ### AWS Batch
-Run batch jobs as Docker images, can run any computing job with provided Docker image  
-Dynamic provisioning of the instances (EC2 & spot)  
-Optimal quantity and type based on volume and requirements  
-Fully serverless  
-Pay for underlying EC2 instances  
-Schedule batch jobs using CWE  
-Orchestrate using Step Functions  
+- Run batch jobs as Docker images, can run any computing job with provided Docker image  
+- Dynamic provisioning of the instances (EC2 & spot)  
+- Run workloads on AWS Fargate, EC2, Spot
+- Optimal quantity and type based on volume and requirements  
+- Fully serverless  
+- Pay for underlying EC2 instances  
+- Schedule batch jobs using CWE  
+- Orchestrate using Step Functions  
 
 ### AWS DMS
 
@@ -257,18 +288,83 @@ E.g. discrete distribution:
 - Binominal
 - Bernoulli
 
+[Distribution types](https://www.analyticsvidhya.com/blog/2017/09/6-probability-distributions-data-science/)
+
+Data types:
+- discrete data
+- continuous data
+
+#### Bernoulli distribution
+- has only **two** possible outcomes: 1 or 0 and a **single trial**
+- independent trails
+- probability of success (1) $p$, probability of failure (0) $1-p$
+- probability mass function: $p^{x}(1-p)^{1-x}, x\in{(0,1)}$ or:
+\[ P(x) = 
+\begin{cases}
+    1-p, & x=0\\
+    p,   & x=1
+\end{cases}
+\]
+- expected value $E(X) = 1p + 0(1-p) = p$
+- variance: $Var(X) = E(X^2)-[E(X)]^2 = p - p^2 = p(1-p)$
+
+#### Uniform distribution
+- $n$ possible outcomes and probability of each outcome is equally likely
+- density function: $f(x)=\frac{1}{b-a}$, $a$ and $b$ are parameters
+- mean: $E(X)=(a+b)/2$
+- variance: $Var(X)=(b-a)^2/12$
+
+#### Binominal distribution
+- only **two** possible outcomes
+- each trial is independent
+- a total number of $n$ identical trials are conducted
+- the probability of success and failure is **same** for all trials
+- Bernoulli Distribution is a special case of Binomial Distribution with a **single trial**
+- mathematical representation ($q = 1-p$)
+$$
+P(x)=\frac{n!}{(n-x)!x!}p^xq^{n-x}
+$$
+- mean: $\mu=np$
+- variance: $Var(X)=np(1-p)=npq$
+
+#### Normal distribution
+- The mean, median and mode of the distribution coincide.
+- The curve of the distribution is bell-shaped and symmetrical about the line x=μ.
+- The total area under the curve is 1.
+- Exactly half of the values are to the left of the center and the other half to the right
+- mean: $E(x)=\mu$
+- variance: $Var(X)=\sigma^2$, $\sigma$ is standard deviation
+
+#### Poisson distribution
+Poisson Distribution is applicable in situations where events occur at random points of time and space wherein our interest lies only in the number of occurrences of the event.
+E.g. models the entire number of calls at a call center in a day, number of printing error at each page of the book, number of customers arriving at a shop in an hour.
+
+Following conditions must be met:
+- Any successful event should not influence the outcome of another successful event
+- The probability of success over a short interval must equal the probability of success over a longer interval
+- The probability of success in an interval approaches zero as the interval becomes smaller
+
+#### Exponential distribution
+Exponential distribution models the interval of time between the calls in the call center (for example). Other examples: 
+- Length of time beteeen metro arrivals,
+- Length of time between arrivals at a gas station
+- The life of an air conditioner
+
 ### Time Series
 - Trends
 - Seasonality
 - Both
 - Noise
 
+**Seasonality** refers to periodic changes, while **trends** are longer-term changes over time. 
+A trend across seasonal data would result in periodic seasonal spikes and valleys increasing or decreasing over time.
+
 Additive model:
 - seasonality + trends + noise
   seasonal variation is constant
 
 Multiplicative model:
-- seasonality*trends*noise
+- seasonality x trends x noise
   seasonal variation increases as the trend increases
 
 ### Amazon Athena
@@ -310,10 +406,44 @@ EMR: choose instance types:
   `m4.large` is baseline, `m4.xlarge` for improved performance
   `t2.medium` if a cluster waits a lot for external dependencies
 
+### Amazon EMR node types
+[apache spark node types](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html)
+
+- Master node on a spot instance:
+    - only if you can tolerate sudden cluster termination
+- Core nodes on spot instances:
+    - core nodes process data and store information using HDFS
+    - only if you can tolerate partial HDFS data loss
+- Tasks nodes on spot instances:
+    - task nodes process data but do not hold persistent data in HDFS
+    - no data loss if terminated
+
 ### Feature engineering
 - Feature _construction_: multiplication, squaring, etc.  
 - Feature _extraction_: encoding, vectorization, etc.
 - Feature _selection_: dimensionality reduction
+
+#### Box plot
+Display the data distribution based on five number summary:
+- minimum = Q1 - 1.5 * IQR
+- Q1
+- median (Q2/50th percentile)
+- Q3
+- maximum = Q3 + 1.5 * IQR
+
+- Interquartile Range (`IQR`) = Q3-Q1
+- Minimum outlier cutoff = Q1 - 1.5 * IQR
+- Maximum outlier cutoff = Q3 + 1.5 * IQR
+
+For normal distribution:
+- probability for value to be within IQR: 50%
+- probability for value to be within [min, max]: 99.3%
+- probability of an outlier (x < min or x > max): 0.7%
+
+
+[Understanding Boxplots](https://towardsdatascience.com/understanding-boxplots-5e2df7bcbd51)
+
+![](img/boxplot.png)
 
 ### Imputing missing data
 **mean** values   
@@ -368,6 +498,8 @@ data points further than 1 stdev can be considered outliers
 Dealing with outliers:
 - remove
 - use RCF (Random Cut Forest) for outlier detection
+- use **Logarithm transformation**
+- use **Robust standardization**
 
 ### Encoding
 categorical:  
@@ -379,6 +511,25 @@ Numerical:
 - binning
 
 Define a hierarchy structure
+
+### Incremental learning
+Over time, you might find that a model generates inferences that are not as good as they were in the past. With incremental training, you can use the artifacts from an existing model and use an expanded dataset to train a new model. Incremental training saves both time and resources.
+
+You can use incremental training to:
+- Train a new model using an expanded dataset that contains an underlying pattern that was not accounted for in the previous training and which resulted in poor model performance.
+- Use the model artifacts or a portion of the model artifacts from a popular publicly available model in a training job. You don't need to train a new model from scratch.
+- Resume a training job that was stopped.
+- Train several variants of a model, either with different hyperparameter settings or using different datasets.
+
+`File` input mode only
+
+- only three built-in algorithms support incremental training:
+  - Object detection
+  - Image classification
+  - Semantic segmentation
+
+[Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/incremental-training.html)
+
 
 ### Binning
 - Bucket observations together based on range of values
@@ -407,6 +558,9 @@ Measure of how important and unique this word is for a specific document
 
 `TF-IDF = TF/DF = TF*1/DF = TF*IDF`
 
+`TF= number_of_term_occurences_in_document/total_number_of_words_in_document`
+`IDF=number_of_documents_include_term/total_number_of_documents`
+
 Practically the `log(IDF)` is used -> better weighting of a word's overall popularity
 
 compute relevancy for `n-grams` as well
@@ -418,31 +572,36 @@ Compute TF-IDF for unigrams and bigrams for 2 documents:
 **Accuracy**  
 ratio of cases classified _correctly_
 
-`accuracy = (TP+TN)/(TP+TN+FP+FN)`
+$accuracy = \frac{TP+TN}{TP+TN+FP+FN}$
 
 **Precision**  
 accuracy of predicted positive, ignores TN (!)
 AKA correct positives
 - How many predicted items are relevant?
 
-`precision = TP/(TP+FP)`
+$precision = \frac{TP}{TP+FP}$
 
 **Recall**  
 ability to predict a positive outcome  
 AKA sensitivity, true positive rate, completeness
 - How many relevant items are predicted?
 
-`recall = TP/(TP+FN)`
+$recall = \frac{TP}{TP+FN}$
 
 **Specificity**  
 True negative rate
 
-`specificity = TN/(TN+FP)`
+$specificity = \frac{TN}{TN+FP}$
+
+**False Positive Rate (FPR)** 
+measures the false alarm rate or the fraction of actual negatives that are predicted as positive.
+
+$FPR=\frac{FP}{FP + TN}$
 
 **F1 Score**  
 Harmonic mean of precision and sensitivity
 
-`F1 = 2TP/(2TP+FP+FN)`
+$F1 = \frac{2TP}{2TP+FP+FN}$
 
 **RMSE**  
 Root mean square error
@@ -644,7 +803,8 @@ _Batch size_: how many training samples are used withing each epoch
 - Random shuffling at each epoch can make this look like very inconsistent results from run to run with large batch size
 
 **Important:**
-- Small batch sizes tend to not get stuck in local minima
+- Small batch sizes tend to **not** get stuck in local minima
+- Small batch size have **regularization** effect
 - Large batch sizes can converge on the wrong solution at random (large batch sizes tend to get stuck, at random, inside "local minima" instead of the correct solution)
 - Large learning rates can overshoot the correct solution
 - Small learning rates can increase training time
@@ -657,14 +817,14 @@ _Batch size_: how many training samples are used withing each epoch
 Too many layers or too many neurons  
 
 Regularization:
-- use simpler model, less layers, less neurons  
+- use simpler model, **less** layers, **less** neurons  
 - drop features, reduce weights
 - **Dropout** - remove some neurons
 - **Early stopping**
 - Tune model complexity by adding a _penalty_ for complexity to the cost function `C(x)`:
-```
-Creg(w) = C(w) + α*penalty(w)
-```
+$$
+C_{reg}(w) = C(w) + \alpha*penalty(w)
+$$
 α - a _regularizer_ parameter
 
 #### L1 and L2 regularization
@@ -675,11 +835,13 @@ A regularization term is added as weights are learned
   - essential if dimensionality is high due to feature engineering
   - computationally inefficient
   - sparse output, can make up for computational inefficiency
+  - reduces the amount of noise in the model
   - feature selection can reduce dimensionality, out of 100 features, maybe only 10 end up with non-zero coefficients!
 
 - **L2** (Ridge): penalizes the model by minimizing the sum of the squared weights
   - all features remain considered, just weighted
   - will try to make all weights smaller, but not necessarily driving them to 0
+  - stabilizes the weights when there is high correlation between the input features
   - computationally efficient
   - dense output
   - better choice than L1 if all features are important
@@ -687,6 +849,8 @@ A regularization term is added as weights are learned
 - **ElasticNet**: both L1 and L2
 
 ! Need to scale the features first !
+
+[L1 and L2 Regularization Methods](https://towardsdatascience.com/l1-and-l2-regularization-methods-ce25e7fc831c)
 
 ### Vanishing gradient problem
 Like the sigmoid function, certain activation functions squish an ample input space into a small output space between 0 and 1. 
@@ -752,6 +916,7 @@ Model endpoint capabilities:
 - SageMaker Neo for deploying to edge devices
 - Elastic inference for accelerating deep learning models
 - Automatic scaling for the endpoint
+- The existing endpoint configuration is read-only
 
 ### Built-in algorithms
 - no coding required to start running experiments
@@ -760,6 +925,10 @@ Model endpoint capabilities:
 
 Commonly supported `ContentType` values and the algorithms that use them:
 ![](img/content-types-for-built-in-algos.png)
+
+- Many Amazon SageMaker algorithms support training with data in CSV format. To use data in CSV format for training, in the input data channel specification, specify `text/csv` as the `ContentType`. 
+- Amazon SageMaker requires that a CSV file does not have a header record and that the target variable is in the first column.
+- To run unsupervised learning algorithms that don't have a target, specify the number of label columns in the content type. For example `content_type=text/csv;label_size=0`.
 
 #### Supervised learning
 General purpose algorithms that can be used for classification or regression problems:
@@ -800,7 +969,7 @@ Specialized algorithms:
 - uses _softmax_ loss function to train multiclass classifiers
 - `File` or `Pipe` mode both supported
 - supports `recordIO-wrapped` `protobuf` and `CSV` formats
-- CPU or GPU
+- train on single or multi-machine CPU or GPU instances
 - Parallelizable
 - `dtype` of all feature and label values must be `float32`
 - `CSV`: first column has to be the label
@@ -808,18 +977,25 @@ Specialized algorithms:
   - **Continuous objectives**, such as mean square error, cross entropy loss, absolute error.
   - **Discrete objectives** suited for classification, such as F1 measure, precision, recall, or accuracy.
 
-Preprocessing:
-- Training data must be normalized (can be done automatically by LL)
-- Input data should be shuffled -> **That's important for algorithms trained using stochastic gradient descent**
+#### How linear learner works
+**Step 1: Preprocessing**
+- Training data must be **normalized** (can be done automatically by LL) -> mean = 0 and stddev = 1
+  - use `normalize_data` and `normalize_label`
+- Input data should be **shuffled** -> **That's important for algorithms trained using stochastic gradient descent**
 
-Training:
+**Step 2: Training**
 - uses stochastic gradient descent (SGD)
 - choose an optimization algorithm (Adam, AdaGrad, SGD, etc)
 - multiple models are optimized in parallel
 - L1, L2 regularization
 
-Validation:
-- most optimal model is selected
+**Step 3: Validation**
+- validate and set the threshold
+- most optimal model is selected -> is the one that achieves the best loss on the validation set
+
+#### Model tuning
+- by default, the linear learner algorithm tunes hyperparameters by training multiple models in parallel
+- automatic model tuning (SageMaker) -> internal tuning mechanism is turned off automatically, `num_models` is set to 1
 
 #### Hyperparameters
 - `balance_multiclass_weights`: gives each class equal importance in loss functions
@@ -832,15 +1008,19 @@ Validation:
 #### Links
 - [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/linear-learner.html)
 - [Build multiclass classifiers with Amazon SageMaker linear learner](https://github.com/aws/amazon-sagemaker-examples/blob/master/scientific_details_of_algorithms/linear_learner_multiclass_classification/linear_learner_multiclass_classification.ipynb)
+- [Build a model to predict the impact of weather on urban air quality using Amazon SageMaker](https://aws.amazon.com/blogs/machine-learning/build-a-model-to-predict-the-impact-of-weather-on-urban-air-quality-using-amazon-sagemaker/)
 
 ### XGBoost
 - boosted group of decision trees
 - uses gradient descent to minimize loss as new trees are added
 - can be used for classification and regression (using regression trees)
+- can be used as **framework** (**script** mode) (`from sagemaker.xgboost.estimator import XGBoost`) to run your customized training script that can incorporate additional data processing into your training job. [Example](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/xgboost_abalone/xgboost_abalone_dist_script_mode.html)
+- can be used as a built-in **algorithm** (`sagemaker.estimator.Estimator`) with XGBoost training container and `image_uris.retrieve()`
 - takes `CSV`/`libsvm` or `Parquet`
 - for `CSV`: the label is in the first column and CSV doesn't have a header record
 - for `libsvm`: the label is in the first column. Subsequent columns contain the zero-based index value pairs for features
-- CPU and GPU (for 1.2-1)
+- CPU and GPU (for 1.2-1, single GPU instance)
+- 1.0-1 or earlier - only CPU
 - Parallelizable
 - `File` and `Pipe` training input mode
 - can be used in framework mode within notebooks (`sagemaker.xgboost`) or as built-in SageMaker algorithm
@@ -897,17 +1077,20 @@ Uses RNNs and CNNs models with attention as encoder-decoder architectures
 #### Links
 - [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/seq-2-seq.html)
 - [Example notebook](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/seq2seq_translation_en-de/SageMaker-Seq2Seq-Translation-English-German.html)
+- [Context-sensitive Spell Correction with Deep Learning](https://makers.underarmour.com/context-sensitive-spell-correction-with-deep-learning/)
 
 ### Deep AR
 - forecast **scalar** (one-dimensional) time series data
 - uses RNN's
 - allows to train the same model over several related time series -> when your dataset contains hundreds of related time series, DeepAR outperforms the standard ARIMA and ETS methods -> "global" algorithm
 - finds frequencies and seasonality
+- doesn't expect data to be stationary (mean, stdev constant over time), you can train data "as is"
 - `train` (mandatory) and `test` (optional) data channels
 - `JSON Lines` format (`.jsonl`), `gzip` or `Parquet` file format
 - each record **must** contain:
   - `start`: the starting timestamp
   - `target`: time series values
+  - use `time_freq` to specify the granularity
 - each record **can** contain:
   - `dynamic_feat`: dynamic features (e.g. promotion applied)
   - `cat`: categorical features
@@ -940,39 +1123,46 @@ Uses RNNs and CNNs models with attention as encoder-decoder architectures
 Highly optimized implementations of the `Word2vec` and `text classification` algorithms.
 
 Applications:
-- `text classification`: predict labels for a sentence, useful in web searches, information retrieval
+- `text classification` supervised:
+  - **predict labels for a sentence, useful in web searches, information retrieval**
   - supervised multi-class, multi-label classification
   - can use GPU
   - for large datasets (> 2GB) use single GPU instance (`p2` or `p3`)
-- `Word2vec`: useful for downstream NLP tasks, but not is not an NLP algorithm
+- `Word2vec` unsupervised: 
+  - **useful for downstream NLP tasks, but not is not an NLP algorithm**
   - maps words to high-quality distributed vectors - _word embedding_
   - words that are semantically similar correspond to vectors that are close together
   - can scale to large datasets easily
-  - provides Skip-gram and `CBOW` training architectures
+  - provides `skip-gram` and continuous bag of words `cbow` training architectures
+  - order of words doesn't matter
   - GPU training
   - for `cbow` and `skipgram` recommended a **single** `p3` instance or any single CPU/single GPU instance
   - for `batch_skipgram` can use single or multiple CPU instances
+
 - **only works on individual words, not sentences or documents**
-- expects a single preprocessed text file with space-separated tokens. Each line should contain a single sentence.
+- expects a single preprocessed text file with space-separated tokens. Each line should contain a single sentence
+- if you need to train on multiple text files, concatenate them into one file and upload the file in the respective channel
 - for **supervised** mode (`text classification`):
   - one sentence per line along with labels
   - first word in the sentence: `__label__<label>`
+  - tokens within the sentence - **including punctuation** - should be space separated
   - supports `validation` channel
   - supports `Pipe` mode with **Augmented Manifest Text Format**
-- for **upsupervised** mode (`Word2Vec`) training:
+- for **unsupervised** mode (`Word2Vec`) training:
   - only `train` channel is supported
   - one sentence per line
 - not parallelizable
 
 #### Hyperparameters
 Word2Vec:
-- `mode` (`batch_skipgram`, `skipgram`, `cbow`)
+- **required** `mode` (`batch_skipgram`, `skipgram`, `cbow`)
 - `learning_rate`
 - `window_size`
 - `vecto_dim`
 - `negative_samples`
 
 Text classification:
+- **required** `mode` (`supervised`)
 - `learning_rate`
 - `epochs`
 - `word_ngrams`
@@ -980,16 +1170,20 @@ Text classification:
 
 #### Links
 - [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/blazingtext.html)
+- [Training Word Embeddings On AWS SageMaker Using BlazingText](https://towardsdatascience.com/training-word-embeddings-on-aws-sagemaker-using-blazingtext-93d0a0838212)
+- [sample notebook](https://github.com/awslabs/amazon-sagemaker-examples/blob/master/introduction_to_amazon_algorithms/blazingtext_text_classification_dbpedia/blazingtext_text_classification_dbpedia.ipynb)
 
 ### Object2Vec
 A general-purpose neural embedding algorithm, similar to `Word2Vec`
-It can learn low-dimensional dense embeddings of high-dimensional objects.  
+It can learn low-dimensional dense embeddings of high-dimensional objects. It is basically `word2vec`, generalized to handle things other than words.
 
 The embeddings are learned in a way that preserves the semantics of the relationship between pairs of objects in the original space in the embedding space. You can use the learned embeddings to efficiently compute nearest neighbors of objects and to visualize natural clusters of related objects in low-dimensional space.
 
 Applications:
 - information retrieval
 - product search
+- genre predictions
+- visualize clusters
 - item matching
 - customer profiling
 - collaborative recommendation system -> training with pairs of {token, token} `{embedding for user features, embedding for item features}`
@@ -999,6 +1193,7 @@ Applications:
 ![](img/object2vec-architecture.png)
 
 - pre-processing is required to transform the input data to the supported formats
+- data must be tokenized into integers
 - supports a discrete token (list of a single `integer-id`, `[10]`) or sequence of discrete tokens (`[1,4,10]`)
 - requires labeled data for training -> `Object2Vec` is a **supervised** learner 
 - the architecture of `Object2Vec` requires the user to make the relationship between objects in each pair explicit at training time, but the relationships themselves may be obtained from natural groupings in data, and they might not require explicit human labeling
@@ -1015,30 +1210,793 @@ Applications:
 - the inference server automatically figures out which of these two modes is requested based on the input data
 
 #### Hyperparameters
-- `network`: encoder network
+- `network`: encoder network (`enc1_network`, `enc2_network`): `hcnn`, `bilstm`, `pooled_embedding`
 - `optimizer`
 - `token_embedding_dim`
 - `enc_dim`
 - Early stopping tolerance and patience 
+- dropout, epochs, learning rate, batch size, layers, activation function, optimizer, weight decay
 
 #### Links
 - [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/object2vec.html)
 - [Introduction to Amazon SageMaker Object2Vec](https://aws.amazon.com/blogs/machine-learning/introduction-to-amazon-sagemaker-object2vec/)
 - [Movie recommender notebook](https://github.com/awslabs/amazon-sagemaker-examples/tree/master/introduction_to_amazon_algorithms/object2vec_movie_recommendation/)
--[Using Object2Vec to Encode Sentences into Fixed Length Embeddings notebook](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/object2vec_sentence_similarity/object2vec_sentence_similarity.html)
+- [Using Object2Vec to Encode Sentences into Fixed Length Embeddings notebook](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/object2vec_sentence_similarity/object2vec_sentence_similarity.html)
 - [Using Object2Vec to learn document embeddings notebook](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_applying_machine_learning/object2vec_document_embedding/object2vec_document_embedding.html)
 
+### Object detection in SageMaker
+Detects and classifies objects in images using a single deep neural network. The object is categorized into one of the classes in a specified collection with a confidence score that it belongs to the class. Its location and scale in the image are indicated by a rectangular bounding box.
+
+- Uses CNN with [Single Shot multibox Detector (SSD)](https://arxiv.org/pdf/1512.02325.pdf)
+- supports two networks: [VGG](https://arxiv.org/pdf/1409.1556.pdf) and [ResNet](https://arxiv.org/pdf/1603.05027.pdf)
+- Can be trained from scratch, or trained with models that have been pre-trained on the [ImageNet](http://www.image-net.org/) dataset.
+- supports RecordIO(`application/x-recordio`) and image (`png`, `jpeg`, `x-image`) content type for training
+- recommended input format is Apache MXNet RecordIO
+- supply a JSON file with annotation for each image
+- only `x-image` for inference
+- instance recommendation: GPU instances for training (`p2` and `p3`)
+- can run multi-GPU and multi-instances for distributed training
+- both CPU (`c5` and `m5`) and GPU (`p2` and `p3`) can be used for inference
+
+#### Hyperparameters
+- `mini_batch_size`
+- `learning_rate`
+- `optimizer`: sgd, adam, rmsprop, adadelta
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/object-detection.html)
+- [Notebook](https://docs.aws.amazon.com/sagemaker/latest/dg/object-detection.html#object-detection-sample-notebooks)
+- [Amazon SageMaker samples](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/object_detection_birds/object_detection_birds.html)
 
 
+### Image classification
+Image classification algorithm is a supervised learning algorithm that supports multi-label classification. It takes an image as input and outputs one or more labels assigned to that image.
+
+- uses CNN ResNet
+- can be trained from scratch or trained using transfer learning
+- recommended input is Apache MXNet RecordIO, but can use raw `.jpg` or `.png` images
+- image format requires `.lst` manifest file
+- recommended to use Pipe mode
+- default image size is 3-channel 224x224 (ImageNet's dataset)
+- instance recommendation: GPU instances for training (`p2` and `p3`)
+- can run multi-GPU and multi-instances for distributed training
+- both CPU (`c5` and `m5`) and GPU (`p2` and `p3`) can be used for inference
+
+#### Hyperparameters
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html)
+- [End-to-End Multiclass Image Classification Example](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-fulltraining.html)
+
+### Semantic Segmentation 
+
+- Pixel-level object classification: tags every pixel with a class label from a predefined set of classes
+- useful for self-driving vehicles, medical imaging diagnostic, robot sensing
+- produces a *segmentation mask*: grayscale image
+- built using [MXNet Gluon framework and Gluon CV toolkit](https://github.com/dmlc/gluon-cv)
+- can use [FCN algorithm](https://arxiv.org/abs/1605.06211), [Pyramid Scene Parsing (PSP)](https://arxiv.org/abs/1612.01105), [DeepLabV3](https://arxiv.org/abs/1706.05587)
+- jpg or png images for training
+- incremental or training from scratch
+- only GPU supported for training
+- inference on both CPU and GPU
+
+- Two distinct components:  
+  - backbone (or encoder): ResNet50 or ResNet110, both trained on ImageNet
+  - decoder
+
+#### Hyperparameters
+- algorithm
+- backbone
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/semantic-segmentation.html)
+- [Example](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/semantic_segmentation_pascalvoc/semantic_segmentation_pascalvoc.html)
+
+### Random Cut Forest (RCF)
+- **Unsupervised** anomaly detection
+- tree based ensemble method
+- support for time series data
+- detects:
+  - unexpected spikes in time series data
+  - breaks in periodicity
+  - unclassifiable data points
+- assigns an anomaly score to each data point
+- data format is `protobuf` or `csv`. For `csv` the first column represents the anomaly label ("1")
+- supports File or Pipe mode
+- optional test channel
+- for train: `ml.m4`, `ml.c4`, and `ml.c5`
+- for inference: `ml.c5.xl`
+
+#### Hyperparameters
+- `feature_dim`: number of features in the data set. SageMaker RCF estimator automatically computes this
+- `eval_metrics`: default: `accuracy`
+- `num_trees`: increasing reduces noise
+- `num_samples_per_tree`: should be chosen such that $\frac{1}{\text{num samples per tree}} \approx \frac{anomalous}{normal}$ 
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/randomcutforest.html)
+- [An Introduction to SageMaker Random Cut Forests](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/random_cut_forest/random_cut_forest.html)
+- [Use the built-in Amazon SageMaker Random Cut Forest algorithm for anomaly detection](https://aws.amazon.com/blogs/machine-learning/use-the-built-in-amazon-sagemaker-random-cut-forest-algorithm-for-anomaly-detection/)
+- https://youtu.be/5p8B2Ikcw-k
+- https://youtu.be/RyFQXQf4w4w
+- https://youtu.be/12Xq9OLdQwQ
 
 
+### Neural topic model (NTM)
+**Unsupervised** learning algorithm that is used to organize a corpus of documents into topics that contain word groupings based on their statistical distribution. The topics from documents that NTM learns are characterized as a _latent_ representation because the topics are inferred from the observed word distributions in the corpus.
+
+- The semantics of topics are usually inferred by examining the top ranking words they contain
+- Only the number of topics, not the topics themselves, are prespecified
+- deep learning algorithm
+- four data channels: train is required, validation, test, auxiliary optional
+- `protobuf` or `csv`
+- words must be tokenized into integers
+  - every document must contain a count for every word in the vocabulary in CSV
+- File or Pipe mode
+- one of two topic modeling algorithms in SageMaker (NTM or LDA)
+- CPU or GPU
+- NTM hardware is more flexible than LDA and can scale better (NTM can run on CPU and GPU, multiple instances)
+
+#### Hyperparameters
+- `num_topics`
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/ntm.html)
+- [Introduction to Basic Functionality of NTM](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/ntm_synthetic/ntm_synthetic.html)
+
+### Latent Dirichlet Allocation (LDA)
+Another topic modeling algorithm, not deep learning, **unsupervised**
+Attempts to describe a set of observations as a mixture of distinct categories
+
+- most commonly used to discover a user-specified number of topics shared by documents within a text corpus
+- can be used for things other than words, e.g.:
+  - cluster customers based on purchases
+  - harmonic analysis in music
+- `protobuf` or `csv`
+- LDA only supports single-instance CPU training
+- Pipe mode only with `protobuf`
+- lemmatization significantly increases algorithm performance and accuracy. Consider pre-processing any input text data
+- LDA is a "bag-of-words" model, which means that the order of words does not matter
+
+#### Terminology
+- Observations are referred to as **documents** 
+- The feature set is referred to as **vocabulary** 
+- A feature is referred to as a **word**, is the occurrence count of each word
+- The resulting categories are referred to as **topics**
+
+#### Hyperparameters
+- `num_topics`
+- `alpha0`: initial guess for concentration parameter
+  - smaller values generate sparse topic mixtures
+  - larger values ($>1.0$) produce uniform mixtures
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/lda.html)
+- [An Introduction to SageMaker LDA](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/lda_topic_modeling/LDA-Introduction.html)
+
+### Choosing between Latent Dirichlet Allocation (LDA) and Neural Topic Model (NTM)
+Topic models are commonly used to produce topics from corpuses that (1) coherently encapsulate semantic meaning and (2) describe documents well. As such, topic models aim to minimize perplexity and maximize topic coherence.
+A lower perplexity score indicates better generalization performance.
+
+- SageMaker NTM hardware is more flexible than LDA and can scale better because NTM can run on CPU and GPU and can be parallelized across multiple GPU instances, whereas LDA only supports single-instance CPU training
+
+### k-NN
+A non-parametric **supervised** method for _classification_ or _regression_
+Training with k-NN has three steps: sampling, dimension reduction, index building
+
+- can separate non-linear data
+- for dimension reductions: `sign` or `fjlt` methods
+- for **training**: supports `text/csv` and `application/x-recordio-protobuf`
+- for **inference** input: supports the `application/json`, `application/x-recordio-protobuf`, and `text/csv`
+- train channel contains training data
+- test channel emits accuracy or MSE
+- supports training on CPU and GPU
+- inference requests from CPUs generally have a **lower average latency** than requests from GPUs, but GPUs have **higher throughput** for larger batches
+- File or Pipe mode
+
+#### How  the k-NN algorithm works
+**Step 1: Sample**
+- use `sample_size` parameter to specify the total number of data points to be sampled from the training dataset  
+
+**Step 2: Dimension reduction**
+- specify the method in `dimension_reduction_type`. `sign` and `fjlt`
+
+**Step 3: Build an index**
+- during inference, the algorithm queries the index for the k-nearest-neighbors of a sample point
+
+#### Hyperparameters
+- `k`
+- `sample_size`
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/k-nearest-neighbors.html)
+- [ K-Nearest Neighbor Covertype](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/k_nearest_neighbors_covtype/k_nearest_neighbors_covtype.html)
+
+### k-Means
+The PCA and K-means algorithms are useful in collection of data using census form.
+
+- **Unsupervised**, divides data in `k` groups
+- You define the attributes that you want the algorithm to use to determine similarity
+- uses modified version of [web-scale k-means clustering](https://www.eecs.tufts.edu/~dsculley/papers/fastkmeans.pdf)
+- expects tabular data, where rows represent the observations that you want to cluster, and the columns represent attributes of the observations
+- measured by _Euclidean distance_
+- train and test channels, recommended `S3DataDistributionType=ShardedByS3Key` for training and `S3DataDistributionType=FullyReplicated` for testing
+- both `File` and `Pipe` mode
+- `recordIO-wrapped-protobuf` and `csv` for training (+ `json` for inference)
+- both CPU and GPU (only one GPU is supported, `p*.xlarge`), but CPU is recommended
+- k-means++ tries to make initial clusters far apart
+
+#### How k-Means works
+- **Step 1**: Determine the initial cluster centers:
+  - the random approach
+  - k-means++
+- **Step 2**: Iterate over the training dataset and calculate cluster centers
+- **Step 3**: Reduce the clusters from K to k - $K=k*x, x > 1$
+
+
+#### Hyperparameters
+- **required** `feature_dim`: number of features in the input data
+- **required** `k`:
+  - optimize for tightness of clusters
+  - use "elbow method"
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/k-means.html)
+- [Analyze US census data for population segmentation using Amazon SageMaker](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_applying_machine_learning/US-census_population_segmentation_PCA_Kmeans/sagemaker-countycensusclustering.html)
+
+### PCA
+- **Unsupervised** dimensionality reduction
+- reduced dimensions are called _components_
+- two modes:
+  - **regular**: for datasets with sparse data and a moderate number of observations and features
+  - **randomized**: for dataset with both a large number of observations and features, uses an approximation algorithm
+- covariance matrix is created, then singular value decomposition (SVD)
+- uses tabular data
+- works only for numeric data
+- data needs to be normalized - features with similar scale
+- both `protobuf` and `csv` for training
+- `csv`, `json`, `protobuf` for inference
+- File or Pipe mode
+- both CPU and GPU
+
+#### Hyperparameters
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/pca.html)
+- [An Introduction to PCA with MNIST](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/pca_mnist/pca_mnist.html)
+
+### Factorization machines
+A a general-purpose **supervised** learning algorithm that you can use for both classification and regression tasks.
+- extension of a linear model that is designed to capture interactions between features with high dimensional sparse datasets economically
+- good choice for tasks dealing with high dimensional sparse datasets, such as _click prediction_ and _item recommendation_
+- usually used in the context of recommender systems
+- finds factors we can use to predict a classification (click on not? purchase or not?) or value (predicted rating?) given a matrix representing some pairs of things (e.g. users & items)
+- considers **only pair-wise** (2nd order) interactions between features
+- linear complexity for calculating model parameters
+- only `protobuf` with `Float32` tensors for training, `csv` is not practical with sparse data
+- both File and Pipe mode
+- for inference `json` and `protobuf`
+- can be trained across distributed instances
+- CPU is recommended for sparse data
+- GPU must be better for dense data
+
+#### Hyperparameters
+- initialization methods for bias, factors, and linear terms: uniform, normal, constant
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/fact-machines.html)
+- [Sample notebook](https://docs.aws.amazon.com/sagemaker/latest/dg/fact-machines.html#fm-sample-notebooks)
+
+### IP-insights
+- **Unsupervised** learning algorithm that learns the usage patterns for IPv4 addresses
+- uses NN to learn latent vector representation of entities and IP addresses
+- designed to capture associations between IPv4 addresses and various entities, such as user IDs or account numbers
+-  ingests historical data as `(entity, IPv4 Address)` pairs and learns the IP usage patterns of each entity
+- When queried with an `(entity, IPv4 Address)` event, a model returns a score that infers how anomalous the pattern of the event is
+- can be used:
+  - identify logins from anomalous IPs
+- can also learn vector representations of IP addresses, known as _embeddings_
+- supports training and validation data channels. Validation channel is used to compute AUC score
+- training/validation data must be in `csv` format, `(entity, IP)`
+- File mode only
+- for inference: `csv`, `json`, `jsonlines` are supported
+- can run on both GPU and CPU
+- for training, GPU is recommended, but for certain workloads with large training datasets, distributed CPU instances might reduce training costs
+- for inference, CPU is recommended
+- supports all available GPUs
+
+If you switch from a single GPU to multiple GPUs, the mini_batch_size is divided equally into the number of GPUs used. You may want to increase the value of the mini_batch_size to compensate for this.
+
+#### Hyperparameters
+- `num_entity_vectors`
+  - hash size
+  - set to 2x number of unique entity IDs
+- `vector_dim`
+  - size of embedding vectors
+  - scales model size
+  - too large results in overfitting
+
+#### Links
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/ip-insights.html)
+- [Sample notebook](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/ipinsights_login/ipinsights-tutorial.html)
+
+### Reinforcement learning in SageMaker
+Q-learning:
+- You have:
+  - a set of environmental states $s$
+  - a set of possible actions in those states $a$
+  - a value of each state/action $Q$
+- Start with $Q$ values of 0
+- explore the space
+- a bad thing happen after a given state/action -> reduce its $Q$
+- a good thing (reward) happen -> increase its $Q$
+- you can look ahead more than one step by using a discount factor ($s$ previous state, $s'$ current state):
+$Q(s,a) = discount*(reward(s,a) + max(Q(s')) - Q(s,a))$
+
+exploration problem:
+- how do we efficiently explore all of the possible states?
+
+**Markov Decision Process** (MDP)
+- discrete time stochastic control process
+- States are $s$ and $s'$
+- state transition functions: $P_{a}(s,s')$
+- $Q$ values as reward function: $R_{a}(s,s')$
+
+RF in SageMaker:
+- uses a deep learning framework with Tensorflow and MXNet
+- supports Intel Coach and Ray Rllib toolkits
+- custom, open-source, or commercial environments supported
+
+### Automatic Model Tuning
+- don't optimize too many hyperparameters at once
+- limit your ranges to as small a range as possible
+- use logarithmic scales when appropriate
+- don't run too many training jobs concurrently: this limits how well the process can learn as it goes
+- [best practices for hyperparameter tuning](https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-considerations.html)
+
+### Apache Spark with SageMaker
+- pre-process data as normal with Spark - generate DataFrames
+- use `sagemaker-spark` library
+- train `SageMakerEstimator` (KMeans, PCA, XGBoost)
+- get `SageMakerModel` from `fit` on `SageMakerEstimator`
+- call `transform` on `SageMakerModel`
+
+### SageMaker Studio and Experiments
+
+### SageMaker Debugger
+Saves internal model state at periodical intervals
+- gradients/tensors over time for training
+- define rules for detecting unwanted conditions while training
+- a debug job is run for each rule configured
+- logs & fires a CloudWatch event when the rul is hit
+
+### SageMaker Autopilot
+...
+
+### SageMaker Model Monitor
+- get alerts on quality deviations on your deployed models (via CW)
+- visualize data drift
+- detect anomalies & outliers
+- detect new features
+- no code
+- integrates with SageMaker Clarify (detects potential bias)
+- monitoring types:
+  - data quality
+  - model quality
+  - bias drift
+  - feature attribution drift
+
+### SageMaker logging and monitoring options + CloudTrail
+- Statistics are kept for 15 months, CloudWatch console limits the search to metrics for the last two weeks
+- monitoring metrics are available on CW at a 1-min frequency
+- the default IAM role has the required permissions to write logs
+- CloudTrail does not monitor calls to `InvokeEndpoint` - **CloudTrail captures all API calls for SageMaker, with the exception of `InvokeEndpoint`**
+- CloudTrail keeps this record for a period of 90 days
+
+### New features in 2021
+- JumpStart
+- Data Wrangler
+- Feature Store
+- Edge Manager
+
+### `CreateTrainingJob` API 
+required parameters:
+- `AlgorithmSpecification`
+- `OutputDataConfig`
+- `ResourceConfig` - ML compute instance type, count, volume KMS key, volume size
+- `RoleArn`
+- `StoppingCondition` - `MaxRuntimeInSeconds` (default 1 day, max is 28 days) and `MaxWaitTimeInSeconds`
+- `TrainingJobName`
+
+
+### Bias-variance trade-off
+https://mlu.corp.amazon.com/explain/bias-variance
+
+
+### Monitor model performance
+https://aws.amazon.com/blogs/machine-learning/use-amazon-cloudwatch-custom-metrics-for-real-time-monitoring-of-amazon-sagemaker-model-performance/
+
+
+### Naive Bayesian classifier
+https://www.analyticsvidhya.com/blog/2017/09/naive-bayes-explained/
+
+$$
+P(class|data)=\frac{P(data|class)*P(class)}{P(data)}
+$$
+
+### Evaluating ML models
+[docs](https://docs.aws.amazon.com/machine-learning/latest/dg/evaluating_models.html)
+
+- can use console to split the data (if single file or directory)
+- default path in Create ML model wizard splits 70/30 sequentially, not random
+- can randomize using **Custom** 70/30 random split
+- to specify custom split ratios in `Create Datasource` API
+- for big data sets - can reserve some data (20%) for test (validation)
+- for small data sets - use **Cross-Validation**
+
+#### Binary model insights
+- select cut-off/threshold, default 0.5
+- AUC, **independent** of cut-off
+
+False positive rate 
+$$
+FPR = \frac{FP}{FP+TN}
+$$
+
+#### Multiclass model insights
+F1
+$$
+F1 = \frac{2TP}{2TP+FP+FN}
+$$
+
+Macro average F1 score
+$$
+F1 = \frac{1}{K}\sum^K_{k=1}{F1_k}
+$$
+
+#### Regression model insights
+RMSE
+$$
+RMSE=\sqrt{\frac{1}{N}\sum_{i=1}^N{(y_i-\hat{y_i})^2}}
+$$
+
+- Common practice to review the **residuals** for regression problems
+- Residuals represent the portion of the target that the model is unable to predict
+- Positive residuals -> model underestimating
+- Negative residuals -> model overestimating
+- The histogram of the residuals on the evaluation data when distributed in a bell shape and centered at zero indicates that the model makes mistakes in a random manner and does not systematically over or under predict any particular range of target values
+- If the residuals do not form a zero-centered bell shape, there is some structure in the model's prediction error
+
+#### Cross-validation
+- Use cross-validation to detect overfitting
+- k-fold cross-validation 
+
+#### Evaluation alerts
+If any of the validation criteria are not met by the evaluation, the Amazon ML console alerts you by displaying the validation criterion that has been violated, as follows:
+
+- Evaluation of ML model is done on held-out data
+- Sufficient data was used for the evaluation of the predictive model (if evaluation data < 10% of training data)
+- Schema matched
+- All records from evaluation files were used for predictive model performance evaluation
+- Distribution of target variable: target is distributed similarly in both training and evaluation data sets
+    - **if this alert triggers**: try using the random split strategy to split the data into training and evaluation datasources
+
+
+### Model Fit: Underfitting vs. Overfitting
+[docs](https://docs.aws.amazon.com/machine-learning/latest/dg/model-fit-underfitting-vs-overfitting.html)
+
+if **underfitting**:
+- Add new domain-specific features and more feature Cartesian products, and change the types of feature processing used (e.g., increasing n-grams size)
+- Decrease the amount of regularization used
+
+if **overfitting**:
+- Feature selection: consider using fewer feature combinations, decrease n-grams size, and decrease the number of numeric attribute bins.
+- Increase the amount of regularization used
+
+### SageMaker integration in Spark
+- Install SageMaker Spark library in the Spark environment
+- Use the appropriate estimator from the SageMaker Spark Library to train a model
+- Use the SageMaker `model.transform` method to get inferences from the model hosted in SageMaker
+
+### SageMaker endpoint scaling
+- [docs](https://docs.aws.amazon.com/sagemaker/latest/dg/endpoint-scaling-loadtest.html)
+- [Load test and optimize an Amazon SageMaker endpoint using automatic scaling](https://aws.amazon.com/blogs/machine-learning/load-test-and-optimize-an-amazon-sagemaker-endpoint-using-automatic-scaling/)
+
+Perform load tests to choose an automatic scaling configuration that works the way you want.
+
+- Assumption: automatic scaling policy uses the predefined target metric `SageMakerVariantInvocationsPerInstance`
+- Perform load testing to find the peak `InvocationsPerInstance`:
+    1. set up an endpoint with your model using a single instance
+    2. use a load testing tool to generate an increasing number of parallel requests - determine the peak request-per-second (RPS) you model's production variant can handle
+
+`SageMakerVariantInvocationsPerInstance = (MAX_RPS * SAFETY_FACTOR) * 60` -> per **minute**
 
 ## Modeling: High-level ML services
 
-## ML implementation and operations
+### Amazon Comprehend
+- NLP and text analytics
+- extract key phrases, entities, sentiments, languages, syntax, topics, document classification
+
+### Amazon Translate
+- use deep learning for translation
+- supports custom terminology
+
+### Amazon Transcribe
+- speech to text
+- streaming audio supported
+- speaker identification (number of speakers)
+- channel identification
+- custom vocabularies
+
+### Amazon Polly
+- text to speech
+- Lexicons, e.g. for handling acronyms
+- SSML (speech synthesis markup language)
+- Speech marks
+
+### Amazon Rekognition
+- object and scene detection
+- image moderation
+- facial analysis
+- celebrity recognition
+- text in images
+- video analysis
+- video must come  from KVS (Kinesis Video Streams), favor resolution over framerate, 5-30 FPS, H.265 encoded
+- images come from S3
+- can use with Lambda to trigger image analysis upon upload
+- recognition custom labels - train with a small set of labeled images
+
+### Amazon Forecast
+- Time series forecast
+- works on any time series
+
+### Amazon Lex
+- Natural-language chatbot engine
+- built around intents
+- utterances invoke intents
+- lambda functions are invoked to fulfill the intent
+- slots specify extra info needed by the intent
+
+### Amazon Personalize
+- fully-managed recommender engine
+- API access:
+  - feed in data (purchases, ratings, impressions, card adds, catalog, user demographics) via S3 or API
+  - you provide an explicit schema in `Avro` format
+  - Javascript or SDK
+  - `GetRecommendations`: recommended products, content, similar items
+  - `GetPersonalizedRanking`: rank a list of items provided
+
+Features:
+- real-time or batch recommendations
+- cold start recommendations (for new users/new items)
+- contextual recommendations (device type, time, etc)
+- similar items
+- unstructured text input
+
+Datasets:
+- users including demographics
+- items
+- interactions
+
+Recipes:
+- user personalization
+- personalized rankings
+- related items
+
+Solutions:
+- trains the model
+- optimizes for relevance as well as your additional objectives
+- HPO
+
+Campaigns:
+- Deploys your "solution versions"
+- deploys capacity for inference
+
+#### HPO
+User personalization, personalized ranking:
+- `hidden_dimension`
+- `bptt` (back propagation through time - RNN)
+- `recency_mask` (weights recent events)
+- `min/max_user_history_length_percentile `(filter out robots)
+- `exploration_weight` (0-1), controls relevance
+- `exploration_item_age_cut_off`, how far back in time you go
+
+Similar-items:
+- item_id_hidden_dimension
+- item_metadata_hidden_dimension
+
+#### Maintain relevance
+- keep your dataset current - incremental data import
+- use `PutEvents` to feed in real-time user behavior
+- retrain the model:
+  - create a _new solution version_
+  - updates every 2 hours by default
+  - should do a full retrain (`trainingMode=FULL`) weekly
+
+#### Security
+- data not shared across accounts
+- data may be encrypted with KMS
+- access control via IAM
+- data in S3 must have appropriate bucket policy for Amazon Personalize
+- monitoring/logging
+
+#### Pricing
+- data ingestion per GB
+- training per hour
+- inference per TPS-hour
+- batch recommendation per user or per item
+
+### Amazon Textract
+- OCR with forms, fields, tables support
+
+### AWS DeepRacer
+- RF powered by race car
+
+### DeepLens
+- deep learning-enabled video camera
+- integrated with Rekognition, SageMaker
+
+### Amazon Lookout
+- for equipment
+- for metrics
+- for vision
+
+detects abnormalities from sensor data automatically to detect equipment issues
+
+### Amazon Monitron
+- end-to-end system for monitoring industrial equipment & predictive maintenance
+
+### TorchServe
+- model serving framework for PyTorch
+- part of the PyTorch open source project from Facebook
+
+### AWS Neuron
+- SDK for ML inference specifically on AWS Inferentia chips
+- EC2 Inf1 instance type
+- Integrated with SM/DLC/AMI, Tensorflow/PyTorch/MXNet
+
+### AWS Panorama
+- computer vision at the edge
+- brings CV to your existing IP cameras
+
+### AWS DeepComposer
+- AI powered keyboard
+- composes a melody into an entire song
+
+### Amazon Fraud Detector
+- upload you own historical fraud data
+- builds custom models from template you choose
+- exposes API for your online application
+
+### Amazon CodeGuru
+- automated code review
+- finds lines of code that hurt performance
+- resource leaks, race conditions
+- offers specific recommendations
+- Java and Python
+
+### Contact Lens for Amazon Connnect
+- for support call centers
+- ingest audio data from recorded calls
+- allows search on calls/chats
+- sentiment analysis
+- find utterances that correlate with successful calls
+- categorize calls automatically
+- measures talk speed and interruptions
+- theme detection: discovers emerging issues
+
+### Amazon Kendra
+- enterprise search with natural language
+
+### Amazon Augmented AI (A2I)
+- human review of ML predictions
+- builds workflows for reviewing low-confidence predictions
+- integrated into Textract and Rekognition, SM
+
+## Section 8: ML implementation and operations
+
+### SageMaker and Docker
+- all models in SM are hosted in Docker containers:
+  - pre-built deep learning
+  - pre-built scikit-learn and Spark ML
+  - pre-built Tensorflow, MXNet, Chainer, PyTorch
+    - distributed training via Horovod or Parameter Servers
+  - own training and inference code or pre-built image extension
+
+consider environment variables
+- [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/adapt-training-container.html)
+
+Sample docker file:
+```
+# Downloads the TensorFlow Docker base image. 
+# You can replace this with any Docker base image you want to bring to build containers, as well as with AWS pre-built container base images
+FROM tensorflow/tensorflow:2.2.0rc2-gpu-py3-jupyter
+
+# Install sagemaker-training toolkit that contains the common functionality necessary to create a container compatible with SageMaker and the Python SDK.
+RUN pip3 install sagemaker-training
+
+# Copies the training code inside the container
+# The script must be located in this folder
+COPY train.py /opt/ml/code/train.py
+
+# Defines train.py as script entrypoint
+ENV SAGEMAKER_PROGRAM train.py
+```
+
+❗ `SAGEMAKER_PROGRAM` is the only environmental variable that you must specify when you build your own container
+
+#### Production variants
+- test out multiple models on live traffic
+- variant weights - how to distribute traffic among them
+- lets you do A/B tests and validate performance in real-world settings
+
+### SageMaker on the Edge
+
+#### SageMaker Neo
+- compile models to edge devices: ARM, Intel, Nvidia, embedded
+- optimizes code for specific devices
+- consists of a compiler and a runtime
+
+#### Neo + AWS IoT Greengrass
+- Neo-compiled models can be deployed to an HTTPS endpoint
+  - hosted on c5, m5, m4, p3, p2 instances
+  - must be same instance type used for compilation
+- You can deploy to IoT Greengrass
+  - how to get the model to an actual edge device
+  - uses Lambda inference applications
+
+### SageMaker security
+
+Network isolation, the following SageMaker containers do not support isolation:
+- Chainer
+- PyTorch
+- Scikit-learn
+- Reinforcement learning
+
+
+### SageMaker resource management
+- Use checkpoints to S3 so training can resume
+- can increase training time (need wait for spot instances)
+
+### Elastic inference
+- accelerates DL inference
+  - a fraction of cost of using a GPU instance for inference
+- EL accelerators may be added alongside a CPU instance:
+  - ml.eia1.medium/large/xlarge
+- EL accelerators may be applied to notebooks
+- works with TF and MXNet pre-built containers
+- works with image classification and object detection built-in algorithms
+- you must create an AWS PrivateLink endpoint service
+
+### Automatic scaling
+- works with CloudWatch
+- you setup a scaling policy to define target metrics, min/max capacity, cool-down periods
+
+### SageMaker inference pipelines
+- linear sequence of 2-15 containers
+- any combination of pre-trained built-in algorithms or your own algorithms in Docker containers
+- combine pre-processing, prediction, post-processing
+- Spark ML and scikit-learn containers
+- can handle both real-time inference and batch transforms
+- invocations as a sequence of HTTP requests
+
+#### SageMaker inference containers
+[documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/docker-containers.html)
+custom inference containers requirements:
+- Responding to inference requests:
+    - web server listening on 8080 
+    - accept `POST` request to `/invocations` endpoint
+    - must accept socket connection requests within `250ms`
+    - must respond to requests within 60s
+- Responding to health check (ping):
+    - `GET` requests to `/ping` endpoint
+    - simplest requirement is return `HTTP 200` and empty body
+    - respond on `/ping` within `2s`
 
 ## Wrapping up
 
+### More prep resources
+- practice exam
 
 # LinuxAcademy course by **Mike Chambers**
 https://linuxacademy.com/cp/modules/view/id/340
@@ -1263,7 +2221,7 @@ Use cases:
 - data exploration
 - customer categorization
 
-Elbow Plot
+[Elbow Plot](ttps://towardsdatascience.com/k-means-explained-10349949bd10): total  within-cluster sum (WSS) as a function of `k`
 
 ## K-Nearest Neighbour
 **Supervised**
@@ -1390,14 +2348,15 @@ False Positive Rate (FPR) = False Positive / (True Negatives + False Positives)
 false alarm rate - what % of the actual negatives does the classifier get wrong (i.e. predict to  be positive)
 
 ## Gini Impurity
-Gini impurity = 1 - (probability of label 1)^2 - (probability of label 2)^2
+$Gini impurity = 1 - p(label_1)^2 - p(label_2)^2$
+p - probability of a label
 take weighted Gini impurity over all branches
 
 The feature with the **lowest** weighted Gini impurity is the best choice for the root node (best separates labels)
 
 ## F1 Score
 
-F1 = [(Recall x Precision) / (Recall + Precision)] * 2
+$F1 = 2*\frac{Recall * Precision}{Recall + Precision}$
 
 Recall (sensitivity) = True Positives / (True Positives + False Negatives)
 Precision = True Positives / True Positives + False Positives

@@ -16,3 +16,32 @@ recall = TP/(TP+FN)
 8 - C
 9 -
 10 -
+
+## Udemy full practice exam
+- data de-duplication AWS Glue
+- mechanical turk
+- apache spark on EMR, EMRFS, HDFS, reading data from S3 
+- [k-means](https://towardsdatascience.com/k-means-explained-10349949bd10) compared to [KNN](https://medium.com/ml-with-arpit-pathak/k-nearest-neighbors-algorithm-a9559b960fe5)
+
+
+- SageMaker notebook default IAM role
+- Object2Vec compared to word2vec (BlazingText)
+- RCF in KDA
+- Binning techniques
+- multiple GPU training for TensorFlow
+- kNN 
+- early stopping in SageMaker
+
+
+## Udemy practice examы
+
+
+## CodeGure practice exam (60 q)
+- Plots for EDA
+- Elastic inference accelerator
+
+## Practice exam
+- Horowod + TensorFlow
+
+
+

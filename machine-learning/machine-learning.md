@@ -111,6 +111,14 @@ Logging & Audit:
 
 Tagged based security (combined with IAM policies and bucket policies)
 
+### EFS
+- if your training data is already in Amazon Elastic File System (Amazon EFS), we recommend using that as your training data source
+- EFS has the benefit of directly launching your training jobs from the service without the need for data movement, resulting in faster training start times
+
+### FSx for Lustre
+- When your training data is already in Amazon S3 and you plan to run training jobs several times using different algorithms and parameters, consider using Amazon FSx for Lustre, a file system service
+- The first time you run a training job, FSx for Lustre automatically copies data from Amazon S3 and makes it available to Amazon SageMaker. You can use the same Amazon FSx file system for subsequent iterations of training jobs, preventing repeated downloads of common Amazon S3 objects
+
 ### Kinesis
 - data is replicated to 3 AZ
 
@@ -177,13 +185,13 @@ Destinations (batch writes):
 KDS:
 - need to write custom code (producer/consumer) - KDS API
 - real time, 200ms latency for classic, 70ms latency for enhanced fan-out
-- need to manage scaling (shard splitting/merging)
+- **need to manage scaling** (shard splitting/merging)
 - data storage 1 - 365d, replay capability, multi-consumers
 
 KDF:
 - Near real time (60s is lowest buffer time)
 - Data transformation via Lambda
-- Auto scaling
+- **Auto scaling**
 - no data storage, only delivery retry, 24h max retention
 
 #### Kinesis Data Analytics (KDA)
@@ -268,6 +276,11 @@ Max execution time 1y
 
 ## EDA
 
+### T-SNE
+T-SNE is a visualization technique for high dimensional datasets
+
+For example, in natural language processing, we need to convert a word to a vector.
+
 ### Types of data
 - Numerical
 - Categorical -> ordinal (ordered, e.g. size or rating), nominal (unordered, e.g. color)
@@ -335,9 +348,11 @@ $$
 - mean: $E(x)=\mu$
 - variance: $Var(X)=\sigma^2$, $\sigma$ is standard deviation
 
-#### Poisson distribution
+#### Poisson distribution (discrete)
 Poisson Distribution is applicable in situations where events occur at random points of time and space wherein our interest lies only in the number of occurrences of the event.
 E.g. models the entire number of calls at a call center in a day, number of printing error at each page of the book, number of customers arriving at a shop in an hour.
+
+Parameter: $\lambda$ - expected rate of occurrences
 
 Following conditions must be met:
 - Any successful event should not influence the outcome of another successful event
@@ -1133,7 +1148,7 @@ Applications:
   - maps words to high-quality distributed vectors - _word embedding_
   - words that are semantically similar correspond to vectors that are close together
   - can scale to large datasets easily
-  - provides `skip-gram` and continuous bag of words `cbow` training architectures
+  - provides `skip-gram`, `batch_skipgram`, and continuous bag of words `cbow` training architectures
   - order of words doesn't matter
   - GPU training
   - for `cbow` and `skipgram` recommended a **single** `p3` instance or any single CPU/single GPU instance
@@ -1172,6 +1187,8 @@ Text classification:
 - [Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/blazingtext.html)
 - [Training Word Embeddings On AWS SageMaker Using BlazingText](https://towardsdatascience.com/training-word-embeddings-on-aws-sagemaker-using-blazingtext-93d0a0838212)
 - [sample notebook](https://github.com/awslabs/amazon-sagemaker-examples/blob/master/introduction_to_amazon_algorithms/blazingtext_text_classification_dbpedia/blazingtext_text_classification_dbpedia.ipynb)
+- [BlazingText Algorithm](https://www.mlexam.com/blazingtext-algorithm/)
+- [BlazingText word2vec](https://github.com/aws/amazon-sagemaker-examples/blob/main/introduction_to_amazon_algorithms/blazingtext_word2vec_text8/blazingtext_word2vec_text8.ipynb)
 
 ### Object2Vec
 A general-purpose neural embedding algorithm, similar to `Word2Vec`
@@ -1466,7 +1483,7 @@ The PCA and K-means algorithms are useful in collection of data using census for
 - [An Introduction to PCA with MNIST](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/pca_mnist/pca_mnist.html)
 
 ### Factorization machines
-A a general-purpose **supervised** learning algorithm that you can use for both classification and regression tasks.
+A a general-purpose **supervised** learning algorithm that you can use for both **classification** and **regression** tasks.
 - extension of a linear model that is designed to capture interactions between features with high dimensional sparse datasets economically
 - good choice for tasks dealing with high dimensional sparse datasets, such as _click prediction_ and _item recommendation_
 - usually used in the context of recommender systems
@@ -1717,6 +1734,20 @@ Perform load tests to choose an automatic scaling configuration that works the w
 - NLP and text analytics
 - extract key phrases, entities, sentiments, languages, syntax, topics, document classification
 
+- Features:
+  - comprehend insights:
+    - entities (people, places, locations)
+    - key phrases
+    - PII
+    - language
+    - sentiment (positive, neutral, negative, or mixed)
+    - targeted sentiment - associated with specific entities in a document
+    - syntax - parses each word in a document and determines the part of speech
+  - comprehend custom:
+    - custom classification, multi-class and multi-label
+    - custom entity recognition
+  - document clustering (topic modelling)
+
 ### Amazon Translate
 - use deep learning for translation
 - supports custom terminology
@@ -1925,6 +1956,11 @@ ENV SAGEMAKER_PROGRAM train.py
 
 ❗ `SAGEMAKER_PROGRAM` is the only environmental variable that you must specify when you build your own container
 
+### Horovod
+- a distributed deep learning training framework for TensorFlow, Keras, PyTorch, and Apache MXNet
+- the primary motivation for this project is to make it easy to take a single-GPU training script and successfully scale it to train across many GPUs in parallel
+- Amazon SageMaker provides for TensorFlow model hosting and training, including fully managed distributed training with Horovod and parameter servers
+
 #### Production variants
 - test out multiple models on live traffic
 - variant weights - how to distribute traffic among them
@@ -1933,16 +1969,29 @@ ENV SAGEMAKER_PROGRAM train.py
 ### SageMaker on the Edge
 
 #### SageMaker Neo
-- compile models to edge devices: ARM, Intel, Nvidia, embedded
+- use cases:
+  - no connectivity to the cloud
+  - latency-sensitive cases
+  - processing sensor data in autonomous vehicles
+- compile models to edge devices: ARM, Intel, Nvidia, Candence, Qualcommm, Xilinx embedded
 - optimizes code for specific devices
+- supports MXNet, TensorFlow, PyTorch, XGBoost models 
 - consists of a compiler and a runtime
+- up to 10x reduction in framework size
+- compiles model and framework into a single executable that can be deployed to an edge device
 
 #### Neo + AWS IoT Greengrass
+- addressed a challenge **how to deploy** a model on your edge device
+- IoT Greengrass extends AWS to edge devices
+- with Greengrass, you can run Lambda functions, docker containers, execute predictions on machine learning models in your edge device even when not connected to the internet
 - Neo-compiled models can be deployed to an HTTPS endpoint
   - hosted on c5, m5, m4, p3, p2 instances
   - must be same instance type used for compilation
 - You can deploy to IoT Greengrass
   - how to get the model to an actual edge device
+  - place your Neo compiled executable on S3
+  - install DLR - a compact runtime for ML models, point model to S3 location
+  - Greengrass runtime then downloads the executable and hosts the model in your computer, and you can use it to generate inference locally
   - uses Lambda inference applications
 
 ### SageMaker security
@@ -2108,6 +2157,7 @@ Split training data in K parts and use K-1 for training and 1 for validation - r
 Selecting relevant data
 - removing irrelevant data/features
 - looking at correlation and variance in the data - drop features with very low correlation to the labeled data or with very low variance
+- correlation matrix show quatification of the **linear** relationships among variables
 
 Gaps and Anomalies
 Engineer new feature (e.g. take a function from multiple features)

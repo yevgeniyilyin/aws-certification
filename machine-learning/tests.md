@@ -45,3 +45,40 @@ recall = TP/(TP+FN)
 
 
 
+## Speciality practice
+- parallel training of DL model
+- the F1 score has been designed to work well on imbalanced data
+- NTM
+
+- S3 analytics
+
+- Multinomial logistic regression
+- [K-means for text clustering](https://towardsdatascience.com/text-clustering-using-k-means-ec19768aae48)
+
+## Service FAQs
+- [AWS SageMaker FAQ](https://aws.amazon.com/sagemaker/faqs/)
+- [AWS Comprehend FAQ](https://aws.amazon.com/comprehend/faqs/)
+- [AWS Lex FAQ](https://aws.amazon.com/lex/faqs/)
+- [AWS Polly FAQ](https://aws.amazon.com/polly/faqs/)
+- [AWS Recognition FAQ](https://aws.amazon.com/rekognition/faqs/)
+- [AWS Translate FAQ](https://aws.amazon.com/translate/faqs/)
+- [AWS Transcribe FAQ](https://aws.amazon.com/transcribe/faqs/)
+- [AWS DeepLens FAQ](https://aws.amazon.com/deeplens/faqs/)
+
+
+[weight decay](https://towardsdatascience.com/this-thing-called-weight-decay-a7cd4bcfccab)
+
+
+- use Amazon Rekognition Video to extract metadata from the videos?
+- approaches on automated HPO (Bayesian optimization, Random search)
+
+
+https://explore.skillbuilder.aws/learn/global-search/exam%20readiness
+
+[Practice Question Set](https://explore.skillbuilder.aws/learn/course/internal/view/elearning/9153/aws-certification-official-practice-question-sets-english)
+
+[Practice Question Set direct link](https://amazonwebservices.benchprep.com/app/aws-certification-official-practice-question-sets-english#exams)
+
+[Exam Readiness](https://amazonmr.au1.qualtrics.com/reports/RC/public/YW1hem9ubXItNWQ0YWQzYTViZjczMDIwMDBmNTc4ZWY3LVVSX2RvRFVNUlZZS1NtQjUyWg==)
+
+
